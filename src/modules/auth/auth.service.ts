@@ -17,11 +17,11 @@ export class AuthService {
     ) {}
 
     async register(email: string, password: string) {
-        const existing = await this.db.query.users.findFirst({
-      where: eq(schema.users.email, email)
-    });
+        const existing = await this.getUser(email);
 
-    if(existing) throw new BadRequestException('Email already in use');
+    if(existing) {
+        throw new BadRequestException('Email already in use');
+    } 
 
     const passwordHash = await bcrypt.hash(password, 10);
 
@@ -36,17 +36,17 @@ export class AuthService {
     }
 
     async login(email: string, password: string) {
-        const user = await this.db.query.users.findFirst({
-            where: and(
-                eq(schema.users.email, email),
-                isNull(schema.users.deletedAt),
-            )
-        })
+        const user = await this.getUser(email);
 
-        if(!user) throw new UnauthorizedException('Invalid credentials');
+        if(!user) {
+            throw new UnauthorizedException('Invalid credentials');
+        } 
 
         const isValid = await bcrypt.compare(password, user.passwordHash);
-        if (!isValid) throw new UnauthorizedException('Invalid credentials');
+
+        if (!isValid) {
+            throw new UnauthorizedException('Invalid credentials');
+        } 
 
         return this.generateTokens(user);
 
@@ -69,5 +69,14 @@ export class AuthService {
             redirectTo: '/dashboard',
          };
     }   
+
+    async getUser(email: string) {
+           return  await this.db.query.users.findFirst({
+            where: and(
+                eq(schema.users.email, email),
+                isNull(schema.users.deletedAt),
+            )
+        })
+    }
 
 }
