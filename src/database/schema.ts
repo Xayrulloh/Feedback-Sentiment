@@ -1,17 +1,23 @@
-import { timestamp, uuid } from 'drizzle-orm/pg-core';
+// src/database/schema.ts
+import { feedbacks } from './feedbacks.schema';
+import { users } from './users.schema';
 
-// enums
+export * from './users.schema';
+export * from './feedbacks.schema';
 
-// schemas
-const _baseSchema = {
-  id: uuid('id').primaryKey().defaultRandom(),
-  createdAt: timestamp('created_at', { mode: 'date', withTimezone: true })
-    .defaultNow()
-    .notNull(),
-  updatedAt: timestamp('updated_at', { mode: 'date', withTimezone: true })
-    .defaultNow()
-    .notNull(),
-  deletedAt: timestamp('deleted_at', { mode: 'date', withTimezone: true }),
+export const userSchema = {
+  users,
 };
 
-// relations
+export const feedbackSchema = {
+  feedbacks,
+};
+
+export const schema = {
+  ...userSchema,
+  ...feedbackSchema,
+};
+
+export type UserSchema = typeof userSchema;
+export type FeedbackSchema = typeof feedbackSchema;
+export type Schema = typeof schema;
