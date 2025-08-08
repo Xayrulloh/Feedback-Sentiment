@@ -32,10 +32,39 @@ const UserSchema = z
 
 type UserSchemaType = z.infer<typeof UserSchema>;
 
+// feedback
+const enum FeedbackSentimentEnum {
+  POSITIVE = 'positive',
+  NEUTRAL = 'neutral',
+  NEGATIVE = 'negative',
+  UNKNOWN = 'unknown',
+}
+
+const FeedbackSchema = z
+  .object({
+    content: z.string().min(3).describe('Feedback content'),
+    sentiment: z.enum([
+      FeedbackSentimentEnum.POSITIVE,
+      FeedbackSentimentEnum.NEUTRAL,
+      FeedbackSentimentEnum.NEGATIVE,
+      FeedbackSentimentEnum.UNKNOWN,
+    ]).describe('Sentiment of the feedback'),
+    confidence: z.number().min(0).max(100).describe('Confidence of the sentiment'),
+    summary: z.string(),
+    userId: z.string().uuid().describe('User ID'),
+    folderId: z.string().uuid().describe('Folder ID'),
+  })
+  .merge(BaseSchema);
+
+type FeedbackSchemaType = z.infer<typeof FeedbackSchema>;
+
 export {
   UserSchema,
   type UserSchemaType,
   UserRoleEnum,
   BaseSchema,
   type BaseSchemaType,
+  FeedbackSchema,
+  type FeedbackSchemaType,
+  FeedbackSentimentEnum
 };

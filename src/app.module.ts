@@ -4,7 +4,7 @@ import { ZodValidationPipe } from 'nestjs-zod';
 import { EnvModule } from './config/env/env.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { ZodSerializerInterceptorCustom } from './common/interceptors/zod.response.interceptor';
-import { AiModule } from './ai/ai.module'; 
+import { AiModule } from './modules/AI/AI.module'; 
 
 @Module({
   imports: [EnvModule, AuthModule, AiModule],
