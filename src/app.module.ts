@@ -1,18 +1,20 @@
 import { Module } from '@nestjs/common';
-import { APP_PIPE } from '@nestjs/core';
+import { APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import { ZodValidationPipe } from 'nestjs-zod';
 import { EnvModule } from './config/env/env.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { ZodSerializerInterceptorCustom } from './common/interceptors/zod.response.interceptor';
 import { AiModule } from './ai/ai.module'; 
 
-
 @Module({
-  imports: [EnvModule, AiModule],
+  imports: [EnvModule, AuthModule, AiModule],
   controllers: [],
   providers: [
     {
       provide: APP_PIPE,
       useClass: ZodValidationPipe,
     },
+    { provide: APP_INTERCEPTOR, useClass: ZodSerializerInterceptorCustom },
   ],
 })
 export class AppModule {}
