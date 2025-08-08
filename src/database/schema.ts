@@ -1,4 +1,12 @@
+import { pgEnum } from 'drizzle-orm/pg-core';
 import { pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { UserRoleEnum } from 'src/utils/zod.schemas';
+
+// enums
+export const DrizzleUserRoleEnum = pgEnum('user_role', [
+  UserRoleEnum.USER,
+  UserRoleEnum.ADMIN,
+]);
 
 const baseSchema = {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -12,12 +20,8 @@ const baseSchema = {
 };
 
 export const users = pgTable('users', {
-  ...baseSchema,
   email: text('email').notNull().unique(),
   passwordHash: text('password_hash').notNull(),
-  role: text('role').$type<'user' | 'admin'>().notNull(),
+  role: DrizzleUserRoleEnum('role').notNull(),
+  ...baseSchema,
 });
-
-export const schema = {
-users
-}
