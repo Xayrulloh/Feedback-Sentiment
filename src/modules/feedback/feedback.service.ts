@@ -4,7 +4,7 @@ import { FeedbackRequestDto } from "./dto/feedback.dto";
 import { FeedbackResponseDto } from "./dto/feedback.dto";
 import { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { DrizzleAsyncProvider } from "src/database/drizzle.provider";
-// import { v4 as uuidv4 } from "uuid";
+import { v4 as uuidv4 } from "uuid";
 import * as schema from 'src/database/schema';
 
 @Injectable()
