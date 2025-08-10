@@ -1,6 +1,6 @@
-import { Injectable } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
 import { AIService } from "../AI/AI.service";
-import { FeedbackRequestDto } from "./dto/feedback.dto";
+import { FeedbackRequestDto, FeedbackResponseSchema } from "./dto/feedback.dto";
 import { FeedbackResponseDto } from "./dto/feedback.dto";
 import { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { DrizzleAsyncProvider } from "src/database/drizzle.provider";
@@ -11,12 +11,20 @@ import type { UserSchemaType } from "src/utils/zod.schemas";
 @Injectable()
 export class FeedbackService {
     constructor(
-        private readonly aiService: AIService,
-        private readonly db: NodePgDatabase
+         private readonly aiService: AIService,
+
+  @Inject(DrizzleAsyncProvider)
+  private readonly db: NodePgDatabase<typeof schema>,
     ) {}
 
     async processFeedback(dto: FeedbackRequestDto, req: UserSchemaType): Promise<FeedbackResponseDto[]> {
+
+          console.log('Received DTO:', dto);
+          console.log('Request user:', req);
+
         const aiResults = await this.aiService.analyzeMany(dto);
+
+        console.log('AI results:', aiResults);
         
         const createdFeedabacks = await Promise.all(
             aiResults.map(async (result) => {
@@ -34,7 +42,7 @@ export class FeedbackService {
                     createdAt: now,
                 });
 
-                return {
+                const feedbackObject =  {
                     id,
                     content: result.content,
                     sentiment: result.sentiment,
@@ -42,8 +50,14 @@ export class FeedbackService {
                     createdAt: now,
                 };
 
+                 FeedbackResponseSchema.parse(feedbackObject);
+
+                 return feedbackObject;
+
             })
         )
+
+        console.log('Returned feedbacks:', createdFeedabacks);
 
         return createdFeedabacks;
     } 

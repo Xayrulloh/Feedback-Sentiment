@@ -6,7 +6,7 @@ import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from 'src/database/schema';
 import { DrizzleAsyncProvider } from 'src/database/drizzle.provider';
 import { and, eq, isNull } from 'drizzle-orm';
-import { type ConfigService } from '@nestjs/config';
+import { ConfigService } from '@nestjs/config';
 import { EnvType } from 'src/config/env/env-validation';
 import { JWTPayloadType } from 'src/modules/auth/dto/auth.dto';
 
@@ -18,11 +18,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     protected configService: ConfigService,
   ) {
     super({
-      jwtFromRequest: (req: Request) => {
-        if (req) {
-        return ExtractJwt.fromAuthHeaderAsBearerToken()(req);
-        }
-      },
+      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
       secretOrKey: configService.get<EnvType['JWT_SECRET']>(
         'JWT_SECRET'
@@ -31,6 +27,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   }
 
   async validate(payload: JWTPayloadType) {
+    console.log('JWT payload received:', payload);
     const user = await this.db.query.users.findFirst({
       where: and(
         eq(schema.users.id, payload.sub),
@@ -38,8 +35,12 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       ),
     });
 
-    if (!user) throw new UnauthorizedException('Please log in to continue');
+    if (!user) {
+      console.log('User not found or deleted:', payload.sub);
+throw new UnauthorizedException('Please log in to continue');
+    } 
 
+    console.log('User found:', user);
     return user;
   }
 }

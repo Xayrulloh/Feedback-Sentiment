@@ -5,9 +5,10 @@ import { EnvModule } from './config/env/env.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { ZodSerializerInterceptorCustom } from './common/interceptors/zod.response.interceptor';
 import { AiModule } from './modules/AI/AI.module'; 
+import { FeedbackModule } from './modules/feedback/feedback.module';
 
 @Module({
-  imports: [EnvModule, AuthModule, AiModule],
+  imports: [EnvModule, AuthModule, AiModule, FeedbackModule],
   controllers: [],
   providers: [
     {

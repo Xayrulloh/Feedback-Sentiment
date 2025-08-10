@@ -18,9 +18,15 @@ export class FeedbackController {
     @Post('manual')
     @HttpCode(HttpStatus.CREATED)
     @ApiCreatedResponse({type: FeedbackResponseDto})
-    @ZodSerializerDto(FeedbackResponseSchema)
+    // @ZodSerializerDto(FeedbackResponseSchema)
     async processManualFeedback(@Body() body: FeedbackRequestDto, @Req() req: Request &  {user: UserSchemaType} ) {
         const user = req.user;
-        return this.feedbackService.processFeedback(body, user)
+        try {
+            return this.feedbackService.processFeedback(body, user)
+        } catch(error) {
+            console.error('Error processing manual feedback:', error);
+            throw error;
+        }
+        
     }
 }
