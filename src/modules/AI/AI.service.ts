@@ -47,11 +47,16 @@ export class AIService {
     return JSON.parse(content);
   }
 
-  async analyzeOne(feedback: string): Promise<AIResponseSchemaType> {
+  async analyzeOne(feedback: string): Promise<AIResponseSchemaType & { content: string }> {
     const prompt = generateSentimentPrompt(feedback);
     const jsonResponse = await this.sendPrompt(prompt);
-
-    return AIResponseSchema.parse(jsonResponse);
+  
+    const parsed = AIResponseSchema.parse(jsonResponse);
+  
+    return {
+      ...parsed,
+      content: feedback, 
+    };
   }
 
   async analyzeMany(input: AIRequestSchemaDto): Promise<AIResponseSchemaType[]> {
