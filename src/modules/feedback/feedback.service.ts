@@ -6,44 +6,45 @@ import { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { DrizzleAsyncProvider } from "src/database/drizzle.provider";
 import { v4 as uuidv4 } from "uuid";
 import * as schema from 'src/database/schema';
+import type { UserSchemaType } from "src/utils/zod.schemas";
 
 @Injectable()
-export class FeedbackManualService {
+export class FeedbackService {
     constructor(
         private readonly aiService: AIService,
         private readonly db: NodePgDatabase
     ) {}
 
-    // async proccessManualFeedback(dto: FeedbackRequestDto): Promise<FeedbackResponseDto[]> {
-    //     const aiResults = await this.aiService.analyzeMany(dto);
+    async processFeedback(dto: FeedbackRequestDto, req: UserSchemaType): Promise<FeedbackResponseDto[]> {
+        const aiResults = await this.aiService.analyzeMany(dto);
         
-    //     const createdFeedabacks = await Promise.all(
-    //         aiResults.map(async (result) => {
-    //             const id = uuidv4();
-    //             const now = new Date();
+        const createdFeedabacks = await Promise.all(
+            aiResults.map(async (result) => {
+                const id = uuidv4();
+                const now = new Date();
 
-    //             await this.db.insert(schema.feedbacks).values({
-    //                 id,
-    //                 user_id: dto.userId,
-    //                 folder_id: dto.folderId ?? null,
-    //                 content: result.content,
-    //                 sentiment: result.sentiment,
-    //                 confidence: Math.round(result.confidence),
-    //                 summary: result.summary,
-    //                 created_at: now,
-    //             })
+                await this.db.insert(schema.feedbacks).values({
+                    id,
+                    userId: req.id,
+                    folderId: null,
+                    content: result.content,
+                    sentiment: result.sentiment,
+                    confidence: Math.round(result.confidence),
+                    summary: result.summary,
+                    createdAt: now,
+                });
 
-    //             return {
-    //                 id,
-    //                 content: result.content,
-    //                 sentiment: result.sentiment,
-    //                 confidence: result.confidence,
-    //                 createdAt: now.toISOString(),
-    //             };
+                return {
+                    id,
+                    content: result.content,
+                    sentiment: result.sentiment,
+                    confidence: result.confidence,
+                    createdAt: now,
+                };
 
-    //         })
-    //     )
+            })
+        )
 
-    //     return createdFeedabacks;
-    // } 
+        return createdFeedabacks;
+    } 
 }

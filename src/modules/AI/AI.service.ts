@@ -59,7 +59,7 @@ export class AIService {
     };
   }
 
-  async analyzeMany(input: AIRequestSchemaDto): Promise<AIResponseSchemaType[]> {
+  async analyzeMany(input: AIRequestSchemaDto): Promise<(AIResponseSchemaType & {content: string})[]> {
     const promises = input.feedbacks.map((feedback) => this.analyzeOne(feedback));
 
     return Promise.all(promises);

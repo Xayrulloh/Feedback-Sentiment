@@ -16,12 +16,13 @@ const FeedbackRequestSchema = z.object({
 
 class FeedbackRequestDto extends createZodDto(FeedbackRequestSchema) {}
 
-const FeedbackResponseSchema = FeedbackSchema
-  .omit({
-    userId: true,
-    folderId: true,
-  })
-  .describe('Feedback response without userId and folderId');
+const FeedbackResponseSchema = FeedbackSchema.pick({
+  id: true,
+  content: true,
+  sentiment: true,
+  confidence: true,
+  createdAt: true,
+})
 
 class FeedbackResponseDto extends createZodDto(FeedbackResponseSchema) {}
 
