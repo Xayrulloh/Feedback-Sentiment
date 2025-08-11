@@ -32,7 +32,7 @@ export class AuthService {
     const passwordHash = await bcrypt.hash(input.password, 10);
 
     const [newUser] = await this.db
-      .insert(schema.users)
+      .insert(schema.userSchema)
       .values({
         email: input.email,
         passwordHash: passwordHash,
@@ -80,8 +80,8 @@ export class AuthService {
   }
 
   async getUser(email: string) {
-    return this.db.query.users.findFirst({
-      where: and(eq(schema.users.email, email), isNull(schema.users.deletedAt)),
+    return this.db.query.userSchema.findFirst({
+      where: and(eq(schema.userSchema.email, email), isNull(schema.userSchema.deletedAt)),
     });
   }
 }

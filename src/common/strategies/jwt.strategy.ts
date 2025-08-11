@@ -26,10 +26,10 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   }
 
   async validate(payload: JWTPayloadType) {
-    const user = await this.db.query.users.findFirst({
+    const user = await this.db.query.userSchema.findFirst({
       where: and(
-        eq(schema.users.id, payload.sub),
-        isNull(schema.users.deletedAt),
+        eq(schema.userSchema.id, payload.sub),
+        isNull(schema.userSchema.deletedAt),
       ),
     });
 

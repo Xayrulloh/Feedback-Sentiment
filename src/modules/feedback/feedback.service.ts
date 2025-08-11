@@ -10,7 +10,6 @@ import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { DrizzleAsyncProvider } from 'src/database/drizzle.provider';
 import * as schema from 'src/database/schema';
 import type { UserSchemaType } from 'src/utils/zod.schemas';
-import { MIN_FEEDBACK_LENGTH } from 'src/utils/constants';
 import type { Express } from 'express';
 import * as Papa from 'papaparse';
 
@@ -26,17 +25,18 @@ export class FeedbackService {
   async feedbackManual(
     input: FeedbackRequestDto,
     user: UserSchemaType,
-    // FIXME: take the optional file as 3rd argument
+    fileId?: string,
   ): Promise<FeedbackResponseDto[]> {
     const response: FeedbackResponseDto[] = await Promise.all(
       input.feedbacks.map(async (feedback) => {
         const aiResult = await this.aiService.analyzeOne(feedback);
 
         const [newFeedback] = await this.db
-          .insert(schema.feedbacks)
+          .insert(schema.feedbackSchema)
           .values({
             content: feedback,
             userId: user.id,
+            fileId: fileId, 
             sentiment: aiResult.sentiment,
             confidence: Math.round(aiResult.confidence),
             summary: aiResult.summary,
@@ -76,9 +76,15 @@ export class FeedbackService {
     });
 
     const validationResult = FeedbackRequestSchema.parse({ feedbacks });
+ 
+    const [newFile] = await this.db
+    .insert(schema.fileSchema)
+    .values({
+      userId: user.id,
+      name: file.originalname,
+    })
+    .returning({ id: schema.fileSchema.id });
 
-    // FIXME: create one file (drizzle with the file name) and pass the id as 3rd argument to feedbackManual
-
-    return this.feedbackManual(validationResult, user);
+    return this.feedbackManual(validationResult, user, newFile.id);
   }
 }

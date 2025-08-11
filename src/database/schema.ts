@@ -30,25 +30,22 @@ const baseSchema = {
   deletedAt: timestamp('deleted_at', { mode: 'date', withTimezone: true }),
 };
 
-export const users = pgTable('users', {
-  // TODO: need to put Schema after the name
+export const userSchema = pgTable('users', {
   email: text('email').notNull().unique(),
   passwordHash: text('password_hash').notNull(),
   role: DrizzleUserRoleEnum('role').notNull(),
   ...baseSchema,
 });
 
-export const folders = pgTable('folders', {
-  // TODO: need to put Schema after the name and change the name to file
+export const fileSchema = pgTable('files', {
   userId: uuid('user_id').notNull(),
   name: text('name').notNull(),
   ...baseSchema,
 });
 
-export const feedbacks = pgTable('feedbacks', {
-  // TODO: need to put Schema after the name
+export const feedbackSchema = pgTable('feedbacks', {
   userId: uuid('user_id').notNull(),
-  folderId: uuid('folder_id'), // FIXME: all folder names to file (folderId -> fileId in types/zod/etc...)
+  fileId: uuid('file_id'), 
   content: text('content').notNull(),
   sentiment: DrizzleFeedbackSentimentEnum('sentiment').notNull(),
   confidence: integer('confidence').notNull(),
@@ -57,31 +54,31 @@ export const feedbacks = pgTable('feedbacks', {
 });
 
 // relations
-export const usersRelations = relations(users, ({ many }) => ({
-  feedbacks: many(feedbacks, { relationName: 'feedbacks_user_id_users_id_fk' }),
-  folders: many(folders, { relationName: 'folders_user_id_users_id_fk' }),
+export const usersRelations = relations(userSchema, ({ many }) => ({
+  feedbackSchema: many(feedbackSchema, { relationName: 'feedbacks_user_id_users_id_fk' }),
+  fileSchema: many(fileSchema, { relationName: 'files_user_id_users_id_fk' }),
 }));
 
-export const foldersRelations = relations(folders, ({ many, one }) => ({
-  feedbacks: many(feedbacks, {
-    relationName: 'feedbacks_folder_id_folders_id_fk',
+export const filesRelations = relations(fileSchema, ({ many, one }) => ({
+  feedbackSchema: many(feedbackSchema, {
+    relationName: 'feedbacks_file_id_files_id_fk',
   }),
-  user: one(users, {
-    fields: [folders.userId],
-    references: [users.id],
-    relationName: 'folders_user_id_users_id_fk',
+  user: one(userSchema, {
+    fields: [fileSchema.userId],
+    references: [userSchema.id],
+    relationName: 'files_user_id_users_id_fk',
   }),
 }));
 
-export const feedbacksRelations = relations(feedbacks, ({ one }) => ({
-  folder: one(folders, {
-    fields: [feedbacks.folderId],
-    references: [folders.id],
-    relationName: 'feedbacks_folder_id_folders_id_fk',
+export const feedbacksRelations = relations(feedbackSchema, ({ one }) => ({
+  fileSchema: one(fileSchema, {
+    fields: [feedbackSchema.fileId],
+    references: [fileSchema.id],
+    relationName: 'feedbacks_file_id_files_id_fk',
   }),
-  user: one(users, {
-    fields: [feedbacks.userId],
-    references: [users.id],
+  user: one(userSchema, {
+    fields: [feedbackSchema.userId],
+    references: [userSchema.id],
     relationName: 'feedbacks_user_id_users_id_fk',
   }),
 }));
