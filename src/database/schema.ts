@@ -48,7 +48,7 @@ export const folders = pgTable('folders', {
 export const feedbacks = pgTable('feedbacks', {
   // TODO: need to put Schema after the name
   userId: uuid('user_id').notNull(),
-  folderId: uuid('folder_id'),
+  folderId: uuid('folder_id'), // FIXME: all folder names to file (folderId -> fileId in types/zod/etc...)
   content: text('content').notNull(),
   sentiment: DrizzleFeedbackSentimentEnum('sentiment').notNull(),
   confidence: integer('confidence').notNull(),

@@ -111,9 +111,5 @@ export class FeedbackController {
 
     return this.feedbackService.feedbackUpload(file, req.user);
 
-    // const feedbacks = await this.feedbackService.processFeedbackFile(file);
-    // const result = await this.feedbackService.feedbackManual(feedbacks, req.user);
-
-    // return result;
   }
 }

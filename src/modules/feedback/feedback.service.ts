@@ -26,6 +26,7 @@ export class FeedbackService {
   async feedbackManual(
     input: FeedbackRequestDto,
     user: UserSchemaType,
+    // FIXME: take the optional file as 3rd argument
   ): Promise<FeedbackResponseDto[]> {
     const response: FeedbackResponseDto[] = await Promise.all(
       input.feedbacks.map(async (feedback) => {
@@ -75,6 +76,8 @@ export class FeedbackService {
     });
 
     const validationResult = FeedbackRequestSchema.parse({ feedbacks });
+
+    // FIXME: create one file (drizzle with the file name) and pass the id as 3rd argument to feedbackManual
 
     return this.feedbackManual(validationResult, user);
   }
