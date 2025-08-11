@@ -19,13 +19,8 @@ export class FeedbackService {
 
     async processFeedback(dto: FeedbackRequestDto, req: UserSchemaType): Promise<FeedbackResponseDto[]> {
 
-          console.log('Received DTO:', dto);
-          console.log('Request user:', req);
-
         const aiResults = await this.aiService.analyzeMany(dto);
 
-        console.log('AI results:', aiResults);
-        
         const createdFeedabacks = await Promise.all(
             aiResults.map(async (result) => {
                 const id = uuidv4();
@@ -50,14 +45,10 @@ export class FeedbackService {
                     createdAt: now,
                 };
 
-                 FeedbackResponseSchema.parse(feedbackObject);
-
                  return feedbackObject;
 
             })
-        )
-
-        console.log('Returned feedbacks:', createdFeedabacks);
+        );
 
         return createdFeedabacks;
     } 

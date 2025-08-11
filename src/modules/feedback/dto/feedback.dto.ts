@@ -3,7 +3,6 @@ import { createZodDto } from 'nestjs-zod';
 import { FeedbackSchema } from 'src/utils/zod.schemas';
 import { MIN_FEEDBACK_LENGTH } from 'src/utils/constants';
 
-
 const FeedbackRequestSchema = z.object({
   feedbacks: z
     .array(
@@ -22,13 +21,18 @@ const FeedbackResponseSchema = FeedbackSchema.pick({
   sentiment: true,
   confidence: true,
   createdAt: true,
-})
+});
+
+const FeedbackArrayResponseSchema = z.array(FeedbackResponseSchema);
 
 class FeedbackResponseDto extends createZodDto(FeedbackResponseSchema) {}
+class FeedbackArrayResponseDto extends createZodDto(FeedbackArrayResponseSchema) {}
 
 export {
   FeedbackRequestDto,
   FeedbackResponseDto,
+  FeedbackArrayResponseDto,
   FeedbackRequestSchema,
   FeedbackResponseSchema,
+  FeedbackArrayResponseSchema,
 };
