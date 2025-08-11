@@ -7,16 +7,21 @@ import {
     HttpCode, 
     HttpStatus,
     HttpException,
-    InternalServerErrorException
+    InternalServerErrorException,
+    UnprocessableEntityException,
+    UploadedFile,
+    UseInterceptors
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { FeedbackService } from './feedback.service';
-import { ApiBearerAuth, ApiCreatedResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiCreatedResponse, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { FeedbackRequestDto, FeedbackResponseDto, FeedbackArrayResponseDto, FeedbackArrayResponseSchema } from './dto/feedback.dto';
 import { ZodSerializerDto } from 'nestjs-zod';
 import { JWTPayloadType } from '../auth/dto/auth.dto';
 import type { UserSchemaType } from 'src/utils/zod.schemas';
 import type { Request } from 'express';
+import { FileInterceptor } from '@nestjs/platform-express';
+import type { Multer } from 'multer';
 
 @ApiTags('Feedback')
 @ApiBearerAuth()
@@ -56,4 +61,49 @@ export class FeedbackController {
             );
         }
     }
+
+  @Post('upload')
+  async uploadFeedback(@UploadedFile() file: Multer.File, @Req() req: Request & {user: UserSchemaType}) {
+
+    if (!file) {
+      throw new UnprocessableEntityException('No file uploaded');
+    }
+
+    const allowedMimeTypes = [
+      'text/csv',
+      'application/csv',
+      'text/plain',
+      'application/vnd.ms-excel',
+    ];
+
+    if (!allowedMimeTypes.includes(file.mimetype)) {
+      throw new UnprocessableEntityException(
+        `Invalid file type: ${file.mimetype}. Only CSV files are allowed.`,
+      );
+    }
+
+    if (!file.originalname?.toLowerCase().endsWith('.csv')) {
+      throw new UnprocessableEntityException('File must have .csv extension');
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      throw new UnprocessableEntityException('File too large (max 10MB)');
+    }
+
+    try {
+      const feedbacks = await this.feedbackService.processFeedbackFile(file);
+      const user = req.user;
+
+      const result = await this.feedbackService.processFeedback(feedbacks, user);
+      return result;
+
+    } catch (error) {
+      if (error instanceof UnprocessableEntityException) {
+        throw error;
+      }
+      throw new UnprocessableEntityException(
+        `Failed to process CSV file: ${error.message}`,
+      );
+    }
+  }
 }

@@ -3,11 +3,15 @@ import { FeedbackService } from './feedback.service';
 import { FeedbackController } from './feedback.controller';
 import { DrizzleModule } from 'src/database/drizzle.module';
 import { AIService } from '../AI/AI.service';
-import { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { MulterModule } from '@nestjs/platform-express';
+
 
 @Module({
   imports: [
     DrizzleModule,
+    MulterModule.register({
+      dest: './uploads',
+    }),
   ],
   controllers: [FeedbackController],
   providers: [FeedbackService, AIService],
