@@ -30,20 +30,20 @@ const baseSchema = {
   deletedAt: timestamp('deleted_at', { mode: 'date', withTimezone: true }),
 };
 
-export const userSchema = pgTable('users', {
+export const usersSchema = pgTable('users', {
   email: text('email').notNull().unique(),
   passwordHash: text('password_hash').notNull(),
   role: DrizzleUserRoleEnum('role').notNull(),
   ...baseSchema,
 });
 
-export const fileSchema = pgTable('files', {
+export const filesSchema = pgTable('files', {
   userId: uuid('user_id').notNull(),
   name: text('name').notNull(),
   ...baseSchema,
 });
 
-export const feedbackSchema = pgTable('feedbacks', {
+export const feedbacksSchema = pgTable('feedbacks', {
   userId: uuid('user_id').notNull(),
   fileId: uuid('file_id'), 
   content: text('content').notNull(),
@@ -54,31 +54,31 @@ export const feedbackSchema = pgTable('feedbacks', {
 });
 
 // relations
-export const usersRelations = relations(userSchema, ({ many }) => ({
-  feedbackSchema: many(feedbackSchema, { relationName: 'feedbacks_user_id_users_id_fk' }),
-  fileSchema: many(fileSchema, { relationName: 'files_user_id_users_id_fk' }),
+export const usersRelations = relations(usersSchema, ({ many }) => ({
+  feedbacks: many(feedbacksSchema, { relationName: 'feedbacks_user_id_users_id_fk' }),
+  files: many(filesSchema, { relationName: 'files_user_id_users_id_fk' }),
 }));
 
-export const filesRelations = relations(fileSchema, ({ many, one }) => ({
-  feedbackSchema: many(feedbackSchema, {
+export const filesRelations = relations(filesSchema, ({ many, one }) => ({
+  feedbacks: many(feedbacksSchema, {
     relationName: 'feedbacks_file_id_files_id_fk',
   }),
-  user: one(userSchema, {
-    fields: [fileSchema.userId],
-    references: [userSchema.id],
+  user: one(usersSchema, {
+    fields: [filesSchema.userId],
+    references: [usersSchema.id],
     relationName: 'files_user_id_users_id_fk',
   }),
 }));
 
-export const feedbacksRelations = relations(feedbackSchema, ({ one }) => ({
-  fileSchema: one(fileSchema, {
-    fields: [feedbackSchema.fileId],
-    references: [fileSchema.id],
+export const feedbacksRelations = relations(feedbacksSchema, ({ one }) => ({
+  file: one(filesSchema, {
+    fields: [feedbacksSchema.fileId],
+    references: [filesSchema.id],
     relationName: 'feedbacks_file_id_files_id_fk',
   }),
-  user: one(userSchema, {
-    fields: [feedbackSchema.userId],
-    references: [userSchema.id],
+  user: one(usersSchema, {
+    fields: [feedbacksSchema.userId],
+    references: [usersSchema.id],
     relationName: 'feedbacks_user_id_users_id_fk',
   }),
 }));
