@@ -10,7 +10,8 @@ import {
     InternalServerErrorException,
     UnprocessableEntityException,
     UploadedFile,
-    UseInterceptors
+    UseInterceptors,
+    BadRequestException
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { FeedbackService } from './feedback.service';
@@ -20,29 +21,24 @@ import {
     ApiConsumes, 
     ApiCreatedResponse, 
     ApiOperation, 
-    ApiResponse, 
     ApiTags 
 } from '@nestjs/swagger';
 import { 
     FeedbackRequestDto, 
-    FeedbackResponseDto, 
     FeedbackArrayResponseDto, 
     FeedbackArrayResponseSchema 
 } from './dto/feedback.dto';
 import { ZodSerializerDto } from 'nestjs-zod';
-import { JWTPayloadType } from '../auth/dto/auth.dto';
-import type { UserSchemaType } from 'src/utils/zod.schemas';
-import type { Request } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Express } from 'express';
 import { ALLOWED_MIME_TYPES } from 'src/utils/constants';
+import { type AuthenticatedRequest } from 'src/shared/types/request-with-user';
 
 @ApiTags('Feedback')
 @ApiBearerAuth()
 @Controller('feedback')
 export class FeedbackController {
-    constructor(
-        private readonly feedbackService: FeedbackService) {}
+    constructor(private readonly feedbackService: FeedbackService) {}
 
     @UseGuards(AuthGuard('jwt'))
     @Post('manual')
@@ -52,28 +48,14 @@ export class FeedbackController {
         description: 'Array of processed feedback items'
     })
     @ZodSerializerDto(FeedbackArrayResponseSchema)
-    async processManualFeedback(
+    async feedbackManual(
         @Body() body: FeedbackRequestDto, 
-        @Req() req: Request & {user: UserSchemaType}
-    ) {
-        const user = req.user;
-        
-        try {
-            const result = await this.feedbackService.processFeedback(body, user);
+        @Req() req: AuthenticatedRequest
+    ): Promise<FeedbackArrayResponseDto> {
+            const result = await this.feedbackService.feedbackManual(body, req.user);
 
             return result;
-        } catch (error) {
-            console.error('Error processing manual feedback:', error);
 
-            if (error instanceof HttpException) {
-                throw error;
-            }
-            
-            throw new InternalServerErrorException(
-                'Failed to process feedback',
-                error.message
-            );
-        }
     }
 
     @UseGuards(AuthGuard('jwt'))
@@ -104,43 +86,31 @@ export class FeedbackController {
     @ZodSerializerDto(FeedbackArrayResponseSchema)
     async uploadFeedback(
         @UploadedFile() file: Express.Multer.File, 
-        @Req() req: Request & {user: UserSchemaType}
-    ) {
+        @Req() req: AuthenticatedRequest
+    ): Promise<FeedbackArrayResponseDto> {
         if (!file) {
             throw new UnprocessableEntityException('No file uploaded');
         }
 
-        if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+        if (!ALLOWED_MIME_TYPES.includes(file.mimetype) || !file.originalname?.toLowerCase().endsWith('.csv')) {
             throw new UnprocessableEntityException(
                 `Invalid file type: ${file.mimetype}. Only CSV files are allowed.`,
             );
         }
 
-        if (!file.originalname?.toLowerCase().endsWith('.csv')) {
-            throw new UnprocessableEntityException('File must have .csv extension');
-        }
-
-        if (file.size > 10 * 1024 * 1024) {
+        if (file.size > 10 * 1024 * 1024) { // TODO: ask file size from frontend devs
             throw new UnprocessableEntityException('File too large (max 10MB)');
         }
 
-        const user = req.user;
+        if (!file.buffer) {
+                    throw new BadRequestException('File buffer is missing');
+                  }
 
-        try {
-            const feedbacks = await this.feedbackService.processFeedbackFile(file);
-            const result = await this.feedbackService.processFeedback(feedbacks, user);
+        return this.feedbackService.feedbackUpload(file, req.user);
+
+            // const feedbacks = await this.feedbackService.processFeedbackFile(file);
+            // const result = await this.feedbackService.feedbackManual(feedbacks, req.user);
             
-            return result;
-        } catch (error) {
-            console.error('Error processing feedback file:', error);
-
-            if (error instanceof HttpException) {
-                throw error;
-            }
-
-            throw new UnprocessableEntityException(
-                `Failed to process CSV file: ${error.message}`,
-            );
-        }
+            // return result;
     }
 }

@@ -52,7 +52,7 @@ const FeedbackSchema = z
     confidence: z.number().min(0).max(100).describe('Confidence of the sentiment'),
     summary: z.string(),
     userId: z.string().uuid().describe('User ID'),
-    folderId: z.string().uuid().describe('Folder ID'),
+    folderId: z.string().uuid().nullable().describe('Folder ID'),
   })
   .merge(BaseSchema);
 

@@ -15,15 +15,9 @@ const FeedbackRequestSchema = z.object({
 
 class FeedbackRequestDto extends createZodDto(FeedbackRequestSchema) {}
 
-const FeedbackResponseSchema = FeedbackSchema.pick({
-  id: true,
-  content: true,
-  sentiment: true,
-  confidence: true,
-  createdAt: true,
-});
+const FeedbackResponseSchema = FeedbackSchema
 
-const FeedbackArrayResponseSchema = z.array(FeedbackResponseSchema);
+const FeedbackArrayResponseSchema = FeedbackResponseSchema.array();
 
 class FeedbackResponseDto extends createZodDto(FeedbackResponseSchema) {}
 class FeedbackArrayResponseDto extends createZodDto(FeedbackArrayResponseSchema) {}

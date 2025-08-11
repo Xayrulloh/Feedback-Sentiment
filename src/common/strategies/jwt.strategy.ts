@@ -1,6 +1,5 @@
 import { Injectable, Inject, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
-import { Request } from 'express';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from 'src/database/schema';
@@ -27,7 +26,6 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   }
 
   async validate(payload: JWTPayloadType) {
-    console.log('JWT payload received:', payload);
     const user = await this.db.query.users.findFirst({
       where: and(
         eq(schema.users.id, payload.sub),
@@ -36,11 +34,9 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     });
 
     if (!user) {
-      console.log('User not found or deleted:', payload.sub);
 throw new UnauthorizedException('Please log in to continue');
     } 
 
-    console.log('User found:', user);
     return user;
   }
 }

@@ -12,7 +12,7 @@ import { DrizzleAsyncProvider } from 'src/database/drizzle.provider';
 
 import { and, eq, isNull } from 'drizzle-orm';
 import { UserRoleEnum, UserSchemaType } from 'src/utils/zod.schemas';
-import { AuthCredentialsDto } from './dto/auth.dto';
+import { AuthCredentialsDto, AuthResponseSchemaType } from './dto/auth.dto';
 
 @Injectable()
 export class AuthService {
@@ -22,7 +22,7 @@ export class AuthService {
     private db: NodePgDatabase<typeof schema>,
   ) {}
 
-  async register(input: AuthCredentialsDto) {
+  async register(input: AuthCredentialsDto): Promise<AuthResponseSchemaType> {
     const existing = await this.getUser(input.email);
 
     if (existing) {
@@ -43,7 +43,7 @@ export class AuthService {
     return this.generateTokens(newUser);
   }
 
-  async login(input: AuthCredentialsDto) {
+  async login(input: AuthCredentialsDto): Promise<AuthResponseSchemaType> {
     const user = await this.getUser(input.email);
 
     if (!user) {
@@ -59,7 +59,7 @@ export class AuthService {
     return this.generateTokens(user);
   }
 
-  async generateTokens(user: Pick<UserSchemaType, 'id' | 'email' | 'role'>) {
+  async generateTokens(user: Pick<UserSchemaType, 'id' | 'email' | 'role'>): Promise<AuthResponseSchemaType> {
     const payload = {
       sub: user.id,
       email: user.email,

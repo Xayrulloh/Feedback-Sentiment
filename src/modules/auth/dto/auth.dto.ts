@@ -26,5 +26,7 @@ const AuthResponseSchema = z.object({
 
 class AuthResponseDto extends createZodDto(AuthResponseSchema) {}
 
+type AuthResponseSchemaType = z.infer<typeof AuthResponseSchema>;
+
 export { AuthCredentialsDto, AuthResponseDto, AuthCredentialsSchema, AuthResponseSchema };
-export type { JWTPayloadType };
+export type { JWTPayloadType, AuthResponseSchemaType };

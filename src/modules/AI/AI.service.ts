@@ -6,7 +6,7 @@ import {
   AIRequestSchemaDto,
   AIResponseSchemaType,
   AIResponseSchema,
-  MistralResponse,
+  PromptResponseSchemaType,
 } from './dto/AI.dto';
 import { generateSentimentPrompt } from './prompts/sentiment.prompt';
 import { EnvType } from 'src/config/env/env-validation';
@@ -23,7 +23,7 @@ export class AIService {
   private async sendPrompt(
     prompt: string,
     model: string = 'mistral-large-latest',
-  ): Promise<AIResponseSchemaType> {
+  ): Promise<PromptResponseSchemaType> {
 
     const { data } = await axios.post(
       'https://api.mistral.ai/v1/chat/completions',
@@ -47,7 +47,7 @@ export class AIService {
     return JSON.parse(content);
   }
 
-  async analyzeOne(feedback: string): Promise<AIResponseSchemaType & { content: string }> {
+  async analyzeOne(feedback: string): Promise<AIResponseSchemaType> {
     const prompt = generateSentimentPrompt(feedback);
     const jsonResponse = await this.sendPrompt(prompt);
   
@@ -59,7 +59,7 @@ export class AIService {
     };
   }
 
-  async analyzeMany(input: AIRequestSchemaDto): Promise<(AIResponseSchemaType & {content: string})[]> {
+  async analyzeMany(input: AIRequestSchemaDto): Promise<AIResponseSchemaType[]> {
     const promises = input.feedbacks.map((feedback) => this.analyzeOne(feedback));
 
     return Promise.all(promises);
