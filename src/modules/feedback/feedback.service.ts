@@ -32,7 +32,7 @@ export class FeedbackService {
         const aiResult = await this.aiService.analyzeOne(feedback);
 
         const [newFeedback] = await this.db
-          .insert(schema.feedbackSchema)
+          .insert(schema.feedbacksSchema)
           .values({
             content: feedback,
             userId: user.id,
@@ -78,12 +78,12 @@ export class FeedbackService {
     const validationResult = FeedbackRequestSchema.parse({ feedbacks });
  
     const [newFile] = await this.db
-    .insert(schema.fileSchema)
+    .insert(schema.filesSchema)
     .values({
       userId: user.id,
       name: file.originalname,
     })
-    .returning({ id: schema.fileSchema.id });
+    .returning({ id: schema.filesSchema.id });
 
     return this.feedbackManual(validationResult, user, newFile.id);
   }
