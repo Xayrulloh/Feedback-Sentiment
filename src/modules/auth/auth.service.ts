@@ -12,7 +12,7 @@ import { DrizzleAsyncProvider } from 'src/database/drizzle.provider';
 
 import { and, eq, isNull } from 'drizzle-orm';
 import { UserRoleEnum, UserSchemaType } from 'src/utils/zod.schemas';
-import { AuthCredentialsDto } from './dto/auth.dto';
+import { AuthCredentialsDto, AuthResponseSchemaType } from './dto/auth.dto';
 
 @Injectable()
 export class AuthService {
@@ -22,7 +22,7 @@ export class AuthService {
     private db: NodePgDatabase<typeof schema>,
   ) {}
 
-  async register(input: AuthCredentialsDto) {
+  async register(input: AuthCredentialsDto): Promise<AuthResponseSchemaType> {
     const existing = await this.getUser(input.email);
 
     if (existing) {
@@ -32,7 +32,7 @@ export class AuthService {
     const passwordHash = await bcrypt.hash(input.password, 10);
 
     const [newUser] = await this.db
-      .insert(schema.users)
+      .insert(schema.userSchema)
       .values({
         email: input.email,
         passwordHash: passwordHash,
@@ -43,7 +43,7 @@ export class AuthService {
     return this.generateTokens(newUser);
   }
 
-  async login(input: AuthCredentialsDto) {
+  async login(input: AuthCredentialsDto): Promise<AuthResponseSchemaType> {
     const user = await this.getUser(input.email);
 
     if (!user) {
@@ -59,7 +59,9 @@ export class AuthService {
     return this.generateTokens(user);
   }
 
-  async generateTokens(user: Pick<UserSchemaType, 'id' | 'email' | 'role'>) {
+  async generateTokens(
+    user: Pick<UserSchemaType, 'id' | 'email' | 'role'>,
+  ): Promise<AuthResponseSchemaType> {
     const payload = {
       sub: user.id,
       email: user.email,
@@ -78,8 +80,8 @@ export class AuthService {
   }
 
   async getUser(email: string) {
-    return this.db.query.users.findFirst({
-      where: and(eq(schema.users.email, email), isNull(schema.users.deletedAt)),
+    return this.db.query.userSchema.findFirst({
+      where: and(eq(schema.userSchema.email, email), isNull(schema.userSchema.deletedAt)),
     });
   }
 }

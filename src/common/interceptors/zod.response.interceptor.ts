@@ -35,12 +35,12 @@ export class ZodSerializerInterceptorCustom implements NestInterceptor {
         }
 
         return validate(res, responseSchema, createZodSerializationException);
-      })
+      }),
     );
   }
 
   protected getContextResponseSchema(
-    context: ExecutionContext
+    context: ExecutionContext,
   ): ZodDto | ZodSchema | undefined {
     return this.reflector.getAllAndOverride(ZodSerializerDtoOptions, [
       context.getHandler(),

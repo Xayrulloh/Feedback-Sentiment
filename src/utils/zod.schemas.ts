@@ -43,16 +43,22 @@ const enum FeedbackSentimentEnum {
 const FeedbackSchema = z
   .object({
     content: z.string().min(3).describe('Feedback content'),
-    sentiment: z.enum([
-      FeedbackSentimentEnum.POSITIVE,
-      FeedbackSentimentEnum.NEUTRAL,
-      FeedbackSentimentEnum.NEGATIVE,
-      FeedbackSentimentEnum.UNKNOWN,
-    ]).describe('Sentiment of the feedback'),
-    confidence: z.number().min(0).max(100).describe('Confidence of the sentiment'),
+    sentiment: z
+      .enum([
+        FeedbackSentimentEnum.POSITIVE,
+        FeedbackSentimentEnum.NEUTRAL,
+        FeedbackSentimentEnum.NEGATIVE,
+        FeedbackSentimentEnum.UNKNOWN,
+      ])
+      .describe('Sentiment of the feedback'),
+    confidence: z
+      .number()
+      .min(0)
+      .max(100)
+      .describe('Confidence of the sentiment'),
     summary: z.string(),
     userId: z.string().uuid().describe('User ID'),
-    folderId: z.string().uuid().describe('Folder ID'),
+    fileId: z.string().uuid().nullable().describe('File ID'),
   })
   .merge(BaseSchema);
 
@@ -66,5 +72,5 @@ export {
   type BaseSchemaType,
   FeedbackSchema,
   type FeedbackSchemaType,
-  FeedbackSentimentEnum
+  FeedbackSentimentEnum,
 };

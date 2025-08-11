@@ -21,16 +21,26 @@ const AIResponseSchema = FeedbackSchema.pick({
   sentiment: true,
   confidence: true,
   summary: true,
-})
+  content: true,
+});
+
+const PromptResponseSchema = AIResponseSchema.omit({ content: true });
 
 type AIRequestSchemaDto = z.infer<typeof AIRequestSchema>;
 type MistralResponse = z.infer<typeof MistralResponseSchema>;
 type AIResponseSchemaType = z.infer<typeof AIResponseSchema>;
+type PromptResponseSchemaType = z.infer<typeof PromptResponseSchema>;
 
 export {
   AIRequestSchema,
   AIResponseSchema,
   MistralResponseSchema,
+  PromptResponseSchema,
 };
 
-export type { AIRequestSchemaDto, MistralResponse, AIResponseSchemaType };
+export type {
+  AIRequestSchemaDto,
+  MistralResponse,
+  AIResponseSchemaType,
+  PromptResponseSchemaType,
+};
