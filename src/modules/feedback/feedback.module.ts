@@ -4,13 +4,14 @@ import { FeedbackController } from './feedback.controller';
 import { DrizzleModule } from 'src/database/drizzle.module';
 import { AIService } from '../AI/AI.service';
 import { MulterModule } from '@nestjs/platform-express';
+import multer from 'multer';
 
 
 @Module({
   imports: [
     DrizzleModule,
     MulterModule.register({
-      dest: './uploads',
+      storage: multer.memoryStorage()
     }),
   ],
   controllers: [FeedbackController],

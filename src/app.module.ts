@@ -6,7 +6,6 @@ import { AuthModule } from './modules/auth/auth.module';
 import { ZodSerializerInterceptorCustom } from './common/interceptors/zod.response.interceptor';
 import { AiModule } from './modules/AI/AI.module'; 
 import { FeedbackModule } from './modules/feedback/feedback.module';
-import { MulterModule } from '@nestjs/platform-express';
 
 @Module({
   imports: [
@@ -14,9 +13,6 @@ import { MulterModule } from '@nestjs/platform-express';
     AuthModule, 
     AiModule, 
     FeedbackModule, 
-    MulterModule.register({
-      dest: './uploads', 
-    }),
 ],
 
   controllers: [],
