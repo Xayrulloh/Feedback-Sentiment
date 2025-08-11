@@ -36,10 +36,11 @@ export class FeedbackService {
       }))
 
       return response
+
     } 
 
     async feedbackUpload(file: Express.Multer.File, user: UserSchemaType): Promise<FeedbackResponseDto[]> {
-          
+
           const csvContent = file.buffer.toString('utf8');
           const parseResult = Papa.parse(csvContent, {
             header: true,
@@ -48,13 +49,13 @@ export class FeedbackService {
             dynamicTyping: false, 
             delimitersToGuess: [',', '\t', '|', ';']
           });
-    
+
           if (parseResult.errors.length > 0) {
             throw new BadRequestException(
               `CSV parsing error: ${parseResult.errors[0].message}`
             );
           }
-    
+
           const data = parseResult.data as Record<string, string>[];
 
           const feedbacks = data.map((row) => {

@@ -5,8 +5,8 @@ import {
   MistralResponseSchema,
   AIRequestSchemaDto,
   AIResponseSchemaType,
-  AIResponseSchema,
   PromptResponseSchemaType,
+  PromptResponseSchema,
 } from './dto/AI.dto';
 import { generateSentimentPrompt } from './prompts/sentiment.prompt';
 import { EnvType } from 'src/config/env/env-validation';
@@ -51,7 +51,7 @@ export class AIService {
     const prompt = generateSentimentPrompt(feedback);
     const jsonResponse = await this.sendPrompt(prompt);
   
-    const parsed = AIResponseSchema.parse(jsonResponse);
+    const parsed = PromptResponseSchema.parse(jsonResponse);
   
     return {
       ...parsed,

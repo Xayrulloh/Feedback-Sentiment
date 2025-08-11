@@ -37,7 +37,7 @@ export const users = pgTable('users', { // TODO: need to put Schema after the na
   ...baseSchema,
 });
 
-export const folders = pgTable('folders', { // TODO: need to put Schema after the name
+export const folders = pgTable('folders', { // TODO: need to put Schema after the name and change the name to file
   userId: uuid('user_id').notNull(),
   name: text('name').notNull(),
   ...baseSchema,
