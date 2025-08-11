@@ -16,6 +16,5 @@ import multer from 'multer';
   ],
   controllers: [FeedbackController],
   providers: [FeedbackService, AIService],
-  exports: [FeedbackService], 
 })
 export class FeedbackModule {}
