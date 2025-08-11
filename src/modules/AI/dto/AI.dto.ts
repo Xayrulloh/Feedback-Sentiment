@@ -22,7 +22,7 @@ const AIResponseSchema = FeedbackSchema.pick({
   confidence: true,
   summary: true,
   content: true,
-})
+});
 
 const PromptResponseSchema = AIResponseSchema.omit({ content: true });
 
@@ -35,7 +35,12 @@ export {
   AIRequestSchema,
   AIResponseSchema,
   MistralResponseSchema,
-  PromptResponseSchema
+  PromptResponseSchema,
 };
 
-export type { AIRequestSchemaDto, MistralResponse, AIResponseSchemaType, PromptResponseSchemaType };
+export type {
+  AIRequestSchemaDto,
+  MistralResponse,
+  AIResponseSchemaType,
+  PromptResponseSchemaType,
+};

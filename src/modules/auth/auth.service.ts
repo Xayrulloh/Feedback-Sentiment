@@ -59,7 +59,9 @@ export class AuthService {
     return this.generateTokens(user);
   }
 
-  async generateTokens(user: Pick<UserSchemaType, 'id' | 'email' | 'role'>): Promise<AuthResponseSchemaType> {
+  async generateTokens(
+    user: Pick<UserSchemaType, 'id' | 'email' | 'role'>,
+  ): Promise<AuthResponseSchemaType> {
     const payload = {
       sub: user.id,
       email: user.email,

@@ -1,32 +1,32 @@
-import { 
-    Controller, 
-    Post, 
-    Body, 
-    UseGuards, 
-    Req, 
-    HttpCode, 
-    HttpStatus,
-    HttpException,
-    InternalServerErrorException,
-    UnprocessableEntityException,
-    UploadedFile,
-    UseInterceptors,
-    BadRequestException
+import {
+  Controller,
+  Post,
+  Body,
+  UseGuards,
+  Req,
+  HttpCode,
+  HttpStatus,
+  HttpException,
+  InternalServerErrorException,
+  UnprocessableEntityException,
+  UploadedFile,
+  UseInterceptors,
+  BadRequestException,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { FeedbackService } from './feedback.service';
-import { 
-    ApiBearerAuth, 
-    ApiBody, 
-    ApiConsumes, 
-    ApiCreatedResponse, 
-    ApiOperation, 
-    ApiTags 
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
+  ApiCreatedResponse,
+  ApiOperation,
+  ApiTags,
 } from '@nestjs/swagger';
-import { 
-    FeedbackRequestDto, 
-    FeedbackArrayResponseDto, 
-    FeedbackArrayResponseSchema 
+import {
+  FeedbackRequestDto,
+  FeedbackArrayResponseDto,
+  FeedbackArrayResponseSchema,
 } from './dto/feedback.dto';
 import { ZodSerializerDto } from 'nestjs-zod';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -38,79 +38,82 @@ import { type AuthenticatedRequest } from 'src/shared/types/request-with-user';
 @ApiBearerAuth()
 @Controller('feedback')
 export class FeedbackController {
-    constructor(private readonly feedbackService: FeedbackService) {}
+  constructor(private readonly feedbackService: FeedbackService) {}
 
-    @UseGuards(AuthGuard('jwt'))
-    @Post('manual')
-    @HttpCode(HttpStatus.CREATED)
-    @ApiCreatedResponse({
-        type: FeedbackArrayResponseDto,
-        description: 'Array of processed feedback items'
-    })
-    @ZodSerializerDto(FeedbackArrayResponseSchema)
-    async feedbackManual(
-        @Body() body: FeedbackRequestDto, 
-        @Req() req: AuthenticatedRequest
-    ): Promise<FeedbackArrayResponseDto> {
-            const result = await this.feedbackService.feedbackManual(body, req.user);
+  @UseGuards(AuthGuard('jwt'))
+  @Post('manual')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiCreatedResponse({
+    type: FeedbackArrayResponseDto,
+    description: 'Array of processed feedback items',
+  })
+  @ZodSerializerDto(FeedbackArrayResponseSchema)
+  async feedbackManual(
+    @Body() body: FeedbackRequestDto,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<FeedbackArrayResponseDto> {
+    const result = await this.feedbackService.feedbackManual(body, req.user);
 
-            return result;
+    return result;
+  }
 
+  @UseGuards(AuthGuard('jwt'))
+  @Post('upload')
+  @UseInterceptors(FileInterceptor('file'))
+  @HttpCode(HttpStatus.CREATED)
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({
+    summary: 'Upload CSV feedback file',
+    description: 'Upload a CSV file containing feedback data for processing',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'CSV file containing feedback data',
+        },
+      },
+    },
+  })
+  @ApiCreatedResponse({
+    type: FeedbackArrayResponseDto,
+    description: 'Array of processed feedback items from uploaded file',
+  })
+  @ZodSerializerDto(FeedbackArrayResponseSchema)
+  async uploadFeedback(
+    @UploadedFile() file: Express.Multer.File,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<FeedbackArrayResponseDto> {
+    if (!file) {
+      throw new UnprocessableEntityException('No file uploaded');
     }
 
-    @UseGuards(AuthGuard('jwt'))
-    @Post('upload')
-    @UseInterceptors(FileInterceptor('file'))
-    @HttpCode(HttpStatus.CREATED)
-    @ApiConsumes('multipart/form-data')
-    @ApiOperation({ 
-        summary: 'Upload CSV feedback file',
-        description: 'Upload a CSV file containing feedback data for processing'
-    })
-    @ApiBody({
-        schema: {
-            type: 'object',
-            properties: {
-                file: {
-                    type: 'string',
-                    format: 'binary',
-                    description: 'CSV file containing feedback data'
-                }
-            }
-        }
-    })
-    @ApiCreatedResponse({
-        type: FeedbackArrayResponseDto,
-        description: 'Array of processed feedback items from uploaded file'
-    })
-    @ZodSerializerDto(FeedbackArrayResponseSchema)
-    async uploadFeedback(
-        @UploadedFile() file: Express.Multer.File, 
-        @Req() req: AuthenticatedRequest
-    ): Promise<FeedbackArrayResponseDto> {
-        if (!file) {
-            throw new UnprocessableEntityException('No file uploaded');
-        }
-
-        if (!ALLOWED_MIME_TYPES.includes(file.mimetype) || !file.originalname?.toLowerCase().endsWith('.csv')) {
-            throw new UnprocessableEntityException(
-                `Invalid file type: ${file.mimetype}. Only CSV files are allowed.`,
-            );
-        }
-
-        if (file.size > 10 * 1024 * 1024) { // TODO: ask file size from frontend devs
-            throw new UnprocessableEntityException('File too large (max 10MB)');
-        }
-
-        if (!file.buffer) {
-                    throw new BadRequestException('File buffer is missing');
-                  }
-
-        return this.feedbackService.feedbackUpload(file, req.user);
-
-            // const feedbacks = await this.feedbackService.processFeedbackFile(file);
-            // const result = await this.feedbackService.feedbackManual(feedbacks, req.user);
-            
-            // return result;
+    if (
+      !ALLOWED_MIME_TYPES.includes(file.mimetype) ||
+      !file.originalname?.toLowerCase().endsWith('.csv')
+    ) {
+      throw new UnprocessableEntityException(
+        `Invalid file type: ${file.mimetype}. Only CSV files are allowed.`,
+      );
     }
+
+    if (file.size > 10 * 1024 * 1024) {
+      // TODO: ask file size from frontend devs
+      throw new UnprocessableEntityException('File too large (max 10MB)');
+    }
+
+    if (!file.buffer) {
+      throw new BadRequestException('File buffer is missing');
+    }
+
+    return this.feedbackService.feedbackUpload(file, req.user);
+
+    // const feedbacks = await this.feedbackService.processFeedbackFile(file);
+    // const result = await this.feedbackService.feedbackManual(feedbacks, req.user);
+
+    // return result;
+  }
 }

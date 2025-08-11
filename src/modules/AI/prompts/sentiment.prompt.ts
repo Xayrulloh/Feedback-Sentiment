@@ -1,4 +1,3 @@
-
 export function generateSentimentPrompt(feedback: string): string {
   return `Analyze the sentiment of the following feedback and respond with a JSON object only.
 

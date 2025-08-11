@@ -20,7 +20,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
       secretOrKey: configService.get<EnvType['JWT_SECRET']>(
-        'JWT_SECRET'
+        'JWT_SECRET',
       ) as string,
     });
   }
@@ -34,8 +34,8 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     });
 
     if (!user) {
-throw new UnauthorizedException('Please log in to continue');
-    } 
+      throw new UnauthorizedException('Please log in to continue');
+    }
 
     return user;
   }

@@ -6,12 +6,11 @@ import { AIService } from '../AI/AI.service';
 import { MulterModule } from '@nestjs/platform-express';
 import multer from 'multer';
 
-
 @Module({
   imports: [
     DrizzleModule,
     MulterModule.register({
-      storage: multer.memoryStorage()
+      storage: multer.memoryStorage(),
     }),
   ],
   controllers: [FeedbackController],

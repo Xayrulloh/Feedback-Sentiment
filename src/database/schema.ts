@@ -30,20 +30,23 @@ const baseSchema = {
   deletedAt: timestamp('deleted_at', { mode: 'date', withTimezone: true }),
 };
 
-export const users = pgTable('users', { // TODO: need to put Schema after the name
+export const users = pgTable('users', {
+  // TODO: need to put Schema after the name
   email: text('email').notNull().unique(),
   passwordHash: text('password_hash').notNull(),
   role: DrizzleUserRoleEnum('role').notNull(),
   ...baseSchema,
 });
 
-export const folders = pgTable('folders', { // TODO: need to put Schema after the name and change the name to file
+export const folders = pgTable('folders', {
+  // TODO: need to put Schema after the name and change the name to file
   userId: uuid('user_id').notNull(),
   name: text('name').notNull(),
   ...baseSchema,
 });
 
-export const feedbacks = pgTable('feedbacks', { // TODO: need to put Schema after the name
+export const feedbacks = pgTable('feedbacks', {
+  // TODO: need to put Schema after the name
   userId: uuid('user_id').notNull(),
   folderId: uuid('folder_id'),
   content: text('content').notNull(),
@@ -55,7 +58,7 @@ export const feedbacks = pgTable('feedbacks', { // TODO: need to put Schema afte
 
 // relations
 export const usersRelations = relations(users, ({ many }) => ({
-  feedbacks: many(feedbacks, { relationName: 'feedbacks_user_id_users_id_fk', }),
+  feedbacks: many(feedbacks, { relationName: 'feedbacks_user_id_users_id_fk' }),
   folders: many(folders, { relationName: 'folders_user_id_users_id_fk' }),
 }));
 

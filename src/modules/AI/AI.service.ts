@@ -16,7 +16,7 @@ export class AIService {
   private MISTRAL_API_KEY: string;
 
   constructor(protected configService: ConfigService) {
-    this.MISTRAL_API_KEY  =
+    this.MISTRAL_API_KEY =
       configService.getOrThrow<EnvType['MISTRAL_API_KEY']>('MISTRAL_API_KEY');
   }
 
@@ -24,7 +24,6 @@ export class AIService {
     prompt: string,
     model: string = 'mistral-large-latest',
   ): Promise<PromptResponseSchemaType> {
-
     const { data } = await axios.post(
       'https://api.mistral.ai/v1/chat/completions',
       {
@@ -50,17 +49,21 @@ export class AIService {
   async analyzeOne(feedback: string): Promise<AIResponseSchemaType> {
     const prompt = generateSentimentPrompt(feedback);
     const jsonResponse = await this.sendPrompt(prompt);
-  
+
     const parsed = PromptResponseSchema.parse(jsonResponse);
-  
+
     return {
       ...parsed,
-      content: feedback, 
+      content: feedback,
     };
   }
 
-  async analyzeMany(input: AIRequestSchemaDto): Promise<AIResponseSchemaType[]> {
-    const promises = input.feedbacks.map((feedback) => this.analyzeOne(feedback));
+  async analyzeMany(
+    input: AIRequestSchemaDto,
+  ): Promise<AIResponseSchemaType[]> {
+    const promises = input.feedbacks.map((feedback) =>
+      this.analyzeOne(feedback),
+    );
 
     return Promise.all(promises);
   }
