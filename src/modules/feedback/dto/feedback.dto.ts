@@ -28,6 +28,29 @@ class FeedbackArrayResponseDto extends createZodDto(
   FeedbackArrayResponseSchema,
 ) {}
 
+const GroupedFeedbackItemSchema = FeedbackSchema.pick({
+  id: true,
+  content: true,
+  sentiment: true,
+});
+
+const FeedbackGroupSchema = z.object({
+  summary: z.string(),
+  count: z.number(),
+  items: z.array(GroupedFeedbackItemSchema),
+});
+
+const GroupedFeedbackArrayResponseSchema = FeedbackGroupSchema.array();
+
+class GroupedFeedbackItemDto extends createZodDto(GroupedFeedbackItemSchema) {}
+class FeedbackGroupDto extends createZodDto(FeedbackGroupSchema) {}
+class GroupedFeedbackArrayResponseDto extends createZodDto(GroupedFeedbackArrayResponseSchema) {}
+
+export type GroupedFeedbackItem = z.infer<typeof GroupedFeedbackItemSchema>;
+export type FeedbackGroup = z.infer<typeof FeedbackGroupSchema>;
+export type GroupedFeedbackArrayResponse = z.infer<typeof GroupedFeedbackArrayResponseSchema>;
+
+
 export {
   FeedbackRequestDto,
   FeedbackResponseDto,
@@ -35,4 +58,10 @@ export {
   FeedbackRequestSchema,
   FeedbackResponseSchema,
   FeedbackArrayResponseSchema,
+  GroupedFeedbackItemDto,
+  FeedbackGroupDto,
+  GroupedFeedbackArrayResponseDto,
+  GroupedFeedbackItemSchema,
+  FeedbackGroupSchema,
+  GroupedFeedbackArrayResponseSchema,
 };

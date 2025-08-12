@@ -12,6 +12,7 @@ import {
   UploadedFile,
   UseInterceptors,
   BadRequestException,
+  Get,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { FeedbackService } from './feedback.service';
@@ -20,6 +21,7 @@ import {
   ApiBody,
   ApiConsumes,
   ApiCreatedResponse,
+  ApiOkResponse,
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
@@ -27,6 +29,8 @@ import {
   FeedbackRequestDto,
   FeedbackArrayResponseDto,
   FeedbackArrayResponseSchema,
+  GroupedFeedbackArrayResponseDto,
+  GroupedFeedbackArrayResponseSchema,
 } from './dto/feedback.dto';
 import { ZodSerializerDto } from 'nestjs-zod';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -112,4 +116,24 @@ export class FeedbackController {
     return this.feedbackService.feedbackUpload(file, req.user);
 
   }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('grouped')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Get grouped feedback',
+    description: 'Retrieve feedback grouped by similarity with counts and items',
+  })
+  @ApiOkResponse({
+    type: GroupedFeedbackArrayResponseDto,
+    description: 'Array of grouped feedback with counts and items',
+  })
+  @ZodSerializerDto(GroupedFeedbackArrayResponseSchema)
+  async getGroupedFeedback(
+    @Req() req: AuthenticatedRequest,
+  ): Promise<GroupedFeedbackArrayResponseDto> {
+    
+    return this.feedbackService.getGroupedFeedback(req.user.id);
+  }
+
 }

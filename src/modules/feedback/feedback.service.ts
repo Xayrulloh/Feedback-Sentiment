@@ -4,14 +4,16 @@ import {
   FeedbackRequestDto,
   FeedbackRequestSchema,
   FeedbackResponseSchema,
+  GroupedFeedbackArrayResponse,
 } from './dto/feedback.dto';
 import { FeedbackResponseDto } from './dto/feedback.dto';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { DrizzleAsyncProvider } from 'src/database/drizzle.provider';
 import * as schema from 'src/database/schema';
-import type { UserSchemaType } from 'src/utils/zod.schemas';
+import type { FeedbackSchemaType, FeedbackSentimentEnum, UserSchemaType } from 'src/utils/zod.schemas';
 import type { Express } from 'express';
 import * as Papa from 'papaparse';
+import { count, eq, isNotNull, ne, sql, and } from 'drizzle-orm';
 
 @Injectable()
 export class FeedbackService {
@@ -86,5 +88,42 @@ export class FeedbackService {
     .returning({ id: schema.fileSchema.id });
 
     return this.feedbackManual(validationResult, user, newFile.id);
+  }
+
+  async getGroupedFeedback(userId: string): Promise<GroupedFeedbackArrayResponse> {
+    const result = await this.db
+      .select({
+        summary: schema.feedbackSchema.summary,
+        count: count(schema.feedbackSchema.id),
+        items: sql`JSON_AGG(
+          JSON_BUILD_OBJECT(
+            'id', ${schema.feedbackSchema.id}::text,
+            'content', ${schema.feedbackSchema.content},
+            'sentiment', ${schema.feedbackSchema.sentiment}
+          )
+        )`.as('items')
+      })
+      .from(schema.feedbackSchema)
+      .where(
+        and(
+          eq(schema.feedbackSchema.userId, userId),
+          isNotNull(schema.feedbackSchema.summary),
+          ne(schema.feedbackSchema.summary, '')
+        )
+      )
+      .groupBy(schema.feedbackSchema.summary)
+      .having(sql`COUNT(*) > 1`)
+      .orderBy(sql`COUNT(*) DESC`)
+      .limit(20);
+  
+    return result.map(row => ({
+      summary: row.summary,
+      count: Number(row.count),
+      items: (row.items as FeedbackSchemaType[]).map(item => ({
+        id: item.id,
+        content: item.content,
+        sentiment: item.sentiment as FeedbackSentimentEnum
+      }))
+    }));
   }
 }
