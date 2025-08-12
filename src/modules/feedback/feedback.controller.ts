@@ -12,6 +12,8 @@ import {
   UploadedFile,
   UseInterceptors,
   BadRequestException,
+  Get,
+  Param,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { FeedbackService } from './feedback.service';
@@ -20,19 +22,22 @@ import {
   ApiBody,
   ApiConsumes,
   ApiCreatedResponse,
+  ApiOkResponse,
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
-import {
-  FeedbackRequestDto,
-  FeedbackArrayResponseDto,
-  FeedbackArrayResponseSchema,
-} from './dto/feedback.dto';
+
 import { ZodSerializerDto } from 'nestjs-zod';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Express } from 'express';
 import { ALLOWED_MIME_TYPES } from 'src/utils/constants';
 import { type AuthenticatedRequest } from 'src/shared/types/request-with-user';
+import {
+  FeedbackArrayResponseDto,
+  FeedbackArrayResponseSchema,
+  FeedbackRequestDto,
+  SentimentSummaryResponseDto,
+} from './dto/feedback.dto';
 
 @ApiTags('Feedback')
 @ApiBearerAuth()
@@ -110,6 +115,23 @@ export class FeedbackController {
     }
 
     return this.feedbackService.feedbackUpload(file, req.user);
+  }
 
+  @UseGuards(AuthGuard('jwt'))
+  @Get('sentiment-summary')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Get sentiment summary for user',
+    description: 'Retrieve sentiment analysis summary for a specific user',
+  })
+  @ApiOkResponse({
+    type: SentimentSummaryResponseDto,
+    description: 'Sentiment summary data for the specified user',
+  })
+  @ZodSerializerDto(SentimentSummaryResponseDto)
+  async getSentimentSummary(
+    @Req() req: AuthenticatedRequest,
+  ): Promise<SentimentSummaryResponseDto> {
+    return await this.feedbackService.getSentimentSummary(req.user.id);
   }
 }
