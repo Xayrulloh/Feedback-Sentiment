@@ -6,14 +6,12 @@ import {
   Req,
   HttpCode,
   HttpStatus,
-  HttpException,
-  InternalServerErrorException,
   UnprocessableEntityException,
   UploadedFile,
   UseInterceptors,
   BadRequestException,
   Get,
-  Param,
+  Sse,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { FeedbackService } from './feedback.service';
@@ -22,10 +20,19 @@ import {
   ApiBody,
   ApiConsumes,
   ApiCreatedResponse,
+  ApiExtraModels,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
+import { Observable, interval } from 'rxjs';
+import {
+  map,
+  switchMap,
+  distinctUntilChanged,
+  startWith,
+  share,
+} from 'rxjs/operators';
 
 import { ZodSerializerDto } from 'nestjs-zod';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -37,6 +44,7 @@ import {
   FeedbackArrayResponseSchema,
   FeedbackRequestDto,
   SentimentSummaryResponseDto,
+  SentimentSummaryEventDto,
 } from './dto/feedback.dto';
 
 @ApiTags('Feedback')
@@ -119,6 +127,7 @@ export class FeedbackController {
 
   @UseGuards(AuthGuard('jwt'))
   @Get('sentiment-summary')
+  @ApiConsumes('application/json')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Get sentiment summary for user',
@@ -133,5 +142,35 @@ export class FeedbackController {
     @Req() req: AuthenticatedRequest,
   ): Promise<SentimentSummaryResponseDto> {
     return await this.feedbackService.getSentimentSummary(req.user.id);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Sse('sentiment-summary/stream')
+  @ApiConsumes('text/event-stream')
+  @ApiOperation({
+    summary: 'Stream sentiment summary updates',
+    description:
+      'Real-time sentiment analysis summary updates for the authenticated user',
+  })
+  @ApiOkResponse({
+    description: 'Server-sent events stream of sentiment summary updates',
+    type: SentimentSummaryEventDto,
+  })
+  sseSentimentSummary(
+    @Req() req: AuthenticatedRequest,
+  ): Observable<SentimentSummaryEventDto> {
+    return interval(5000).pipe(
+      startWith(0),
+      switchMap(() => this.feedbackService.getSentimentSummary(req.user.id)),
+      map((summary) => ({
+        type: 'sentiment_update' as const,
+        data: summary.data,
+        updatedAt: summary.updatedAt || new Date().toISOString(),
+      })),
+      distinctUntilChanged(
+        (prev, curr) => JSON.stringify(prev.data) === JSON.stringify(curr.data),
+      ),
+      share(),
+    );
   }
 }

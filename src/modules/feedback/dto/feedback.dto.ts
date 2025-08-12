@@ -21,6 +21,7 @@ const FeedbackRequestSchema = z.object({
 // Response schemas
 const FeedbackResponseSchema = FeedbackSchema;
 const FeedbackArrayResponseSchema = FeedbackResponseSchema.array();
+
 const SentimentSummarySchema = z.object({
   data: z.array(
     z.object({
@@ -30,12 +31,19 @@ const SentimentSummarySchema = z.object({
         FeedbackSentimentEnum.NEGATIVE,
         FeedbackSentimentEnum.UNKNOWN,
       ]),
-      count: z.coerce.number(),
-      percentage: z.coerce.number().max(100),
+      count: z.coerce.number().min(0),
+      percentage: z.coerce.number().min(0).max(100),
     }),
   ),
   updatedAt: z.string().datetime(),
 });
+
+// SSE
+const SentimentSummaryEventSchema = z
+  .object({
+    type: z.string().describe('Event type identifier'),
+  })
+  .merge(SentimentSummarySchema);
 
 // DTOs
 class FeedbackRequestDto extends createZodDto(FeedbackRequestSchema) {}
@@ -46,24 +54,31 @@ class FeedbackArrayResponseDto extends createZodDto(
 class SentimentSummaryResponseDto extends createZodDto(
   SentimentSummarySchema,
 ) {}
+class SentimentSummaryEventDto extends createZodDto(
+  SentimentSummaryEventSchema,
+) {}
 
 // Types
 type FeedbackRequestDtoType = z.infer<typeof FeedbackRequestSchema>;
 type FeedbackResponseDtoType = z.infer<typeof FeedbackResponseSchema>;
 type FeedbackArrayResponseDtoType = z.infer<typeof FeedbackArrayResponseSchema>;
-type SentimentSummaryDtoType = z.infer<typeof SentimentSummarySchema>;
+type SentimentSummaryResponseDtoType = z.infer<typeof SentimentSummarySchema>;
+type SentimentSummaryEventDtoType = z.infer<typeof SentimentSummaryEventSchema>;
 
 export {
   FeedbackRequestSchema,
   FeedbackResponseSchema,
   FeedbackArrayResponseSchema,
   SentimentSummarySchema,
+  SentimentSummaryEventSchema,
   FeedbackRequestDto,
   FeedbackResponseDto,
   FeedbackArrayResponseDto,
   SentimentSummaryResponseDto,
+  SentimentSummaryEventDto,
   type FeedbackRequestDtoType,
   type FeedbackResponseDtoType,
   type FeedbackArrayResponseDtoType,
-  type SentimentSummaryDtoType,
+  type SentimentSummaryResponseDtoType,
+  type SentimentSummaryEventDtoType,
 };
