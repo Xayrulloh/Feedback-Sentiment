@@ -100,24 +100,24 @@ export class FeedbackService {
 ): Promise<FilteredFeedbackSchemaType> {
   const { sentiment, limit, page } = query;
 
-  const whereConditions = [eq(schema.feedbackSchema.userId, user.id)];
+  const whereConditions = [eq(schema.feedbacksSchema.userId, user.id)];
 
   if (sentiment && sentiment.length > 0) {
-    whereConditions.push(inArray(schema.feedbackSchema.sentiment, sentiment));
+    whereConditions.push(inArray(schema.feedbacksSchema.sentiment, sentiment));
   }
 
   const totalResult = await this.db
     .select({
       count: sql<number>`count(*)`
     })
-    .from(schema.feedbackSchema)
+    .from(schema.feedbacksSchema)
     .where(and(...whereConditions));
 
   const total = totalResult[0]?.count ?? 0;
 
   const feedbacks = await this.db
     .select()
-    .from(schema.feedbackSchema)
+    .from(schema.feedbacksSchema)
     .where(and(...whereConditions))
     .limit(limit)
     .offset((page - 1) * limit);

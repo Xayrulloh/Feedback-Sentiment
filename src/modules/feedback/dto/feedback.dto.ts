@@ -1,9 +1,8 @@
 import * as z from 'zod';
 import { createZodDto } from 'nestjs-zod';
 import { FeedbackSchema, FeedbackSentimentEnum,  PaginationSchema } from 'src/utils/zod.schemas';
-
 import { MIN_FEEDBACK_LENGTH } from 'src/utils/constants';
-import { FeedbackSentimentEnum } from 'src/utils/zod.schemas';
+
 
 // Request schema
 const FeedbackRequestSchema = z.object({
@@ -168,5 +167,6 @@ export {
   FilteredFeedbackSchema,
   GetFeedbackQuerySchema,
   GetFeedbackQuerySchemaDto,
+  SentimentEnum,
 
 };

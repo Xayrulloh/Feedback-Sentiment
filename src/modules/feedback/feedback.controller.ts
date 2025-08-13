@@ -25,6 +25,7 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiTags,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { Observable, interval } from 'rxjs';
 import {
@@ -49,6 +50,7 @@ import {
   FeedbackSummaryEventDto,
   FilteredFeedbackSchema,
   GetFeedbackQuerySchemaDto,
+  SentimentEnum,
 } from './dto/feedback.dto';
 
 @ApiTags('Feedback')
@@ -199,6 +201,9 @@ export class FeedbackController {
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'))
   @Get()
+  @ApiQuery({ name: 'sentiment', required: false, enum: SentimentEnum.options })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Filter feedback by sentiment',
