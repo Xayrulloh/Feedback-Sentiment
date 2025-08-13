@@ -1,8 +1,9 @@
 import * as z from 'zod';
 import { createZodDto } from 'nestjs-zod';
-import { FeedbackSchema } from 'src/utils/zod.schemas';
+import { FeedbackSchema, FeedbackSentimentEnum } from 'src/utils/zod.schemas';
 import { MIN_FEEDBACK_LENGTH } from 'src/utils/constants';
 
+// Request schema
 const FeedbackRequestSchema = z.object({
   feedbacks: z
     .array(
@@ -17,22 +18,60 @@ const FeedbackRequestSchema = z.object({
     .describe('Array of feedback entries, each meeting the minimum length'),
 });
 
-class FeedbackRequestDto extends createZodDto(FeedbackRequestSchema) {}
-
+// Response schemas
 const FeedbackResponseSchema = FeedbackSchema;
-
 const FeedbackArrayResponseSchema = FeedbackResponseSchema.array();
 
+const FeedbackGetSummaryResponseSchema = z
+  .object({
+    data: z.array(
+      z.object({
+        sentiment: z.enum([
+          FeedbackSentimentEnum.POSITIVE,
+          FeedbackSentimentEnum.NEUTRAL,
+          FeedbackSentimentEnum.NEGATIVE,
+          FeedbackSentimentEnum.UNKNOWN,
+        ]),
+        count: z.coerce.number().min(0),
+        percentage: z.coerce.number().min(0).max(100),
+      }),
+    ),
+    updatedAt: z.string().datetime(),
+  })
+  .describe(
+    'Summary of feedback sentiment analysis, including counts and percentages for each sentiment type',
+  );
+
+// SSE
+const FeedbackSummaryEventSchema = z
+  .object({
+    type: z.string().describe('Event type identifier'),
+  })
+  .merge(FeedbackGetSummaryResponseSchema)
+  .describe('Server-sent event for feedback summary updates');
+
+// DTOs
+class FeedbackRequestDto extends createZodDto(FeedbackRequestSchema) {}
 class FeedbackResponseDto extends createZodDto(FeedbackResponseSchema) {}
 class FeedbackArrayResponseDto extends createZodDto(
   FeedbackArrayResponseSchema,
 ) {}
+class FeedbackGetSummaryResponseDto extends createZodDto(
+  FeedbackGetSummaryResponseSchema,
+) {}
+class FeedbackSummaryEventDto extends createZodDto(
+  FeedbackSummaryEventSchema,
+) {}
 
 export {
-  FeedbackRequestDto,
-  FeedbackResponseDto,
-  FeedbackArrayResponseDto,
   FeedbackRequestSchema,
   FeedbackResponseSchema,
   FeedbackArrayResponseSchema,
+  FeedbackGetSummaryResponseSchema,
+  FeedbackSummaryEventSchema,
+  FeedbackRequestDto,
+  FeedbackResponseDto,
+  FeedbackArrayResponseDto,
+  FeedbackGetSummaryResponseDto,
+  FeedbackSummaryEventDto,
 };
