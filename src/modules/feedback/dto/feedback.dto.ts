@@ -22,28 +22,33 @@ const FeedbackRequestSchema = z.object({
 const FeedbackResponseSchema = FeedbackSchema;
 const FeedbackArrayResponseSchema = FeedbackResponseSchema.array();
 
-const SentimentSummarySchema = z.object({
-  data: z.array(
-    z.object({
-      sentiment: z.enum([
-        FeedbackSentimentEnum.POSITIVE,
-        FeedbackSentimentEnum.NEUTRAL,
-        FeedbackSentimentEnum.NEGATIVE,
-        FeedbackSentimentEnum.UNKNOWN,
-      ]),
-      count: z.coerce.number().min(0),
-      percentage: z.coerce.number().min(0).max(100),
-    }),
-  ),
-  updatedAt: z.string().datetime(),
-});
+const FeedbackGetSummaryResponseSchema = z
+  .object({
+    data: z.array(
+      z.object({
+        sentiment: z.enum([
+          FeedbackSentimentEnum.POSITIVE,
+          FeedbackSentimentEnum.NEUTRAL,
+          FeedbackSentimentEnum.NEGATIVE,
+          FeedbackSentimentEnum.UNKNOWN,
+        ]),
+        count: z.coerce.number().min(0),
+        percentage: z.coerce.number().min(0).max(100),
+      }),
+    ),
+    updatedAt: z.string().datetime(),
+  })
+  .describe(
+    'Summary of feedback sentiment analysis, including counts and percentages for each sentiment type',
+  );
 
 // SSE
-const SentimentSummaryEventSchema = z
+const FeedbackSummaryEventSchema = z
   .object({
     type: z.string().describe('Event type identifier'),
   })
-  .merge(SentimentSummarySchema);
+  .merge(FeedbackGetSummaryResponseSchema)
+  .describe('Server-sent event for feedback summary updates');
 
 // DTOs
 class FeedbackRequestDto extends createZodDto(FeedbackRequestSchema) {}
@@ -51,34 +56,22 @@ class FeedbackResponseDto extends createZodDto(FeedbackResponseSchema) {}
 class FeedbackArrayResponseDto extends createZodDto(
   FeedbackArrayResponseSchema,
 ) {}
-class SentimentSummaryResponseDto extends createZodDto(
-  SentimentSummarySchema,
+class FeedbackGetSummaryResponseDto extends createZodDto(
+  FeedbackGetSummaryResponseSchema,
 ) {}
-class SentimentSummaryEventDto extends createZodDto(
-  SentimentSummaryEventSchema,
+class FeedbackSummaryEventDto extends createZodDto(
+  FeedbackSummaryEventSchema,
 ) {}
-
-// Types
-type FeedbackRequestDtoType = z.infer<typeof FeedbackRequestSchema>;
-type FeedbackResponseDtoType = z.infer<typeof FeedbackResponseSchema>;
-type FeedbackArrayResponseDtoType = z.infer<typeof FeedbackArrayResponseSchema>;
-type SentimentSummaryResponseDtoType = z.infer<typeof SentimentSummarySchema>;
-type SentimentSummaryEventDtoType = z.infer<typeof SentimentSummaryEventSchema>;
 
 export {
   FeedbackRequestSchema,
   FeedbackResponseSchema,
   FeedbackArrayResponseSchema,
-  SentimentSummarySchema,
-  SentimentSummaryEventSchema,
+  FeedbackGetSummaryResponseSchema,
+  FeedbackSummaryEventSchema,
   FeedbackRequestDto,
   FeedbackResponseDto,
   FeedbackArrayResponseDto,
-  SentimentSummaryResponseDto,
-  SentimentSummaryEventDto,
-  type FeedbackRequestDtoType,
-  type FeedbackResponseDtoType,
-  type FeedbackArrayResponseDtoType,
-  type SentimentSummaryResponseDtoType,
-  type SentimentSummaryEventDtoType,
+  FeedbackGetSummaryResponseDto,
+  FeedbackSummaryEventDto,
 };

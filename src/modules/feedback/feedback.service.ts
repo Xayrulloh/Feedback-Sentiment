@@ -4,8 +4,8 @@ import {
   FeedbackRequestDto,
   FeedbackRequestSchema,
   FeedbackResponseSchema,
-  SentimentSummaryResponseDto,
-  SentimentSummarySchema,
+  FeedbackGetSummaryResponseDto,
+  FeedbackGetSummaryResponseSchema,
 } from './dto/feedback.dto';
 import { FeedbackResponseDto } from './dto/feedback.dto';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
@@ -91,9 +91,9 @@ export class FeedbackService {
     return this.feedbackManual(validationResult, user, newFile.id);
   }
 
-  async getSentimentSummary(
+  async feedbackSummary(
     userId: string,
-  ): Promise<SentimentSummaryResponseDto> {
+  ): Promise<FeedbackGetSummaryResponseDto> {
     const results = await this.db
       .select({
         sentiment: schema.feedbacksSchema.sentiment,
@@ -104,11 +104,11 @@ export class FeedbackService {
       .where(eq(schema.feedbacksSchema.userId, userId))
       .groupBy(schema.feedbacksSchema.sentiment);
 
-    const summaryData: SentimentSummaryResponseDto = {
+    const summaryData: FeedbackGetSummaryResponseDto = {
       data: results,
       updatedAt: new Date().toISOString(),
     };
 
-    return SentimentSummarySchema.parse(summaryData);
+    return FeedbackGetSummaryResponseSchema.parse(summaryData);
   }
 }

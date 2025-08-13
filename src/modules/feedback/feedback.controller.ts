@@ -20,7 +20,6 @@ import {
   ApiBody,
   ApiConsumes,
   ApiCreatedResponse,
-  ApiExtraModels,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
@@ -43,8 +42,8 @@ import {
   FeedbackArrayResponseDto,
   FeedbackArrayResponseSchema,
   FeedbackRequestDto,
-  SentimentSummaryResponseDto,
-  SentimentSummaryEventDto,
+  FeedbackGetSummaryResponseDto,
+  FeedbackSummaryEventDto,
 } from './dto/feedback.dto';
 
 @ApiTags('Feedback')
@@ -96,7 +95,7 @@ export class FeedbackController {
     description: 'Array of processed feedback items from uploaded file',
   })
   @ZodSerializerDto(FeedbackArrayResponseSchema)
-  async uploadFeedback(
+  async feedbackUpload(
     @UploadedFile() file: Express.Multer.File,
     @Req() req: AuthenticatedRequest,
   ): Promise<FeedbackArrayResponseDto> {
@@ -134,14 +133,14 @@ export class FeedbackController {
     description: 'Retrieve sentiment analysis summary for a specific user',
   })
   @ApiOkResponse({
-    type: SentimentSummaryResponseDto,
+    type: FeedbackGetSummaryResponseDto,
     description: 'Sentiment summary data for the specified user',
   })
-  @ZodSerializerDto(SentimentSummaryResponseDto)
+  @ZodSerializerDto(FeedbackGetSummaryResponseDto)
   async getSentimentSummary(
     @Req() req: AuthenticatedRequest,
-  ): Promise<SentimentSummaryResponseDto> {
-    return await this.feedbackService.getSentimentSummary(req.user.id);
+  ): Promise<FeedbackGetSummaryResponseDto> {
+    return await this.feedbackService.feedbackSummary(req.user.id);
   }
 
   @UseGuards(AuthGuard('jwt'))
@@ -152,16 +151,13 @@ export class FeedbackController {
     description:
       'Real-time sentiment analysis summary updates for the authenticated user',
   })
-  @ApiOkResponse({
-    description: 'Server-sent events stream of sentiment summary updates',
-    type: SentimentSummaryEventDto,
-  })
-  sseSentimentSummary(
+  @ApiOkResponse({ type: FeedbackSummaryEventDto })
+  feedbackStreamSummary(
     @Req() req: AuthenticatedRequest,
-  ): Observable<SentimentSummaryEventDto> {
+  ): Observable<FeedbackSummaryEventDto> {
     return interval(5000).pipe(
       startWith(0),
-      switchMap(() => this.feedbackService.getSentimentSummary(req.user.id)),
+      switchMap(() => this.feedbackService.feedbackSummary(req.user.id)),
       map((summary) => ({
         type: 'sentiment_update' as const,
         data: summary.data,
