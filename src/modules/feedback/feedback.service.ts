@@ -4,7 +4,7 @@ import {
   FeedbackRequestDto,
   FeedbackRequestSchema,
   FeedbackResponseSchema,
-  FilteredFeedbackType,
+  FilteredFeedbackSchemaType,
   GetFeedbackQuerySchemaDto,
 } from './dto/feedback.dto';
 import { FeedbackResponseDto } from './dto/feedback.dto';
@@ -90,10 +90,10 @@ export class FeedbackService {
     return this.feedbackManual(validationResult, user, newFile.id);
   }
 
-  async getFilteredFeedback(
+  async feedbackFiltered(
   query: GetFeedbackQuerySchemaDto,
   user: UserSchemaType
-): Promise<FilteredFeedbackType> {
+): Promise<FilteredFeedbackSchemaType> {
   const { sentiment, limit, page } = query;
 
   const whereConditions = [eq(schema.feedbackSchema.userId, user.id)];

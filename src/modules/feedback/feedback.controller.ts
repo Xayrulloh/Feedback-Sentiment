@@ -130,12 +130,12 @@ export class FeedbackController {
     description: 'Filtering feedback by sentimant with pagination',
   })
   @ZodSerializerDto(FilteredFeedbackSchema)
-  async getFilteredFeedback(
+  async feedbackFiltered(
     @Query(new ZodValidationPipe(GetFeedbackQuerySchemaDto))
     query: GetFeedbackQuerySchemaDto,
     @Req() req: AuthenticatedRequest,
   ) {
-    const result = await this.feedbackService.getFilteredFeedback(query, req.user);
-    return result;
+    return this.feedbackService.feedbackFiltered(query, req.user);
   }
+  
 }

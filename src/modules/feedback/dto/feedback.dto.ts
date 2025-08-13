@@ -70,11 +70,11 @@ const FilteredFeedbackSchema = z.object({
   pagination: PaginationSchema,
 })
 
-type FilteredFeedbackType = z.infer<typeof FilteredFeedbackSchema>;
+type FilteredFeedbackSchemaType = z.infer<typeof FilteredFeedbackSchema>;
 
 
 export {
-  type FilteredFeedbackType,
+  type FilteredFeedbackSchemaType,
   FilteredFeedbackSchema,
   GetFeedbackQuerySchema,
   GetFeedbackQuerySchemaDto,
