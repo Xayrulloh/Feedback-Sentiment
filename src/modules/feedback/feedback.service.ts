@@ -6,6 +6,8 @@ import {
   FeedbackRequestDto,
   FeedbackRequestSchema,
   FeedbackResponseSchema,
+  FilteredFeedbackSchemaType,
+  GetFeedbackQuerySchemaDto,
   FeedbackGetSummaryResponseDto,
   FeedbackGetSummaryResponseSchema,
   FeedbackResponseDto,
@@ -13,10 +15,9 @@ import {
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { DrizzleAsyncProvider } from 'src/database/drizzle.provider';
 import * as schema from 'src/database/schema';
-import type { UserSchemaType } from 'src/utils/zod.schemas';
-import type { Express } from 'express';
+import type { FeedbackSchemaType, UserSchemaType } from 'src/utils/zod.schemas';
 import * as Papa from 'papaparse';
-import { count, eq, sql, desc } from 'drizzle-orm';
+import { count, eq, sql, desc, and, inArray, } from 'drizzle-orm';
 
 @Injectable()
 export class FeedbackService {
@@ -92,6 +93,45 @@ export class FeedbackService {
 
     return this.feedbackManual(validationResult, user, newFile.id);
   }
+
+  async feedbackFiltered(
+  query: GetFeedbackQuerySchemaDto,
+  user: UserSchemaType
+): Promise<FilteredFeedbackSchemaType> {
+  const { sentiment, limit, page } = query;
+
+  const whereConditions = [eq(schema.feedbacksSchema.userId, user.id)];
+
+  if (sentiment && sentiment.length > 0) {
+    whereConditions.push(inArray(schema.feedbacksSchema.sentiment, sentiment));
+  }
+
+  const totalResult = await this.db
+    .select({
+      count: sql<number>`count(*)`
+    })
+    .from(schema.feedbacksSchema)
+    .where(and(...whereConditions));
+
+  const total = totalResult[0]?.count ?? 0;
+
+  const feedbacks = await this.db
+    .select()
+    .from(schema.feedbacksSchema)
+    .where(and(...whereConditions))
+    .limit(limit)
+    .offset((page - 1) * limit);
+
+  return {
+    data: feedbacks,
+    pagination: {
+      limit,
+      page,
+      total: Number(total),
+      pages: Math.ceil(total / limit)
+    }
+  };
+}
 
   async feedbackGrouped(
     userId: string,

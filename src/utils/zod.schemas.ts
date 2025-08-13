@@ -40,6 +40,13 @@ const enum FeedbackSentimentEnum {
   UNKNOWN = 'unknown',
 }
 
+const PaginationSchema = z.object({
+  limit: z.number().int().min(1),
+  page: z.number().int().min(1),
+  total: z.number().int().min(0),
+  pages: z.number().int().min(0),
+});
+
 const FeedbackSchema = z
   .object({
     content: z.string().min(3).describe('Feedback content'),
@@ -69,6 +76,7 @@ export {
   type UserSchemaType,
   UserRoleEnum,
   BaseSchema,
+  PaginationSchema,
   type BaseSchemaType,
   FeedbackSchema,
   type FeedbackSchemaType,

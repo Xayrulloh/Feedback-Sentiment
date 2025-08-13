@@ -11,7 +11,9 @@ import {
   UseInterceptors,
   BadRequestException,
   Get,
+  Query,
   Sse,
+
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { FeedbackService } from './feedback.service';
@@ -23,6 +25,7 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiTags,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { Observable, interval } from 'rxjs';
 import {
@@ -32,7 +35,7 @@ import {
   startWith,
   share,
 } from 'rxjs/operators';
-import { ZodSerializerDto } from 'nestjs-zod';
+import { ZodSerializerDto, ZodValidationPipe } from 'nestjs-zod';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Express } from 'express';
 import { ALLOWED_MIME_TYPES } from 'src/utils/constants';
@@ -45,6 +48,9 @@ import {
   FeedbackGroupedArrayResponseSchema,
   FeedbackGetSummaryResponseDto,
   FeedbackSummaryEventDto,
+  FilteredFeedbackSchema,
+  GetFeedbackQuerySchemaDto,
+  SentimentEnum,
 } from './dto/feedback.dto';
 
 @ApiTags('Feedback')
@@ -59,6 +65,10 @@ export class FeedbackController {
   @ApiCreatedResponse({
     type: FeedbackArrayResponseDto,
     description: 'Array of processed feedback items',
+  })
+  @ApiOperation({
+    summary: 'Sending text based feedback and getting the ai analyze',
+    description: 'Sending text based feedback and getting the ai analyze',
   })
   @ZodSerializerDto(FeedbackArrayResponseSchema)
   async feedbackManual(
@@ -187,4 +197,25 @@ export class FeedbackController {
   ): Promise<FeedbackGroupedArrayResponseDto> {
     return this.feedbackService.feedbackGrouped(req.user.id);
   }
+
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
+  @Get()
+  @ApiQuery({ name: 'sentiment', required: false, enum: SentimentEnum.options })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Filter feedback by sentiment',
+    description: 'Filtering feedback by sentimant with pagination',
+  })
+  @ZodSerializerDto(FilteredFeedbackSchema)
+  async feedbackFiltered(
+    @Query(new ZodValidationPipe(GetFeedbackQuerySchemaDto))
+    query: GetFeedbackQuerySchemaDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.feedbackService.feedbackFiltered(query, req.user);
+  }
+  
 }
