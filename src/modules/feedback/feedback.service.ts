@@ -13,10 +13,10 @@ import {
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { DrizzleAsyncProvider } from 'src/database/drizzle.provider';
 import * as schema from 'src/database/schema';
-import type { FeedbackSchemaType, FeedbackSentimentEnum, UserSchemaType } from 'src/utils/zod.schemas';
+import type { UserSchemaType } from 'src/utils/zod.schemas';
 import type { Express } from 'express';
 import * as Papa from 'papaparse';
-import { count, eq, isNotNull, ne, sql, and } from 'drizzle-orm';
+import { count, eq, sql, desc } from 'drizzle-orm';
 
 @Injectable()
 export class FeedbackService {
@@ -93,40 +93,28 @@ export class FeedbackService {
     return this.feedbackManual(validationResult, user, newFile.id);
   }
 
-
-  async feedbackGrouped(userId: string): Promise<FeedbackGroupedArrayResponseType> {
-    const result = await this.db
+  async feedbackGrouped(
+    userId: string,
+  ): Promise<FeedbackGroupedArrayResponseType> {
+    return await this.db
       .select({
-        summary: schema.feedbackSchema.summary,
-        count: count(schema.feedbackSchema.id),
+        summary: schema.feedbacksSchema.summary,
+        count: count(schema.feedbacksSchema.id),
         items: sql<FeedbackGroupedItemType[]>`JSON_AGG(
           JSON_BUILD_OBJECT(
-            'id', ${schema.feedbackSchema.id}::text,
-            'content', ${schema.feedbackSchema.content},
-            'sentiment', ${schema.feedbackSchema.sentiment}
+            'id', ${schema.feedbacksSchema.id}::text,
+            'content', ${schema.feedbacksSchema.content},
+            'sentiment', ${schema.feedbacksSchema.sentiment}
           )
-        )`.as('items')
+        )`,
       })
-      .from(schema.feedbackSchema)
-      .where(
-        and(
-          eq(schema.feedbackSchema.userId, userId)
-        )
-      )
-      .groupBy(schema.feedbackSchema.summary)
+      .from(schema.feedbacksSchema)
+      .where(eq(schema.feedbacksSchema.userId, userId))
+      .groupBy(schema.feedbacksSchema.summary)
       .having(sql`COUNT(*) > 1`)
-      .orderBy(sql`COUNT(*) DESC`)
+      .orderBy(desc(count(schema.feedbacksSchema.id)))
       .limit(20);
-  
-    return result.map(row => ({
-      summary: row.summary,
-      count: Number(row.count),
-      items: row.items.map(item => ({
-        id: item.id,
-        content: item.content,
-        sentiment: item.sentiment as FeedbackSentimentEnum
-      }))
-    }));
+  }
 
   async feedbackSummary(
     userId: string,

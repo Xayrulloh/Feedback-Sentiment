@@ -26,13 +26,6 @@ import {
 } from '@nestjs/swagger';
 import { Observable, interval } from 'rxjs';
 import {
-  FeedbackRequestDto,
-  FeedbackArrayResponseDto,
-  FeedbackArrayResponseSchema,
-  FeedbackGroupedArrayResponseDto,
-  FeedbackGroupedArrayResponseSchema,
-} from './dto/feedback.dto';
-import {
   map,
   switchMap,
   distinctUntilChanged,
@@ -48,6 +41,8 @@ import {
   FeedbackArrayResponseDto,
   FeedbackArrayResponseSchema,
   FeedbackRequestDto,
+  FeedbackGroupedArrayResponseDto,
+  FeedbackGroupedArrayResponseSchema,
   FeedbackGetSummaryResponseDto,
   FeedbackSummaryEventDto,
 } from './dto/feedback.dto';
@@ -192,5 +187,4 @@ export class FeedbackController {
   ): Promise<FeedbackGroupedArrayResponseDto> {
     return this.feedbackService.feedbackGrouped(req.user.id);
   }
-
 }
