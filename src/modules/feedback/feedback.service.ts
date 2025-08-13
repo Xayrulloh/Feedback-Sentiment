@@ -11,6 +11,7 @@ import {
   FeedbackGetSummaryResponseDto,
   FeedbackGetSummaryResponseSchema,
   FeedbackResponseDto,
+  ReportDownloadRequestDto,
 } from './dto/feedback.dto';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { DrizzleAsyncProvider } from 'src/database/drizzle.provider';
@@ -18,12 +19,14 @@ import * as schema from 'src/database/schema';
 import type { FeedbackSchemaType, UserSchemaType } from 'src/utils/zod.schemas';
 import * as Papa from 'papaparse';
 import { count, eq, sql, desc, and, inArray, } from 'drizzle-orm';
+import { FileGeneratorService } from './file-generator.service';
+import { Response } from 'express';
 
 @Injectable()
 export class FeedbackService {
   constructor(
     private readonly aiService: AIService,
-
+    private readonly fileGeneratorService: FileGeneratorService,
     @Inject(DrizzleAsyncProvider)
     private readonly db: NodePgDatabase<typeof schema>,
   ) {}
@@ -176,4 +179,35 @@ export class FeedbackService {
 
     return FeedbackGetSummaryResponseSchema.parse(summaryData);
   }
+
+  async getAllFeedback(user: UserSchemaType): Promise<FeedbackSchemaType[]> {
+  return this.db
+    .select()
+    .from(schema.feedbacksSchema)
+    .where(eq(schema.feedbacksSchema.userId, user.id));
+}
+
+
+  async feedbackReportDownload(
+  query: ReportDownloadRequestDto,
+  user: UserSchemaType,
+  res: Response,
+) {
+  const { format, type } = query;
+
+  let data: FeedbackSchemaType[] | FeedbackGetSummaryResponseDto;
+  if (type === 'detailed') {
+    data = await this.getAllFeedback(user);
+  } else {
+    data = await this.feedbackSummary(user.id);
+  }
+
+  const fileBuffer = await this.fileGeneratorService.generate(format, type, data);
+
+  const fileName = `feedback-report-${type}-${Date.now()}.${format}`;
+  res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+  res.setHeader('Content-Type', format === 'csv' ? 'text/csv' : 'application/pdf');
+
+  res.send(fileBuffer);
+}
 }

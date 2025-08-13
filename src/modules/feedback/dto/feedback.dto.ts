@@ -43,6 +43,8 @@ const FeedbackGetSummaryResponseSchema = z
     'Summary of feedback sentiment analysis, including counts and percentages for each sentiment type',
   );
 
+  type FeedbackGetSummaryResponseSchemaType = z.infer<typeof FeedbackGetSummaryResponseSchema>;
+
 // SSE
 const FeedbackSummaryEventSchema = z
   .object({
@@ -124,6 +126,14 @@ class FeedbackGroupedItemDto extends createZodDto(FeedbackGroupedItemSchema) {}
 class FeedbackGroupedResponseDto extends createZodDto(
   FeedbackGroupedResponseSchema,
 ) {}
+
+const ReportDownloadRequestSchema = z.object({
+  format: z.enum(['pdf', 'csv']),
+  type: z.enum(['summary', 'detailed']),
+});
+
+class ReportDownloadRequestDto extends createZodDto(ReportDownloadRequestSchema){}
+
 class FeedbackGroupedArrayResponseDto extends createZodDto(
   FeedbackGroupedArrayResponseSchema,
 ) {}
@@ -144,6 +154,8 @@ class FeedbackSummaryEventDto extends createZodDto(
 ) {}
 
 export {
+  ReportDownloadRequestSchema,
+  ReportDownloadRequestDto,
   FeedbackRequestSchema,
   FeedbackResponseSchema,
   FeedbackArrayResponseSchema,
@@ -168,5 +180,5 @@ export {
   GetFeedbackQuerySchema,
   GetFeedbackQuerySchemaDto,
   SentimentEnum,
-
+  type FeedbackGetSummaryResponseSchemaType,
 };
