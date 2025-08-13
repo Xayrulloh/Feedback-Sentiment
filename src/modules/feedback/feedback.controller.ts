@@ -12,6 +12,8 @@ import {
   UploadedFile,
   UseInterceptors,
   BadRequestException,
+  Get,
+  Query,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { FeedbackService } from './feedback.service';
@@ -27,8 +29,10 @@ import {
   FeedbackRequestDto,
   FeedbackArrayResponseDto,
   FeedbackArrayResponseSchema,
+  FilteredFeedbackSchema,
+  GetFeedbackQuerySchemaDto,
 } from './dto/feedback.dto';
-import { ZodSerializerDto } from 'nestjs-zod';
+import { ZodSerializerDto, ZodValidationPipe } from 'nestjs-zod';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Express } from 'express';
 import { ALLOWED_MIME_TYPES } from 'src/utils/constants';
@@ -46,6 +50,10 @@ export class FeedbackController {
   @ApiCreatedResponse({
     type: FeedbackArrayResponseDto,
     description: 'Array of processed feedback items',
+  })
+  @ApiOperation({
+    summary: 'Sending text based feedback and getting the ai analyze',
+    description: 'Sending text based feedback and getting the ai analyze',
   })
   @ZodSerializerDto(FeedbackArrayResponseSchema)
   async feedbackManual(
@@ -111,5 +119,23 @@ export class FeedbackController {
 
     return this.feedbackService.feedbackUpload(file, req.user);
 
+  }
+
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
+  @Get()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Filter feedback by sentiment',
+    description: 'Filtering feedback by sentimant with pagination',
+  })
+  @ZodSerializerDto(FilteredFeedbackSchema)
+  async getFilteredFeedback(
+    @Query(new ZodValidationPipe(GetFeedbackQuerySchemaDto))
+    query: GetFeedbackQuerySchemaDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    const result = await this.feedbackService.getFilteredFeedback(query, req.user);
+    return result;
   }
 }
