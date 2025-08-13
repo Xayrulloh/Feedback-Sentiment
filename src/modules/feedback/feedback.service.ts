@@ -1,20 +1,22 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { AIService } from '../AI/AI.service';
 import {
+  FeedbackGroupedArrayResponseType,
+  FeedbackGroupedItemType,
   FeedbackRequestDto,
   FeedbackRequestSchema,
   FeedbackResponseSchema,
   FeedbackGetSummaryResponseDto,
   FeedbackGetSummaryResponseSchema,
+  FeedbackResponseDto,
 } from './dto/feedback.dto';
-import { FeedbackResponseDto } from './dto/feedback.dto';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { DrizzleAsyncProvider } from 'src/database/drizzle.provider';
 import * as schema from 'src/database/schema';
+import type { UserSchemaType } from 'src/utils/zod.schemas';
 import type { Express } from 'express';
 import * as Papa from 'papaparse';
-import { sql, eq } from 'drizzle-orm';
-import { UserSchemaType } from 'src/utils/zod.schemas';
+import { count, eq, sql, desc } from 'drizzle-orm';
 
 @Injectable()
 export class FeedbackService {
@@ -89,6 +91,29 @@ export class FeedbackService {
       .returning({ id: schema.filesSchema.id });
 
     return this.feedbackManual(validationResult, user, newFile.id);
+  }
+
+  async feedbackGrouped(
+    userId: string,
+  ): Promise<FeedbackGroupedArrayResponseType> {
+    return await this.db
+      .select({
+        summary: schema.feedbacksSchema.summary,
+        count: count(schema.feedbacksSchema.id),
+        items: sql<FeedbackGroupedItemType[]>`JSON_AGG(
+          JSON_BUILD_OBJECT(
+            'id', ${schema.feedbacksSchema.id}::text,
+            'content', ${schema.feedbacksSchema.content},
+            'sentiment', ${schema.feedbacksSchema.sentiment}
+          )
+        )`,
+      })
+      .from(schema.feedbacksSchema)
+      .where(eq(schema.feedbacksSchema.userId, userId))
+      .groupBy(schema.feedbacksSchema.summary)
+      .having(sql`COUNT(*) > 1`)
+      .orderBy(desc(count(schema.feedbacksSchema.id)))
+      .limit(20);
   }
 
   async feedbackSummary(
