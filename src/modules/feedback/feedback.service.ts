@@ -1,19 +1,23 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { AIService } from '../AI/AI.service';
 import {
+  FeedbackGroupedArrayResponseType,
+  FeedbackGroupedItemType,
   FeedbackRequestDto,
   FeedbackRequestSchema,
   FeedbackResponseSchema,
   FilteredFeedbackSchemaType,
   GetFeedbackQuerySchemaDto,
+  FeedbackGetSummaryResponseDto,
+  FeedbackGetSummaryResponseSchema,
+  FeedbackResponseDto,
 } from './dto/feedback.dto';
-import { FeedbackResponseDto } from './dto/feedback.dto';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { DrizzleAsyncProvider } from 'src/database/drizzle.provider';
 import * as schema from 'src/database/schema';
 import type { FeedbackSchemaType, UserSchemaType } from 'src/utils/zod.schemas';
 import * as Papa from 'papaparse';
-import { and, eq, inArray, sql } from 'drizzle-orm';
+import { count, eq, sql, desc, and, inArray, } from 'drizzle-orm';
 
 @Injectable()
 export class FeedbackService {
@@ -34,11 +38,11 @@ export class FeedbackService {
         const aiResult = await this.aiService.analyzeOne(feedback);
 
         const [newFeedback] = await this.db
-          .insert(schema.feedbackSchema)
+          .insert(schema.feedbacksSchema)
           .values({
             content: feedback,
             userId: user.id,
-            fileId: fileId, 
+            fileId: fileId,
             sentiment: aiResult.sentiment,
             confidence: Math.round(aiResult.confidence),
             summary: aiResult.summary,
@@ -78,14 +82,14 @@ export class FeedbackService {
     });
 
     const validationResult = FeedbackRequestSchema.parse({ feedbacks });
- 
+
     const [newFile] = await this.db
-    .insert(schema.fileSchema)
-    .values({
-      userId: user.id,
-      name: file.originalname,
-    })
-    .returning({ id: schema.fileSchema.id });
+      .insert(schema.filesSchema)
+      .values({
+        userId: user.id,
+        name: file.originalname,
+      })
+      .returning({ id: schema.filesSchema.id });
 
     return this.feedbackManual(validationResult, user, newFile.id);
   }
@@ -129,4 +133,47 @@ export class FeedbackService {
   };
 }
 
+  async feedbackGrouped(
+    userId: string,
+  ): Promise<FeedbackGroupedArrayResponseType> {
+    return await this.db
+      .select({
+        summary: schema.feedbacksSchema.summary,
+        count: count(schema.feedbacksSchema.id),
+        items: sql<FeedbackGroupedItemType[]>`JSON_AGG(
+          JSON_BUILD_OBJECT(
+            'id', ${schema.feedbacksSchema.id}::text,
+            'content', ${schema.feedbacksSchema.content},
+            'sentiment', ${schema.feedbacksSchema.sentiment}
+          )
+        )`,
+      })
+      .from(schema.feedbacksSchema)
+      .where(eq(schema.feedbacksSchema.userId, userId))
+      .groupBy(schema.feedbacksSchema.summary)
+      .having(sql`COUNT(*) > 1`)
+      .orderBy(desc(count(schema.feedbacksSchema.id)))
+      .limit(20);
+  }
+
+  async feedbackSummary(
+    userId: string,
+  ): Promise<FeedbackGetSummaryResponseDto> {
+    const results = await this.db
+      .select({
+        sentiment: schema.feedbacksSchema.sentiment,
+        count: sql<number>`CAST(COUNT(*) AS INTEGER)`,
+        percentage: sql<number>`CAST(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER () AS DECIMAL(5,2))`,
+      })
+      .from(schema.feedbacksSchema)
+      .where(eq(schema.feedbacksSchema.userId, userId))
+      .groupBy(schema.feedbacksSchema.sentiment);
+
+    const summaryData: FeedbackGetSummaryResponseDto = {
+      data: results,
+      updatedAt: new Date().toISOString(),
+    };
+
+    return FeedbackGetSummaryResponseSchema.parse(summaryData);
+  }
 }

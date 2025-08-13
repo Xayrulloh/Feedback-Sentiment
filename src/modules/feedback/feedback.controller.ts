@@ -6,14 +6,14 @@ import {
   Req,
   HttpCode,
   HttpStatus,
-  HttpException,
-  InternalServerErrorException,
   UnprocessableEntityException,
   UploadedFile,
   UseInterceptors,
   BadRequestException,
   Get,
   Query,
+  Sse,
+
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { FeedbackService } from './feedback.service';
@@ -22,21 +22,34 @@ import {
   ApiBody,
   ApiConsumes,
   ApiCreatedResponse,
+  ApiOkResponse,
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
+import { Observable, interval } from 'rxjs';
 import {
-  FeedbackRequestDto,
-  FeedbackArrayResponseDto,
-  FeedbackArrayResponseSchema,
-  FilteredFeedbackSchema,
-  GetFeedbackQuerySchemaDto,
-} from './dto/feedback.dto';
+  map,
+  switchMap,
+  distinctUntilChanged,
+  startWith,
+  share,
+} from 'rxjs/operators';
 import { ZodSerializerDto, ZodValidationPipe } from 'nestjs-zod';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Express } from 'express';
 import { ALLOWED_MIME_TYPES } from 'src/utils/constants';
 import { type AuthenticatedRequest } from 'src/shared/types/request-with-user';
+import {
+  FeedbackArrayResponseDto,
+  FeedbackArrayResponseSchema,
+  FeedbackRequestDto,
+  FeedbackGroupedArrayResponseDto,
+  FeedbackGroupedArrayResponseSchema,
+  FeedbackGetSummaryResponseDto,
+  FeedbackSummaryEventDto,
+  FilteredFeedbackSchema,
+  GetFeedbackQuerySchemaDto,
+} from './dto/feedback.dto';
 
 @ApiTags('Feedback')
 @ApiBearerAuth()
@@ -91,7 +104,7 @@ export class FeedbackController {
     description: 'Array of processed feedback items from uploaded file',
   })
   @ZodSerializerDto(FeedbackArrayResponseSchema)
-  async uploadFeedback(
+  async feedbackUpload(
     @UploadedFile() file: Express.Multer.File,
     @Req() req: AuthenticatedRequest,
   ): Promise<FeedbackArrayResponseDto> {
@@ -118,7 +131,69 @@ export class FeedbackController {
     }
 
     return this.feedbackService.feedbackUpload(file, req.user);
+  }
 
+  @UseGuards(AuthGuard('jwt'))
+  @Get('sentiment-summary')
+  @ApiConsumes('application/json')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Get sentiment summary for user',
+    description: 'Retrieve sentiment analysis summary for a specific user',
+  })
+  @ApiOkResponse({
+    type: FeedbackGetSummaryResponseDto,
+    description: 'Sentiment summary data for the specified user',
+  })
+  @ZodSerializerDto(FeedbackGetSummaryResponseDto)
+  async getSentimentSummary(
+    @Req() req: AuthenticatedRequest,
+  ): Promise<FeedbackGetSummaryResponseDto> {
+    return await this.feedbackService.feedbackSummary(req.user.id);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Sse('sentiment-summary/stream')
+  @ApiConsumes('text/event-stream')
+  @ApiOperation({
+    summary: 'Stream sentiment summary updates',
+    description:
+      'Real-time sentiment analysis summary updates for the authenticated user',
+  })
+  @ApiOkResponse({ type: FeedbackSummaryEventDto })
+  feedbackStreamSummary(
+    @Req() req: AuthenticatedRequest,
+  ): Observable<FeedbackSummaryEventDto> {
+    return interval(5000).pipe(
+      startWith(0),
+      switchMap(() => this.feedbackService.feedbackSummary(req.user.id)),
+      map((summary) => ({
+        type: 'sentiment_update' as const,
+        data: summary.data,
+        updatedAt: summary.updatedAt || new Date().toISOString(),
+      })),
+      distinctUntilChanged(
+        (prev, curr) => JSON.stringify(prev.data) === JSON.stringify(curr.data),
+      ),
+      share(),
+    );
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('grouped')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Get grouped feedback',
+  })
+  @ApiOkResponse({
+    type: FeedbackGroupedArrayResponseDto,
+    description: 'Array of grouped feedback with counts and items',
+  })
+  @ZodSerializerDto(FeedbackGroupedArrayResponseSchema)
+  async feedbackGrouped(
+    @Req() req: AuthenticatedRequest,
+  ): Promise<FeedbackGroupedArrayResponseDto> {
+    return this.feedbackService.feedbackGrouped(req.user.id);
   }
 
   @ApiBearerAuth()
