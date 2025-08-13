@@ -1,10 +1,11 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { AIService } from '../AI/AI.service';
 import {
+  FeedbackGroupedArrayResponseType,
+  FeedbackGroupedItemType,
   FeedbackRequestDto,
   FeedbackRequestSchema,
   FeedbackResponseSchema,
-  GroupedFeedbackArrayResponse,
 } from './dto/feedback.dto';
 import { FeedbackResponseDto } from './dto/feedback.dto';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
@@ -90,12 +91,12 @@ export class FeedbackService {
     return this.feedbackManual(validationResult, user, newFile.id);
   }
 
-  async getGroupedFeedback(userId: string): Promise<GroupedFeedbackArrayResponse> {
+  async feedbackGrouped(userId: string): Promise<FeedbackGroupedArrayResponseType> {
     const result = await this.db
       .select({
         summary: schema.feedbackSchema.summary,
         count: count(schema.feedbackSchema.id),
-        items: sql`JSON_AGG(
+        items: sql<FeedbackGroupedItemType[]>`JSON_AGG(
           JSON_BUILD_OBJECT(
             'id', ${schema.feedbackSchema.id}::text,
             'content', ${schema.feedbackSchema.content},
@@ -106,9 +107,7 @@ export class FeedbackService {
       .from(schema.feedbackSchema)
       .where(
         and(
-          eq(schema.feedbackSchema.userId, userId),
-          isNotNull(schema.feedbackSchema.summary),
-          ne(schema.feedbackSchema.summary, '')
+          eq(schema.feedbackSchema.userId, userId)
         )
       )
       .groupBy(schema.feedbackSchema.summary)
@@ -119,7 +118,7 @@ export class FeedbackService {
     return result.map(row => ({
       summary: row.summary,
       count: Number(row.count),
-      items: (row.items as FeedbackSchemaType[]).map(item => ({
+      items: row.items.map(item => ({
         id: item.id,
         content: item.content,
         sentiment: item.sentiment as FeedbackSentimentEnum

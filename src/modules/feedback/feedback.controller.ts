@@ -29,8 +29,8 @@ import {
   FeedbackRequestDto,
   FeedbackArrayResponseDto,
   FeedbackArrayResponseSchema,
-  GroupedFeedbackArrayResponseDto,
-  GroupedFeedbackArrayResponseSchema,
+  FeedbackGroupedArrayResponseDto,
+  FeedbackGroupedArrayResponseSchema,
 } from './dto/feedback.dto';
 import { ZodSerializerDto } from 'nestjs-zod';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -122,18 +122,16 @@ export class FeedbackController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Get grouped feedback',
-    description: 'Retrieve feedback grouped by similarity with counts and items',
   })
   @ApiOkResponse({
-    type: GroupedFeedbackArrayResponseDto,
+    type: FeedbackGroupedArrayResponseDto,
     description: 'Array of grouped feedback with counts and items',
   })
-  @ZodSerializerDto(GroupedFeedbackArrayResponseSchema)
-  async getGroupedFeedback(
+  @ZodSerializerDto(FeedbackGroupedArrayResponseSchema)
+  async feedbackGrouped(
     @Req() req: AuthenticatedRequest,
-  ): Promise<GroupedFeedbackArrayResponseDto> {
-    
-    return this.feedbackService.getGroupedFeedback(req.user.id);
+  ): Promise<FeedbackGroupedArrayResponseDto> {
+    return this.feedbackService.feedbackGrouped(req.user.id);
   }
 
 }

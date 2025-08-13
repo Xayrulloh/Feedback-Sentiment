@@ -27,28 +27,27 @@ class FeedbackResponseDto extends createZodDto(FeedbackResponseSchema) {}
 class FeedbackArrayResponseDto extends createZodDto(
   FeedbackArrayResponseSchema,
 ) {}
-
-const GroupedFeedbackItemSchema = FeedbackSchema.pick({
+const FeedbackGroupedItemSchema = FeedbackSchema.pick({
   id: true,
   content: true,
   sentiment: true,
 });
 
-const FeedbackGroupSchema = z.object({
-  summary: z.string(),
-  count: z.number(),
-  items: z.array(GroupedFeedbackItemSchema),
+const FeedbackGroupedResponseSchema = z.object({
+  summary: z.string().describe('Summary of grouped feedback items'),
+  count: z.number().describe('Number of feedback items in this group'),
+  items: FeedbackGroupedItemSchema.array().describe('Array of feedback items in this group'),
 });
 
-const GroupedFeedbackArrayResponseSchema = FeedbackGroupSchema.array();
+const FeedbackGroupedArrayResponseSchema = FeedbackGroupedResponseSchema.array();
 
-class GroupedFeedbackItemDto extends createZodDto(GroupedFeedbackItemSchema) {}
-class FeedbackGroupDto extends createZodDto(FeedbackGroupSchema) {}
-class GroupedFeedbackArrayResponseDto extends createZodDto(GroupedFeedbackArrayResponseSchema) {}
+class FeedbackGroupedItemDto extends createZodDto(FeedbackGroupedItemSchema) {}
+class FeedbackGroupedResponseDto extends createZodDto(FeedbackGroupedResponseSchema) {}
+class FeedbackGroupedArrayResponseDto extends createZodDto(FeedbackGroupedArrayResponseSchema) {}
 
-export type GroupedFeedbackItem = z.infer<typeof GroupedFeedbackItemSchema>;
-export type FeedbackGroup = z.infer<typeof FeedbackGroupSchema>;
-export type GroupedFeedbackArrayResponse = z.infer<typeof GroupedFeedbackArrayResponseSchema>;
+type FeedbackGroupedItemType = z.infer<typeof FeedbackGroupedItemSchema>;
+type FeedbackGroupedResponseType = z.infer<typeof FeedbackGroupedResponseSchema>;
+type FeedbackGroupedArrayResponseType = z.infer<typeof FeedbackGroupedArrayResponseSchema>;
 
 
 export {
@@ -58,10 +57,13 @@ export {
   FeedbackRequestSchema,
   FeedbackResponseSchema,
   FeedbackArrayResponseSchema,
-  GroupedFeedbackItemDto,
-  FeedbackGroupDto,
-  GroupedFeedbackArrayResponseDto,
-  GroupedFeedbackItemSchema,
-  FeedbackGroupSchema,
-  GroupedFeedbackArrayResponseSchema,
+  FeedbackGroupedItemDto,
+  FeedbackGroupedResponseDto,
+  FeedbackGroupedArrayResponseDto,
+  FeedbackGroupedItemSchema,
+  FeedbackGroupedResponseSchema,
+  FeedbackGroupedArrayResponseSchema,
+  type FeedbackGroupedItemType,
+  type FeedbackGroupedResponseType,
+  type FeedbackGroupedArrayResponseType,
 };
