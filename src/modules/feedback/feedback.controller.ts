@@ -13,6 +13,7 @@ import {
   Get,
   Query,
   Sse,
+  Res,
 
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
@@ -51,7 +52,9 @@ import {
   FilteredFeedbackSchema,
   GetFeedbackQuerySchemaDto,
   SentimentEnum,
+  ReportDownloadRequestDto,
 } from './dto/feedback.dto';
+import type { Response } from 'express';
 
 @ApiTags('Feedback')
 @ApiBearerAuth()
@@ -217,5 +220,21 @@ export class FeedbackController {
   ) {
     return this.feedbackService.feedbackFiltered(query, req.user);
   }
+
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
+  @ApiOperation({
+    summary: 'Download either pdf or csv report file',
+    description: 'Download either pdf or csv file report with full details or just summary',
+  })
+  @HttpCode(HttpStatus.OK)
+  @Get('report')
+async getFeedbackReport(
+  @Query() query: ReportDownloadRequestDto,
+  @Req() req: AuthenticatedRequest,
+  @Res() res: Response,
+) {
+  return this.feedbackService.feedbackReportDownload(query, req.user, res);
+}
   
 }

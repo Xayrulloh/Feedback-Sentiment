@@ -5,6 +5,7 @@ import { DrizzleModule } from 'src/database/drizzle.module';
 import { AIService } from '../AI/AI.service';
 import { MulterModule } from '@nestjs/platform-express';
 import multer from 'multer';
+import { FileGeneratorService } from './file-generator.service';
 
 @Module({
   imports: [
@@ -14,6 +15,6 @@ import multer from 'multer';
     }),
   ],
   controllers: [FeedbackController],
-  providers: [FeedbackService, AIService],
+  providers: [FeedbackService, AIService, FileGeneratorService],
 })
 export class FeedbackModule {}
