@@ -15,10 +15,10 @@ import {
   type FeedbackGroupedItemType,
   type FeedbackManualRequestDto,
   FeedbackManualRequestSchema,
-  type FeedbackResponseDto,
-  type FilteredFeedbackSchemaType,
+  type FilteredFeedbackResponseSchemaType,
   type GetFeedbackQuerySchemaDto,
-  type ReportDownloadRequestDto,
+  type ReportDownloadQueryDto,
+  FeedbackArrayResponseDto,
 } from './dto/feedback.dto';
 // biome-ignore lint/style/useImportType: Needed for DI
 import { FileGeneratorService } from './file-generator.service';
@@ -36,8 +36,8 @@ export class FeedbackService {
     input: FeedbackManualRequestDto,
     user: UserSchemaType,
     fileId?: string,
-  ): Promise<FeedbackResponseDto[]> {
-    const response: FeedbackResponseDto[] = await Promise.all(
+  ): Promise<FeedbackArrayResponseDto> {
+    const response = await Promise.all(
       input.feedbacks.map(async (feedback) => {
         const aiResult = await this.aiService.analyzeOne(feedback);
 
@@ -63,7 +63,7 @@ export class FeedbackService {
   async feedbackUpload(
     file: Express.Multer.File,
     user: UserSchemaType,
-  ): Promise<FeedbackResponseDto[]> {
+  ): Promise<FeedbackArrayResponseDto> {
     const csvContent = file.buffer.toString('utf8');
     const parseResult = Papa.parse(csvContent, {
       header: true,
@@ -101,14 +101,14 @@ export class FeedbackService {
   async feedbackFiltered(
     query: GetFeedbackQuerySchemaDto,
     user: UserSchemaType,
-  ): Promise<FilteredFeedbackSchemaType> {
+  ): Promise<FilteredFeedbackResponseSchemaType> {
     const { sentiment, limit, page } = query;
 
     const whereConditions = [eq(schema.feedbacksSchema.userId, user.id)];
 
     if (sentiment && sentiment.length > 0) {
       whereConditions.push(
-        inArray(schema.feedbacksSchema.sentiment, sentiment),
+        eq(schema.feedbacksSchema.sentiment, sentiment),
       );
     }
 
@@ -191,7 +191,7 @@ export class FeedbackService {
   }
 
   async feedbackReportDownload(
-    query: ReportDownloadRequestDto,
+    query: ReportDownloadQueryDto,
     user: UserSchemaType,
     res: Response,
   ) {

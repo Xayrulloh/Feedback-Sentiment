@@ -13,9 +13,7 @@ export const drizzleProvider = [
     provide: DrizzleAsyncProvider,
     inject: [ConfigService],
     useFactory: async (configService: ConfigService) => {
-      const connectionString = configService.get<EnvType['DATABASE_URL']>(
-        'DATABASE_URL',
-      ) as string; // FIXME: remove type assertion (connectionString type must be string not string and undefined)
+      const connectionString = configService.getOrThrow<string>('DATABASE_URL');
       const pool = new Pool({
         connectionString,
       });

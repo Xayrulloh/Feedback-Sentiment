@@ -26,9 +26,9 @@ export class AuthService {
   ) {}
 
   async register(input: AuthCredentialsDto): Promise<AuthResponseSchemaType> {
-    const existing = await this.getUser(input.email); // FIXME: existing what? always make it understandable (existingUser)
+    const existingUser = await this.getUser(input.email);
 
-    if (existing) {
+    if (existingUser) {
       throw new BadRequestException('Email already in use');
     }
 
@@ -71,9 +71,7 @@ export class AuthService {
       role: user.role,
     };
 
-    const token = await this.jwtService.signAsync(payload, {
-      expiresIn: '1h', // TODO: research that do you really need to set expiresIn if you've already set it globally
-    });
+    const token = await this.jwtService.signAsync(payload);
 
     return {
       token,

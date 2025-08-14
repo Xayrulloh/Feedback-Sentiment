@@ -18,9 +18,9 @@ const FeedbackManualRequestSchema = z.object({
     .describe('Array of feedback entries, each meeting the minimum length'),
 });
 
-// Response schemas
-const FeedbackResponseSchema = FeedbackSchema; // FIXME: we don't need this schema since the response is always array
-const FeedbackArrayResponseSchema = FeedbackResponseSchema.array(); // FIXME: since we only have one, we can call it FeedbackResponseSchema
+const FeedbackArrayResponseSchema = FeedbackSchema.array();
+
+class FeedbackArrayResponseDto extends createZodDto(FeedbackArrayResponseSchema) {}
 
 const FeedbackSummaryResponseSchema = z 
   .object({ // FIXME: I want you to just return the data (sentiment, count, percentage) not data and updatedAt (for now let's keep it simple)
@@ -56,10 +56,6 @@ const FeedbackSummaryEventSchema = z // FIXME: let's remove this part and not fo
 
 // DTOs
 class FeedbackManualRequestDto extends createZodDto(FeedbackManualRequestSchema) {}
-class FeedbackResponseDto extends createZodDto(FeedbackResponseSchema) {}
-class FeedbackArrayResponseDto extends createZodDto(
-  FeedbackArrayResponseSchema,
-) {}
 
 const SentimentEnum = z.enum([
   FeedbackSentimentEnum.NEGATIVE,
@@ -68,41 +64,21 @@ const SentimentEnum = z.enum([
   FeedbackSentimentEnum.UNKNOWN,
 ]);
 
-function isValidSentiment(val: string): val is FeedbackSentimentEnum {
-  return SentimentEnum.options.includes(val as FeedbackSentimentEnum);
-}
-
-const GetFeedbackQuerySchema = z.object({ // FIXME: make it simple (look for internet and find best practice (to work zod with query))
-    sentiment: z
-    .union([
-      SentimentEnum.array(),
-      z.string()
-    ])
-    .optional()
-    .transform((val) => {
-  if (!val) return undefined;
-  if (Array.isArray(val)) return val;
-  return val.split(',').map(s => s.trim());
-})
-.refine(
-  (arr) =>
-    arr === undefined || arr.every(isValidSentiment),
-  { message: 'Invalid sentiment value(s) provided' }
-),
-
-  limit: z.coerce.number().int().max(100).default(20),
+const GetFeedbackQuerySchema = z.object({
+ sentiment: SentimentEnum.optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
   page: z.coerce.number().int().min(1).default(1),
-})
+});
 
 class GetFeedbackQuerySchemaDto extends createZodDto(GetFeedbackQuerySchema) {}
 
 
-const FilteredFeedbackSchema = z.object({ // FIXME: naming issue
+const FilteredFeedbackResponseSchema = z.object({
   data: FeedbackSchema.array(),
   pagination: PaginationSchema,
-})
+});
 
-type FilteredFeedbackSchemaType = z.infer<typeof FilteredFeedbackSchema>;
+type FilteredFeedbackResponseSchemaType = z.infer<typeof FilteredFeedbackResponseSchema>;
 
 
 
@@ -128,12 +104,12 @@ class FeedbackGroupedResponseDto extends createZodDto(
   FeedbackGroupedResponseSchema,
 ) {}
 
-const ReportDownloadRequestSchema = z.object({ // FIXME: naming issue
+const ReportDownloadQuerySchema = z.object({
   format: z.enum(['pdf', 'csv']),
   type: z.enum(['summary', 'detailed']),
 });
 
-class ReportDownloadRequestDto extends createZodDto(ReportDownloadRequestSchema){}
+class ReportDownloadQueryDto extends createZodDto(ReportDownloadQuerySchema) {}
 
 class FeedbackGroupedArrayResponseDto extends createZodDto(
   FeedbackGroupedArrayResponseSchema,
@@ -155,10 +131,9 @@ class FeedbackSummaryEventDto extends createZodDto(
 ) {}
 
 export {
-  ReportDownloadRequestSchema,
-  ReportDownloadRequestDto,
+  ReportDownloadQuerySchema,
+  ReportDownloadQueryDto,
   FeedbackManualRequestSchema,
-  FeedbackResponseSchema,
   FeedbackArrayResponseSchema,
   FeedbackGroupedItemDto,
   FeedbackGroupedResponseDto,
@@ -172,12 +147,11 @@ export {
   FeedbackSummaryResponseSchema,
   FeedbackSummaryEventSchema,
   FeedbackManualRequestDto,
-  FeedbackResponseDto,
   FeedbackArrayResponseDto,
   FeedbackGetSummaryResponseDto,
   FeedbackSummaryEventDto,
-  type FilteredFeedbackSchemaType,
-  FilteredFeedbackSchema,
+  type FilteredFeedbackResponseSchemaType,
+  FilteredFeedbackResponseSchema,
   GetFeedbackQuerySchema,
   GetFeedbackQuerySchemaDto,
   SentimentEnum,

@@ -38,9 +38,10 @@ import {
   FeedbackGroupedArrayResponseSchema,
   type FeedbackManualRequestDto,
   FeedbackSummaryEventDto,
-  FilteredFeedbackSchema,
+  FilteredFeedbackResponseSchema,
   GetFeedbackQuerySchemaDto,
-  type ReportDownloadRequestDto,
+  type ReportDownloadQueryDto,
+  ReportDownloadQuerySchema,
   SentimentEnum,
 } from './dto/feedback.dto';
 // biome-ignore lint/style/useImportType: Needed for DI
@@ -69,6 +70,7 @@ export class FeedbackController {
   ): Promise<FeedbackArrayResponseDto> {
     return this.feedbackService.feedbackManual(body, req.user);
   }
+
 
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'))
@@ -205,7 +207,7 @@ export class FeedbackController {
     summary: 'Filter feedback by sentiment',
     description: 'Filtering feedback by sentimant with pagination',
   })
-  @ZodSerializerDto(FilteredFeedbackSchema)
+  @ZodSerializerDto(FilteredFeedbackResponseSchema)
   async feedbackFiltered(
     @Query(new ZodValidationPipe(GetFeedbackQuerySchemaDto))
     query: GetFeedbackQuerySchemaDto,
@@ -223,8 +225,10 @@ export class FeedbackController {
   })
   @HttpCode(HttpStatus.OK)
   @Get('report')
+  @ApiQuery({ name: 'format', required: true, type: String })
+  @ApiQuery({ name: 'type', required: true, type: String })
   async getFeedbackReport(
-    @Query() query: ReportDownloadRequestDto,
+    @Query() query: ReportDownloadQueryDto,
     @Req() req: AuthenticatedRequest,
     @Res() res: Response,
   ) {
