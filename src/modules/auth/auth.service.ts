@@ -12,7 +12,7 @@ import { DrizzleAsyncProvider } from 'src/database/drizzle.provider';
 
 import { and, eq, isNull } from 'drizzle-orm';
 import { UserRoleEnum, UserSchemaType } from 'src/utils/zod.schemas';
-import { AuthCredentialsDto, AuthResponseSchemaType } from './dto/auth.dto';
+import { AuthCredentialsDto, AuthResponseSchemaType } from './dto/auth.dto'; // FIXME: fix all imports
 
 @Injectable()
 export class AuthService {
@@ -23,7 +23,7 @@ export class AuthService {
   ) {}
 
   async register(input: AuthCredentialsDto): Promise<AuthResponseSchemaType> {
-    const existing = await this.getUser(input.email);
+    const existing = await this.getUser(input.email); // FIXME: existing what? always make it understandable (existingUser)
 
     if (existing) {
       throw new BadRequestException('Email already in use');
@@ -69,7 +69,7 @@ export class AuthService {
     };
 
     const token = await this.jwtService.signAsync(payload, {
-      expiresIn: '1h',
+      expiresIn: '1h', // TODO: research that do you really need to set expiresIn if you've already set it globally
     });
 
     return {

@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { FeedbackSchemaType } from 'src/utils/zod.schemas';
-import { parse } from 'json2csv';
-import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
-import { FeedbackGetSummaryResponseDto, FeedbackSummaryEventDto, ReportDownloadRequestDto } from './dto/feedback.dto';
+import { parse } from 'json2csv'; // FIXME: they are not exist in pckg.json
+import { PDFDocument, rgb, StandardFonts } from 'pdf-lib'; // FIXME: they are not exist in pckg.json
+import { FeedbackGetSummaryResponseDto, FeedbackSummaryEventDto, ReportDownloadRequestDto } from './dto/feedback.dto'; // FIXME: fix all imports
 
 @Injectable()
 export class FileGeneratorService {
@@ -13,8 +13,8 @@ export class FileGeneratorService {
     return this.generatePDF(data, type);
   }
 
- private async generateCSV(
-  data: FeedbackSchemaType[] | Record<string, any>,
+ private async generateCSV( // TODO: pls improve readability and make it more simple
+  data: FeedbackSchemaType[] | Record<string, any>, // FIXME: use unknown not any
   type: ReportDownloadRequestDto['type']
 ): Promise<Buffer> {
   let csv: string;
@@ -33,7 +33,7 @@ export class FileGeneratorService {
     });
   } else {
   const summaryArray = (data as FeedbackGetSummaryResponseDto).data;
-  const total = summaryArray.reduce((sum, f) => sum + f.count, 0);
+  const total = summaryArray.reduce((sum, f) => sum + f.count, 0); // FIXME: wth total is needed if you don't use
 
   const summaryData = summaryArray.map(f => ({
     Sentiment: f.sentiment,
@@ -51,7 +51,7 @@ export class FileGeneratorService {
   return Buffer.from(csv, 'utf-8');
 }
 
- private async generatePDF(
+ private async generatePDF( // TODO: pls improve readability and make it more simple
   data: FeedbackSchemaType[] | FeedbackGetSummaryResponseDto,
   type: ReportDownloadRequestDto['type']
 ): Promise<Buffer> {

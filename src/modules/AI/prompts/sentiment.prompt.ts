@@ -1,4 +1,4 @@
-export function generateSentimentPrompt(feedback: string): string {
+export function generateSentimentPrompt(feedback: string): string { // TODO: make it smaller (less tokens) but understandable (double check for summary part)
   return `You are a sentiment and topic classifier. Your response must be strictly valid JSON only, with no additional text, explanations, or formatting outside the JSON object.
 
   Output format:

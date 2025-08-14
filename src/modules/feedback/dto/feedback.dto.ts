@@ -5,7 +5,7 @@ import { MIN_FEEDBACK_LENGTH } from 'src/utils/constants';
 
 
 // Request schema
-const FeedbackRequestSchema = z.object({
+const FeedbackRequestSchema = z.object({ // TODO: name should be FeedbackManualRequestSchema
   feedbacks: z
     .array(
       z
@@ -20,14 +20,14 @@ const FeedbackRequestSchema = z.object({
 });
 
 // Response schemas
-const FeedbackResponseSchema = FeedbackSchema;
-const FeedbackArrayResponseSchema = FeedbackResponseSchema.array();
+const FeedbackResponseSchema = FeedbackSchema; // FIXME: we don't need this schema since the response is always array
+const FeedbackArrayResponseSchema = FeedbackResponseSchema.array(); // FIXME: since we only have one, we can call it FeedbackResponseSchema
 
-const FeedbackGetSummaryResponseSchema = z
-  .object({
+const FeedbackGetSummaryResponseSchema = z // FIXME: since it's Response we don't need Get part of the name
+  .object({ // FIXME: I want you to just return the data (sentiment, count, percentage) not data and updatedAt (for now let's keep it simple)
     data: z.array(
       z.object({
-        sentiment: z.enum([
+        sentiment: z.enum([ // TODO: always include describe part
           FeedbackSentimentEnum.POSITIVE,
           FeedbackSentimentEnum.NEUTRAL,
           FeedbackSentimentEnum.NEGATIVE,
@@ -46,7 +46,7 @@ const FeedbackGetSummaryResponseSchema = z
   type FeedbackGetSummaryResponseSchemaType = z.infer<typeof FeedbackGetSummaryResponseSchema>;
 
 // SSE
-const FeedbackSummaryEventSchema = z
+const FeedbackSummaryEventSchema = z // FIXME: let's remove this part and not focus
   .object({
     type: z.string().describe('Event type identifier'),
   })
@@ -54,7 +54,7 @@ const FeedbackSummaryEventSchema = z
   .describe('Server-sent event for feedback summary updates');
 
 // DTOs
-class FeedbackRequestDto extends createZodDto(FeedbackRequestSchema) {}
+class FeedbackRequestDto extends createZodDto(FeedbackRequestSchema) {} // FIXME: change the name
 class FeedbackResponseDto extends createZodDto(FeedbackResponseSchema) {}
 class FeedbackArrayResponseDto extends createZodDto(
   FeedbackArrayResponseSchema,
@@ -71,7 +71,7 @@ function isValidSentiment(val: string): val is FeedbackSentimentEnum {
   return SentimentEnum.options.includes(val as FeedbackSentimentEnum);
 }
 
-const GetFeedbackQuerySchema = z.object({
+const GetFeedbackQuerySchema = z.object({ // FIXME: make it simple (look for internet and find best practice (to work zod with query))
     sentiment: z
     .union([
       SentimentEnum.array(),
@@ -96,7 +96,7 @@ const GetFeedbackQuerySchema = z.object({
 class GetFeedbackQuerySchemaDto extends createZodDto(GetFeedbackQuerySchema) {}
 
 
-const FilteredFeedbackSchema = z.object({
+const FilteredFeedbackSchema = z.object({ // FIXME: naming issue
   data: FeedbackSchema.array(),
   pagination: PaginationSchema,
 })
@@ -105,13 +105,13 @@ type FilteredFeedbackSchemaType = z.infer<typeof FilteredFeedbackSchema>;
 
 
 
-const FeedbackGroupedItemSchema = FeedbackSchema.pick({
+const FeedbackGroupedItemSchema = FeedbackSchema.pick({ // FIXME: what's this? (Request/Response?)
   id: true,
   content: true,
   sentiment: true,
 });
 
-const FeedbackGroupedResponseSchema = z.object({
+const FeedbackGroupedResponseSchema = z.object({ // FIXME: just create it with array and use it, no need to separate it to singular and plural one
   summary: z.string().describe('Summary of grouped feedback items'),
   count: z.number().describe('Number of feedback items in this group'),
   items: FeedbackGroupedItemSchema.array().describe(
@@ -127,7 +127,7 @@ class FeedbackGroupedResponseDto extends createZodDto(
   FeedbackGroupedResponseSchema,
 ) {}
 
-const ReportDownloadRequestSchema = z.object({
+const ReportDownloadRequestSchema = z.object({ // FIXME: naming issue
   format: z.enum(['pdf', 'csv']),
   type: z.enum(['summary', 'detailed']),
 });

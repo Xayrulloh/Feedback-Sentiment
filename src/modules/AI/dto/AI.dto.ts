@@ -1,7 +1,7 @@
 import { FeedbackSchema } from 'src/utils/zod.schemas';
 import { z } from 'zod';
 
-const AIRequestSchema = z.object({
+const AIRequestSchema = z.object({ // TODO: remove this object and assign FeedbackManualRequestSchema
   feedbacks: z.array(z.string().min(3)),
 });
 

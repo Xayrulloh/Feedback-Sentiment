@@ -54,7 +54,7 @@ import {
   SentimentEnum,
   ReportDownloadRequestDto,
 } from './dto/feedback.dto';
-import type { Response } from 'express';
+import type { Response } from 'express'; // TODO: fix all imports
 
 @ApiTags('Feedback')
 @ApiBearerAuth()
@@ -62,27 +62,29 @@ import type { Response } from 'express';
 export class FeedbackController {
   constructor(private readonly feedbackService: FeedbackService) {}
 
+  // FIXME: where's apibearerauth
   @UseGuards(AuthGuard('jwt'))
   @Post('manual')
   @HttpCode(HttpStatus.CREATED)
   @ApiCreatedResponse({
     type: FeedbackArrayResponseDto,
-    description: 'Array of processed feedback items',
+    description: 'Array of processed feedback items', // TODO: no need description in here, give it to zod schema
   })
   @ApiOperation({
     summary: 'Sending text based feedback and getting the ai analyze',
-    description: 'Sending text based feedback and getting the ai analyze',
+    description: 'Sending text based feedback and getting the ai analyze', // TODO: no need description in here, give it to zod schema
   })
   @ZodSerializerDto(FeedbackArrayResponseSchema)
   async feedbackManual(
     @Body() body: FeedbackRequestDto,
     @Req() req: AuthenticatedRequest,
   ): Promise<FeedbackArrayResponseDto> {
-    const result = await this.feedbackService.feedbackManual(body, req.user);
+    const result = await this.feedbackService.feedbackManual(body, req.user); // FIXME: just return to feedbackService
 
     return result;
   }
 
+  // FIXME: where's apibearerauth
   @UseGuards(AuthGuard('jwt'))
   @Post('upload')
   @UseInterceptors(FileInterceptor('file'))
@@ -106,7 +108,7 @@ export class FeedbackController {
   })
   @ApiCreatedResponse({
     type: FeedbackArrayResponseDto,
-    description: 'Array of processed feedback items from uploaded file',
+    description: 'Array of processed feedback items from uploaded file', // TODO: no need description in here, give it to zod schema
   })
   @ZodSerializerDto(FeedbackArrayResponseSchema)
   async feedbackUpload(
@@ -138,9 +140,10 @@ export class FeedbackController {
     return this.feedbackService.feedbackUpload(file, req.user);
   }
 
+  // FIXME: where's apibearerauth
   @UseGuards(AuthGuard('jwt'))
   @Get('sentiment-summary')
-  @ApiConsumes('application/json')
+  @ApiConsumes('application/json') // TODO: do we really need this?
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Get sentiment summary for user',
@@ -148,16 +151,17 @@ export class FeedbackController {
   })
   @ApiOkResponse({
     type: FeedbackGetSummaryResponseDto,
-    description: 'Sentiment summary data for the specified user',
+    description: 'Sentiment summary data for the specified user', // TODO: no need description in here, give it to zod schema
   })
   @ZodSerializerDto(FeedbackGetSummaryResponseDto)
   async getSentimentSummary(
     @Req() req: AuthenticatedRequest,
   ): Promise<FeedbackGetSummaryResponseDto> {
-    return await this.feedbackService.feedbackSummary(req.user.id);
+    return await this.feedbackService.feedbackSummary(req.user.id); // TODO: research difference between return and return await
   }
 
-  @UseGuards(AuthGuard('jwt'))
+  // FIXME: where's apibearerauth
+  @UseGuards(AuthGuard('jwt')) // FIXME: let's comment this whole method (feedbackStreamSummary)
   @Sse('sentiment-summary/stream')
   @ApiConsumes('text/event-stream')
   @ApiOperation({
@@ -184,6 +188,7 @@ export class FeedbackController {
     );
   }
 
+  // FIXME: where's apibearerauth
   @UseGuards(AuthGuard('jwt'))
   @Get('grouped')
   @HttpCode(HttpStatus.OK)
@@ -192,7 +197,7 @@ export class FeedbackController {
   })
   @ApiOkResponse({
     type: FeedbackGroupedArrayResponseDto,
-    description: 'Array of grouped feedback with counts and items',
+    description: 'Array of grouped feedback with counts and items', // TODO: no need description in here, give it to zod schema
   })
   @ZodSerializerDto(FeedbackGroupedArrayResponseSchema)
   async feedbackGrouped(

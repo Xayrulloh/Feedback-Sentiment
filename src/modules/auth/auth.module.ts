@@ -14,10 +14,10 @@ import { JwtStrategy } from 'src/common/strategies/jwt.strategy';
       global: true,
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: async (configService) => ({
-        secret: configService.get('JWT_SECRET'),
+      useFactory: async (configService) => ({ // FIXME: give type to configService
+        secret: configService.get('JWT_SECRET'), // FIXME: don't use get but getOrThrow
         signOptions: {
-          expiresIn: '1h',
+          expiresIn: '1h', // TODO: set it to 1 day
         },
       }),
     }),

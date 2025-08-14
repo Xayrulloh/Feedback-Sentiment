@@ -7,7 +7,7 @@ import { DrizzleAsyncProvider } from 'src/database/drizzle.provider';
 import { and, eq, isNull } from 'drizzle-orm';
 import { ConfigService } from '@nestjs/config';
 import { EnvType } from 'src/config/env/env-validation';
-import { JWTPayloadType } from 'src/modules/auth/dto/auth.dto';
+import { JWTPayloadType } from 'src/modules/auth/dto/auth.dto'; // FIXME: fix all imports in here
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {

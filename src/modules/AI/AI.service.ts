@@ -9,7 +9,7 @@ import {
   PromptResponseSchema,
 } from './dto/AI.dto';
 import { generateSentimentPrompt } from './prompts/sentiment.prompt';
-import { EnvType } from 'src/config/env/env-validation';
+import { EnvType } from 'src/config/env/env-validation'; // FIXME: fix all imports in here
 
 @Injectable()
 export class AIService {

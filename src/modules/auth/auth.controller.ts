@@ -5,7 +5,7 @@ import {
   AuthResponseSchema,
   AuthResponseSchemaType,
 } from './dto/auth.dto';
-import { AuthService } from './auth.service';
+import { AuthService } from './auth.service'; // FIXME: fix all imports
 import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { ZodSerializerDto } from 'nestjs-zod';
 

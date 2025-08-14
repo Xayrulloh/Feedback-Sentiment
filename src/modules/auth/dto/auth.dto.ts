@@ -5,7 +5,7 @@ import { z } from 'zod';
 type JWTPayloadType = {
   sub: string;
   email: string;
-  role: 'USER' | 'ADMIN';
+  role: 'USER' | 'ADMIN'; // FIXME: take data from UserRoleEnum
 };
 
 const AuthCredentialsSchema = UserSchema.pick({ email: true }).merge(
@@ -27,6 +27,8 @@ const AuthResponseSchema = z.object({
 class AuthResponseDto extends createZodDto(AuthResponseSchema) {}
 
 type AuthResponseSchemaType = z.infer<typeof AuthResponseSchema>;
+
+// TODO: make all as grouped (first enums, then zod schemas, then zod dtos, then types)
 
 export {
   AuthCredentialsDto,
