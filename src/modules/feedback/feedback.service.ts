@@ -5,17 +5,20 @@ import type { Response } from 'express';
 import * as Papa from 'papaparse';
 import { DrizzleAsyncProvider } from 'src/database/drizzle.provider';
 import * as schema from 'src/database/schema';
-import type { FeedbackSchemaType, UserSchemaType } from 'src/utils/zod.schemas';
+import type {
+  FeedbackSchemaType,
+  FeedbackSentimentEnum,
+  UserSchemaType,
+} from 'src/utils/zod.schemas';
 // biome-ignore lint/style/useImportType: Needed for DI
 import { AIService } from '../AI/AI.service';
 import {
   type FeedbackGetSummaryResponseDto,
-  FeedbackSummaryResponseSchema,
   type FeedbackGroupedArrayResponseType,
-  type FeedbackGroupedItemType,
   type FeedbackManualRequestDto,
   FeedbackManualRequestSchema,
   type FeedbackResponseDto,
+  FeedbackSummaryResponseSchema,
   type FilteredFeedbackSchemaType,
   type GetFeedbackQuerySchemaDto,
   type ReportDownloadRequestDto,
@@ -36,8 +39,8 @@ export class FeedbackService {
     input: FeedbackManualRequestDto,
     user: UserSchemaType,
     fileId?: string,
-  ): Promise<FeedbackResponseDto[]> {
-    const response: FeedbackResponseDto[] = await Promise.all(
+  ): Promise<FeedbackResponseDto> {
+    const response: FeedbackResponseDto = await Promise.all(
       input.feedbacks.map(async (feedback) => {
         const aiResult = await this.aiService.analyzeOne(feedback);
 
@@ -63,7 +66,7 @@ export class FeedbackService {
   async feedbackUpload(
     file: Express.Multer.File,
     user: UserSchemaType,
-  ): Promise<FeedbackResponseDto[]> {
+  ): Promise<FeedbackResponseDto> {
     const csvContent = file.buffer.toString('utf8');
     const parseResult = Papa.parse(csvContent, {
       header: true,
@@ -146,7 +149,13 @@ export class FeedbackService {
       .select({
         summary: schema.feedbacksSchema.summary,
         count: count(schema.feedbacksSchema.id),
-        items: sql<FeedbackGroupedItemType[]>`JSON_AGG(
+        items: sql<
+          Array<{
+            id: string;
+            content: string;
+            sentiment: FeedbackSentimentEnum;
+          }>
+        >`JSON_AGG(
           JSON_BUILD_OBJECT(
             'id', ${schema.feedbacksSchema.id}::text,
             'content', ${schema.feedbacksSchema.content},
@@ -175,12 +184,7 @@ export class FeedbackService {
       .where(eq(schema.feedbacksSchema.userId, userId))
       .groupBy(schema.feedbacksSchema.sentiment);
 
-    const summaryData: FeedbackGetSummaryResponseDto = {
-      data: results,
-      updatedAt: new Date().toISOString(),
-    };
-
-    return FeedbackSummaryResponseSchema.parse(summaryData);
+    return FeedbackSummaryResponseSchema.parse(results);
   }
 
   async getAllFeedback(user: UserSchemaType): Promise<FeedbackSchemaType[]> {

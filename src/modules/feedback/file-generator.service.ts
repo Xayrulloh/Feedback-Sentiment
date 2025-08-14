@@ -40,7 +40,7 @@ export class FileGeneratorService {
         quote: false,
       });
     } else {
-      const summaryArray = (data as FeedbackGetSummaryResponseDto).data;
+      const summaryArray = data as FeedbackGetSummaryResponseDto;
       const total = summaryArray.reduce((sum, f) => sum + f.count, 0); // FIXME: wth total is needed if you don't use
 
       const summaryData = summaryArray.map((f) => ({
@@ -112,7 +112,7 @@ export class FileGeneratorService {
       });
     } else if (!Array.isArray(data)) {
       // Summary case
-      const summaryArray = data.data;
+      const summaryArray = data as FeedbackGetSummaryResponseDto;
       const total = summaryArray.reduce((sum, f) => sum + f.count, 0);
 
       page.drawText('Sentiment', { x: 50, y: yPos, size: fontSizeText, font });

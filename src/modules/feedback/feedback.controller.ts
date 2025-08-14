@@ -9,7 +9,6 @@ import {
   Query,
   Req,
   Res,
-  Sse,
   UnprocessableEntityException,
   UploadedFile,
   UseGuards,
@@ -31,13 +30,12 @@ import type { Express, Response } from 'express';
 import { ZodSerializerDto, ZodValidationPipe } from 'nestjs-zod';
 import type { AuthenticatedRequest } from 'src/shared/types/request-with-user';
 import {
-  FeedbackArrayResponseDto,
-  FeedbackArrayResponseSchema,
   FeedbackGetSummaryResponseDto,
   FeedbackGroupedArrayResponseDto,
   FeedbackGroupedArrayResponseSchema,
   type FeedbackManualRequestDto,
-  FeedbackSummaryEventDto,
+  FeedbackResponseDto,
+  FeedbackResponseSchema,
   FilteredFeedbackSchema,
   GetFeedbackQuerySchemaDto,
   type ReportDownloadRequestDto,
@@ -57,16 +55,16 @@ export class FeedbackController {
   @Post('manual')
   @HttpCode(HttpStatus.CREATED)
   @ApiCreatedResponse({
-    type: FeedbackArrayResponseDto,
+    type: FeedbackResponseDto,
   })
   @ApiOperation({
     summary: 'Sending text based feedback and getting the ai analyze',
   })
-  @ZodSerializerDto(FeedbackArrayResponseSchema)
+  @ZodSerializerDto(FeedbackResponseSchema)
   async feedbackManual(
     @Body() body: FeedbackManualRequestDto,
     @Req() req: AuthenticatedRequest,
-  ): Promise<FeedbackArrayResponseDto> {
+  ): Promise<FeedbackResponseDto> {
     return this.feedbackService.feedbackManual(body, req.user);
   }
 
@@ -93,13 +91,13 @@ export class FeedbackController {
     },
   })
   @ApiCreatedResponse({
-    type: FeedbackArrayResponseDto,
+    type: FeedbackResponseDto,
   })
-  @ZodSerializerDto(FeedbackArrayResponseSchema)
+  @ZodSerializerDto(FeedbackResponseSchema)
   async feedbackUpload(
     @UploadedFile() file: Express.Multer.File,
     @Req() req: AuthenticatedRequest,
-  ): Promise<FeedbackArrayResponseDto> {
+  ): Promise<FeedbackResponseDto> {
     if (!file) {
       throw new UnprocessableEntityException('No file uploaded');
     }
@@ -149,16 +147,16 @@ export class FeedbackController {
     return this.feedbackService.feedbackSummary(req.user.id);
   }
 
-  @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt')) 
-  @Sse('sentiment-summary/stream')
-  @ApiConsumes('text/event-stream')
-  @ApiOperation({
-    summary: 'Stream sentiment summary updates',
-    description:
-      'Real-time sentiment analysis summary updates for the authenticated user',
-  })
-  @ApiOkResponse({ type: FeedbackSummaryEventDto })
+  // @ApiBearerAuth()
+  // @UseGuards(AuthGuard('jwt'))
+  // @Sse('sentiment-summary/stream')
+  // @ApiConsumes('text/event-stream')
+  // @ApiOperation({
+  //   summary: 'Stream sentiment summary updates',
+  //   description:
+  //     'Real-time sentiment analysis summary updates for the authenticated user',
+  // })
+  // @ApiOkResponse({ type: FeedbackSummaryEventDto })
   // feedbackStreamSummary(
   //   @Req() req: AuthenticatedRequest,
   // ): Observable<FeedbackSummaryEventDto> {
