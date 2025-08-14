@@ -26,7 +26,7 @@ const FeedbackSummaryResponseSchema = z
   .object({ // FIXME: I want you to just return the data (sentiment, count, percentage) not data and updatedAt (for now let's keep it simple)
     data: z.array(
       z.object({
-        sentiment: z.enum([ // TODO: always include describe part
+        sentiment: z.enum([ 
           FeedbackSentimentEnum.POSITIVE,
           FeedbackSentimentEnum.NEUTRAL,
           FeedbackSentimentEnum.NEGATIVE,

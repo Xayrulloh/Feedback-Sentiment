@@ -149,8 +149,8 @@ export class FeedbackController {
     return this.feedbackService.feedbackSummary(req.user.id);
   }
 
-  // FIXME: where's apibearerauth
-  @UseGuards(AuthGuard('jwt')) // FIXME: let's comment this whole method (feedbackStreamSummary)
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt')) 
   @Sse('sentiment-summary/stream')
   @ApiConsumes('text/event-stream')
   @ApiOperation({
