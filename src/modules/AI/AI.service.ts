@@ -1,15 +1,17 @@
 import { Injectable } from '@nestjs/common';
+// biome-ignore lint/style/useImportType: Needed for DI
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
+import type { EnvType } from 'src/config/env/env-validation';
 import {
+  type AIRequestSchemaDto,
+  type AIResponseSchemaType,
   MistralResponseSchema,
-  AIRequestSchemaDto,
-  AIResponseSchemaType,
-  PromptResponseSchemaType,
   PromptResponseSchema,
+  type PromptResponseSchemaType,
 } from './dto/AI.dto';
+
 import { generateSentimentPrompt } from './prompts/sentiment.prompt';
-import { EnvType } from 'src/config/env/env-validation'; // FIXME: fix all imports in here
 
 @Injectable()
 export class AIService {

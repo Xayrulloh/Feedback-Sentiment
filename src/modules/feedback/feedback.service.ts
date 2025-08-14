@@ -1,26 +1,27 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
-import { AIService } from '../AI/AI.service';
-import {
-  FeedbackGroupedArrayResponseType,
-  FeedbackGroupedItemType,
-  FeedbackRequestDto,
-  FeedbackRequestSchema,
-  FeedbackResponseSchema,
-  FilteredFeedbackSchemaType,
-  GetFeedbackQuerySchemaDto,
-  FeedbackGetSummaryResponseDto,
-  FeedbackGetSummaryResponseSchema,
-  FeedbackResponseDto,
-  ReportDownloadRequestDto,
-} from './dto/feedback.dto';
-import { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { and, count, desc, eq, inArray, sql } from 'drizzle-orm';
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import type { Response } from 'express';
+import * as Papa from 'papaparse';
 import { DrizzleAsyncProvider } from 'src/database/drizzle.provider';
 import * as schema from 'src/database/schema';
 import type { FeedbackSchemaType, UserSchemaType } from 'src/utils/zod.schemas';
-import * as Papa from 'papaparse';
-import { count, eq, sql, desc, and, inArray, } from 'drizzle-orm';
+// biome-ignore lint/style/useImportType: Needed for DI
+import { AIService } from '../AI/AI.service';
+import {
+  type FeedbackGetSummaryResponseDto,
+  FeedbackSummaryResponseSchema,
+  type FeedbackGroupedArrayResponseType,
+  type FeedbackGroupedItemType,
+  type FeedbackManualRequestDto,
+  FeedbackManualRequestSchema,
+  type FeedbackResponseDto,
+  type FilteredFeedbackSchemaType,
+  type GetFeedbackQuerySchemaDto,
+  type ReportDownloadRequestDto,
+} from './dto/feedback.dto';
+// biome-ignore lint/style/useImportType: Needed for DI
 import { FileGeneratorService } from './file-generator.service';
-import { Response } from 'express'; // FIXME: fix all imports
 
 @Injectable()
 export class FeedbackService {
@@ -32,7 +33,7 @@ export class FeedbackService {
   ) {}
 
   async feedbackManual(
-    input: FeedbackRequestDto,
+    input: FeedbackManualRequestDto,
     user: UserSchemaType,
     fileId?: string,
   ): Promise<FeedbackResponseDto[]> {
@@ -84,7 +85,7 @@ export class FeedbackService {
       return row['feedback'] || row['feedbacks'];
     });
 
-    const validationResult = FeedbackRequestSchema.parse({ feedbacks });
+    const validationResult = FeedbackManualRequestSchema.parse({ feedbacks });
 
     const [newFile] = await this.db
       .insert(schema.filesSchema)
@@ -98,43 +99,45 @@ export class FeedbackService {
   }
 
   async feedbackFiltered(
-  query: GetFeedbackQuerySchemaDto,
-  user: UserSchemaType
-): Promise<FilteredFeedbackSchemaType> {
-  const { sentiment, limit, page } = query;
+    query: GetFeedbackQuerySchemaDto,
+    user: UserSchemaType,
+  ): Promise<FilteredFeedbackSchemaType> {
+    const { sentiment, limit, page } = query;
 
-  const whereConditions = [eq(schema.feedbacksSchema.userId, user.id)];
+    const whereConditions = [eq(schema.feedbacksSchema.userId, user.id)];
 
-  if (sentiment && sentiment.length > 0) {
-    whereConditions.push(inArray(schema.feedbacksSchema.sentiment, sentiment));
-  }
-
-  const totalResult = await this.db
-    .select({
-      count: sql<number>`count(*)`
-    })
-    .from(schema.feedbacksSchema)
-    .where(and(...whereConditions));
-
-  const total = totalResult[0]?.count ?? 0;
-
-  const feedbacks = await this.db
-    .select()
-    .from(schema.feedbacksSchema)
-    .where(and(...whereConditions))
-    .limit(limit)
-    .offset((page - 1) * limit);
-
-  return {
-    data: feedbacks,
-    pagination: {
-      limit,
-      page,
-      total: Number(total),
-      pages: Math.ceil(total / limit)
+    if (sentiment && sentiment.length > 0) {
+      whereConditions.push(
+        inArray(schema.feedbacksSchema.sentiment, sentiment),
+      );
     }
-  };
-}
+
+    const totalResult = await this.db
+      .select({
+        count: sql<number>`count(*)`,
+      })
+      .from(schema.feedbacksSchema)
+      .where(and(...whereConditions));
+
+    const total = totalResult[0]?.count ?? 0;
+
+    const feedbacks = await this.db
+      .select()
+      .from(schema.feedbacksSchema)
+      .where(and(...whereConditions))
+      .limit(limit)
+      .offset((page - 1) * limit);
+
+    return {
+      data: feedbacks,
+      pagination: {
+        limit,
+        page,
+        total: Number(total),
+        pages: Math.ceil(total / limit),
+      },
+    };
+  }
 
   async feedbackGrouped(
     userId: string,
@@ -177,37 +180,43 @@ export class FeedbackService {
       updatedAt: new Date().toISOString(),
     };
 
-    return FeedbackGetSummaryResponseSchema.parse(summaryData);
+    return FeedbackSummaryResponseSchema.parse(summaryData);
   }
 
   async getAllFeedback(user: UserSchemaType): Promise<FeedbackSchemaType[]> {
-  return this.db
-    .select()
-    .from(schema.feedbacksSchema)
-    .where(eq(schema.feedbacksSchema.userId, user.id));
-}
-
-
-  async feedbackReportDownload(
-  query: ReportDownloadRequestDto,
-  user: UserSchemaType,
-  res: Response,
-) {
-  const { format, type } = query;
-
-  let data: FeedbackSchemaType[] | FeedbackGetSummaryResponseDto;
-  if (type === 'detailed') {
-    data = await this.getAllFeedback(user);
-  } else {
-    data = await this.feedbackSummary(user.id);
+    return this.db
+      .select()
+      .from(schema.feedbacksSchema)
+      .where(eq(schema.feedbacksSchema.userId, user.id));
   }
 
-  const fileBuffer = await this.fileGeneratorService.generate(format, type, data);
+  async feedbackReportDownload(
+    query: ReportDownloadRequestDto,
+    user: UserSchemaType,
+    res: Response,
+  ) {
+    const { format, type } = query;
 
-  const fileName = `feedback-report-${type}-${Date.now()}.${format}`;
-  res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
-  res.setHeader('Content-Type', format === 'csv' ? 'text/csv' : 'application/pdf');
+    let data: FeedbackSchemaType[] | FeedbackGetSummaryResponseDto;
+    if (type === 'detailed') {
+      data = await this.getAllFeedback(user);
+    } else {
+      data = await this.feedbackSummary(user.id);
+    }
 
-  res.send(fileBuffer);
-}
+    const fileBuffer = await this.fileGeneratorService.generate(
+      format,
+      type,
+      data,
+    );
+
+    const fileName = `feedback-report-${type}-${Date.now()}.${format}`;
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    res.setHeader(
+      'Content-Type',
+      format === 'csv' ? 'text/csv' : 'application/pdf',
+    );
+
+    res.send(fileBuffer);
+  }
 }

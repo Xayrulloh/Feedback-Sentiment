@@ -1,5 +1,5 @@
-import { type Request } from 'express';
-import { UserSchemaType } from 'src/utils/zod.schemas'; // FIXME: fix all imports
+import type { Request } from 'express';
+import type { UserSchemaType } from 'src/utils/zod.schemas';
 
 export type AuthenticatedRequest = Request & {
   user: UserSchemaType;

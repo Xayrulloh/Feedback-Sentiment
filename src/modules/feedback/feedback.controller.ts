@@ -1,23 +1,22 @@
 import {
-  Controller,
-  Post,
+  BadRequestException,
   Body,
-  UseGuards,
-  Req,
+  Controller,
+  Get,
   HttpCode,
   HttpStatus,
+  Post,
+  Query,
+  Req,
+  Res,
+  Sse,
   UnprocessableEntityException,
   UploadedFile,
+  UseGuards,
   UseInterceptors,
-  BadRequestException,
-  Get,
-  Query,
-  Sse,
-  Res,
-
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { FeedbackService } from './feedback.service';
+import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -25,36 +24,27 @@ import {
   ApiCreatedResponse,
   ApiOkResponse,
   ApiOperation,
-  ApiTags,
   ApiQuery,
+  ApiTags,
 } from '@nestjs/swagger';
-import { Observable, interval } from 'rxjs';
-import {
-  map,
-  switchMap,
-  distinctUntilChanged,
-  startWith,
-  share,
-} from 'rxjs/operators';
+import type { Express, Response } from 'express';
 import { ZodSerializerDto, ZodValidationPipe } from 'nestjs-zod';
-import { FileInterceptor } from '@nestjs/platform-express';
-import type { Express } from 'express';
-import { ALLOWED_MIME_TYPES } from 'src/utils/constants';
-import { type AuthenticatedRequest } from 'src/shared/types/request-with-user';
+import type { AuthenticatedRequest } from 'src/shared/types/request-with-user';
 import {
   FeedbackArrayResponseDto,
   FeedbackArrayResponseSchema,
-  FeedbackRequestDto,
+  FeedbackGetSummaryResponseDto,
   FeedbackGroupedArrayResponseDto,
   FeedbackGroupedArrayResponseSchema,
-  FeedbackGetSummaryResponseDto,
+  type FeedbackManualRequestDto,
   FeedbackSummaryEventDto,
   FilteredFeedbackSchema,
   GetFeedbackQuerySchemaDto,
+  type ReportDownloadRequestDto,
   SentimentEnum,
-  ReportDownloadRequestDto,
 } from './dto/feedback.dto';
-import type { Response } from 'express'; // TODO: fix all imports
+// biome-ignore lint/style/useImportType: Needed for DI
+import { FeedbackService } from './feedback.service';
 
 @ApiTags('Feedback')
 @ApiBearerAuth()
@@ -62,29 +52,25 @@ import type { Response } from 'express'; // TODO: fix all imports
 export class FeedbackController {
   constructor(private readonly feedbackService: FeedbackService) {}
 
-  // FIXME: where's apibearerauth
+  @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'))
   @Post('manual')
   @HttpCode(HttpStatus.CREATED)
   @ApiCreatedResponse({
     type: FeedbackArrayResponseDto,
-    description: 'Array of processed feedback items', // TODO: no need description in here, give it to zod schema
   })
   @ApiOperation({
     summary: 'Sending text based feedback and getting the ai analyze',
-    description: 'Sending text based feedback and getting the ai analyze', // TODO: no need description in here, give it to zod schema
   })
   @ZodSerializerDto(FeedbackArrayResponseSchema)
   async feedbackManual(
-    @Body() body: FeedbackRequestDto,
+    @Body() body: FeedbackManualRequestDto,
     @Req() req: AuthenticatedRequest,
   ): Promise<FeedbackArrayResponseDto> {
-    const result = await this.feedbackService.feedbackManual(body, req.user); // FIXME: just return to feedbackService
-
-    return result;
+    return this.feedbackService.feedbackManual(body, req.user);
   }
 
-  // FIXME: where's apibearerauth
+  @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'))
   @Post('upload')
   @UseInterceptors(FileInterceptor('file'))
@@ -108,7 +94,6 @@ export class FeedbackController {
   })
   @ApiCreatedResponse({
     type: FeedbackArrayResponseDto,
-    description: 'Array of processed feedback items from uploaded file', // TODO: no need description in here, give it to zod schema
   })
   @ZodSerializerDto(FeedbackArrayResponseSchema)
   async feedbackUpload(
@@ -118,6 +103,13 @@ export class FeedbackController {
     if (!file) {
       throw new UnprocessableEntityException('No file uploaded');
     }
+
+    const ALLOWED_MIME_TYPES = [
+      'text/csv',
+      'application/csv',
+      'text/plain',
+      'application/vnd.ms-excel',
+    ];
 
     if (
       !ALLOWED_MIME_TYPES.includes(file.mimetype) ||
@@ -129,7 +121,6 @@ export class FeedbackController {
     }
 
     if (file.size > 10 * 1024 * 1024) {
-      // TODO: ask file size from frontend devs
       throw new UnprocessableEntityException('File too large (max 10MB)');
     }
 
@@ -140,10 +131,9 @@ export class FeedbackController {
     return this.feedbackService.feedbackUpload(file, req.user);
   }
 
-  // FIXME: where's apibearerauth
+  @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'))
   @Get('sentiment-summary')
-  @ApiConsumes('application/json') // TODO: do we really need this?
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Get sentiment summary for user',
@@ -151,13 +141,12 @@ export class FeedbackController {
   })
   @ApiOkResponse({
     type: FeedbackGetSummaryResponseDto,
-    description: 'Sentiment summary data for the specified user', // TODO: no need description in here, give it to zod schema
   })
   @ZodSerializerDto(FeedbackGetSummaryResponseDto)
   async getSentimentSummary(
     @Req() req: AuthenticatedRequest,
   ): Promise<FeedbackGetSummaryResponseDto> {
-    return await this.feedbackService.feedbackSummary(req.user.id); // TODO: research difference between return and return await
+    return this.feedbackService.feedbackSummary(req.user.id);
   }
 
   // FIXME: where's apibearerauth
@@ -170,25 +159,25 @@ export class FeedbackController {
       'Real-time sentiment analysis summary updates for the authenticated user',
   })
   @ApiOkResponse({ type: FeedbackSummaryEventDto })
-  feedbackStreamSummary(
-    @Req() req: AuthenticatedRequest,
-  ): Observable<FeedbackSummaryEventDto> {
-    return interval(5000).pipe(
-      startWith(0),
-      switchMap(() => this.feedbackService.feedbackSummary(req.user.id)),
-      map((summary) => ({
-        type: 'sentiment_update' as const,
-        data: summary.data,
-        updatedAt: summary.updatedAt || new Date().toISOString(),
-      })),
-      distinctUntilChanged(
-        (prev, curr) => JSON.stringify(prev.data) === JSON.stringify(curr.data),
-      ),
-      share(),
-    );
-  }
+  // feedbackStreamSummary(
+  //   @Req() req: AuthenticatedRequest,
+  // ): Observable<FeedbackSummaryEventDto> {
+  //   return interval(5000).pipe(
+  //     startWith(0),
+  //     switchMap(() => this.feedbackService.feedbackSummary(req.user.id)),
+  //     map((summary) => ({
+  //       type: 'sentiment_update' as const,
+  //       data: summary.data,
+  //       updatedAt: summary.updatedAt || new Date().toISOString(),
+  //     })),
+  //     distinctUntilChanged(
+  //       (prev, curr) => JSON.stringify(prev.data) === JSON.stringify(curr.data),
+  //     ),
+  //     share(),
+  //   );
+  // }
 
-  // FIXME: where's apibearerauth
+  @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'))
   @Get('grouped')
   @HttpCode(HttpStatus.OK)
@@ -197,7 +186,6 @@ export class FeedbackController {
   })
   @ApiOkResponse({
     type: FeedbackGroupedArrayResponseDto,
-    description: 'Array of grouped feedback with counts and items', // TODO: no need description in here, give it to zod schema
   })
   @ZodSerializerDto(FeedbackGroupedArrayResponseSchema)
   async feedbackGrouped(
@@ -230,16 +218,16 @@ export class FeedbackController {
   @UseGuards(AuthGuard('jwt'))
   @ApiOperation({
     summary: 'Download either pdf or csv report file',
-    description: 'Download either pdf or csv file report with full details or just summary',
+    description:
+      'Download either pdf or csv file report with full details or just summary',
   })
   @HttpCode(HttpStatus.OK)
   @Get('report')
-async getFeedbackReport(
-  @Query() query: ReportDownloadRequestDto,
-  @Req() req: AuthenticatedRequest,
-  @Res() res: Response,
-) {
-  return this.feedbackService.feedbackReportDownload(query, req.user, res);
-}
-  
+  async getFeedbackReport(
+    @Query() query: ReportDownloadRequestDto,
+    @Req() req: AuthenticatedRequest,
+    @Res() res: Response,
+  ) {
+    return this.feedbackService.feedbackReportDownload(query, req.user, res);
+  }
 }

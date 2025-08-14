@@ -1,11 +1,11 @@
 import { createZodDto } from 'nestjs-zod/dto';
-import { UserSchema } from 'src/utils/zod.schemas';
+import { UserRoleEnum, UserSchema } from 'src/utils/zod.schemas';
 import { z } from 'zod';
 
 type JWTPayloadType = {
   sub: string;
   email: string;
-  role: 'USER' | 'ADMIN'; // FIXME: take data from UserRoleEnum
+  role: UserRoleEnum;
 };
 
 const AuthCredentialsSchema = UserSchema.pick({ email: true }).merge(

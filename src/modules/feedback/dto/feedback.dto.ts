@@ -1,18 +1,17 @@
 import * as z from 'zod';
 import { createZodDto } from 'nestjs-zod';
 import { FeedbackSchema, FeedbackSentimentEnum,  PaginationSchema } from 'src/utils/zod.schemas';
-import { MIN_FEEDBACK_LENGTH } from 'src/utils/constants';
 
 
 // Request schema
-const FeedbackRequestSchema = z.object({ // TODO: name should be FeedbackManualRequestSchema
+const FeedbackManualRequestSchema = z.object({ 
   feedbacks: z
     .array(
       z
         .string()
         .min(
-          MIN_FEEDBACK_LENGTH,
-          `Feedback must be at least ${MIN_FEEDBACK_LENGTH} characters long`,
+          10,
+          `Feedback must be at least 10 characters long`,
         ),
     )
     .nonempty('At least one feedback is required')
@@ -23,7 +22,7 @@ const FeedbackRequestSchema = z.object({ // TODO: name should be FeedbackManualR
 const FeedbackResponseSchema = FeedbackSchema; // FIXME: we don't need this schema since the response is always array
 const FeedbackArrayResponseSchema = FeedbackResponseSchema.array(); // FIXME: since we only have one, we can call it FeedbackResponseSchema
 
-const FeedbackGetSummaryResponseSchema = z // FIXME: since it's Response we don't need Get part of the name
+const FeedbackSummaryResponseSchema = z 
   .object({ // FIXME: I want you to just return the data (sentiment, count, percentage) not data and updatedAt (for now let's keep it simple)
     data: z.array(
       z.object({
@@ -32,9 +31,11 @@ const FeedbackGetSummaryResponseSchema = z // FIXME: since it's Response we don'
           FeedbackSentimentEnum.NEUTRAL,
           FeedbackSentimentEnum.NEGATIVE,
           FeedbackSentimentEnum.UNKNOWN,
-        ]),
-        count: z.coerce.number().min(0),
-        percentage: z.coerce.number().min(0).max(100),
+        ]).describe('Sentiment type of the feedback'),
+        count: z.coerce.number().min(0).describe('Count of feedbacks with this sentiment'),
+        percentage: z.coerce.number().min(0).max(100).describe(
+          'Percentage of feedbacks with this sentiment',
+        ),
       }),
     ),
     updatedAt: z.string().datetime(),
@@ -43,18 +44,18 @@ const FeedbackGetSummaryResponseSchema = z // FIXME: since it's Response we don'
     'Summary of feedback sentiment analysis, including counts and percentages for each sentiment type',
   );
 
-  type FeedbackGetSummaryResponseSchemaType = z.infer<typeof FeedbackGetSummaryResponseSchema>;
+  type FeedbackSummaryResponseSchemaType = z.infer<typeof FeedbackSummaryResponseSchema>;
 
 // SSE
 const FeedbackSummaryEventSchema = z // FIXME: let's remove this part and not focus
   .object({
     type: z.string().describe('Event type identifier'),
   })
-  .merge(FeedbackGetSummaryResponseSchema)
+  .merge(FeedbackSummaryResponseSchema)
   .describe('Server-sent event for feedback summary updates');
 
 // DTOs
-class FeedbackRequestDto extends createZodDto(FeedbackRequestSchema) {} // FIXME: change the name
+class FeedbackManualRequestDto extends createZodDto(FeedbackManualRequestSchema) {}
 class FeedbackResponseDto extends createZodDto(FeedbackResponseSchema) {}
 class FeedbackArrayResponseDto extends createZodDto(
   FeedbackArrayResponseSchema,
@@ -147,7 +148,7 @@ type FeedbackGroupedArrayResponseType = z.infer<
 >;
 
 class FeedbackGetSummaryResponseDto extends createZodDto(
-  FeedbackGetSummaryResponseSchema,
+  FeedbackSummaryResponseSchema,
 ) {}
 class FeedbackSummaryEventDto extends createZodDto(
   FeedbackSummaryEventSchema,
@@ -156,7 +157,7 @@ class FeedbackSummaryEventDto extends createZodDto(
 export {
   ReportDownloadRequestSchema,
   ReportDownloadRequestDto,
-  FeedbackRequestSchema,
+  FeedbackManualRequestSchema,
   FeedbackResponseSchema,
   FeedbackArrayResponseSchema,
   FeedbackGroupedItemDto,
@@ -168,9 +169,9 @@ export {
   type FeedbackGroupedItemType,
   type FeedbackGroupedResponseType,
   type FeedbackGroupedArrayResponseType,
-  FeedbackGetSummaryResponseSchema,
+  FeedbackSummaryResponseSchema,
   FeedbackSummaryEventSchema,
-  FeedbackRequestDto,
+  FeedbackManualRequestDto,
   FeedbackResponseDto,
   FeedbackArrayResponseDto,
   FeedbackGetSummaryResponseDto,
@@ -180,5 +181,5 @@ export {
   GetFeedbackQuerySchema,
   GetFeedbackQuerySchemaDto,
   SentimentEnum,
-  type FeedbackGetSummaryResponseSchemaType,
+  type FeedbackSummaryResponseSchemaType,
 };
