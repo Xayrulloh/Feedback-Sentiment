@@ -1,4 +1,23 @@
 services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: feedback-sentiment-api
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    ports:
+      - "${PORT}:${PORT}"
+    restart: unless-stopped
+    networks:
+      - backend
+
+
   db:
     image: postgres:14-alpine
     container_name: feedback-sentiment-postgres
