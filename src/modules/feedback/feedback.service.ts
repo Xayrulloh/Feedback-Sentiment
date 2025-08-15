@@ -22,7 +22,6 @@ import {
   type FilteredFeedbackResponseSchemaType,
   type GetFeedbackQuerySchemaDto,
   type ReportDownloadQueryDto,
-
 } from './dto/feedback.dto';
 // biome-ignore lint/style/useImportType: Needed for DI
 import { FileGeneratorService } from './file-generator.service';
@@ -67,9 +66,7 @@ export class FeedbackService {
   async feedbackUpload(
     file: Express.Multer.File,
     user: UserSchemaType,
-
   ): Promise<FeedbackResponseDto> {
-
     const csvContent = file.buffer.toString('utf8');
     const parseResult = Papa.parse(csvContent, {
       header: true,
@@ -113,9 +110,7 @@ export class FeedbackService {
     const whereConditions = [eq(schema.feedbacksSchema.userId, user.id)];
 
     if (sentiment && sentiment.length > 0) {
-      whereConditions.push(
-        eq(schema.feedbacksSchema.sentiment, sentiment),
-      );
+      whereConditions.push(eq(schema.feedbacksSchema.sentiment, sentiment));
     }
 
     const totalResult = await this.db

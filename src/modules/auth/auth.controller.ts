@@ -1,10 +1,15 @@
 import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
-import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBody,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { ZodSerializerDto } from 'nestjs-zod';
 // biome-ignore lint/style/useImportType: Needed for DI
 import { AuthService } from './auth.service';
 import {
-  type AuthCredentialsDto,
+  AuthCredentialsDto,
   AuthResponseDto,
   AuthResponseSchema,
   type AuthResponseSchemaType,
@@ -17,6 +22,7 @@ export class AuthController {
 
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
+  @ApiBody({ type: AuthCredentialsDto })
   @ApiCreatedResponse({ type: AuthResponseDto })
   @ZodSerializerDto(AuthResponseSchema)
   async register(
@@ -27,6 +33,7 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
+  @ApiBody({ type: AuthCredentialsDto })
   @ApiOkResponse({ type: AuthResponseDto })
   async login(
     @Body() body: AuthCredentialsDto,

@@ -4,7 +4,7 @@ import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import type { FeedbackSchemaType } from 'src/utils/zod.schemas';
 import type {
   FeedbackGetSummaryResponseDto,
- ReportDownloadQueryDto
+  ReportDownloadQueryDto,
 } from './dto/feedback.dto';
 
 @Injectable()
@@ -20,97 +20,95 @@ export class FileGeneratorService {
     return this.generatePDF(data, type);
   }
 
- private async generateCSV(
-  data: FeedbackSchemaType[] | FeedbackGetSummaryResponseDto,
-  type: ReportDownloadQueryDto['type'],
-): Promise<Buffer> {
-  const delimiter = '   ';
-  const quote = false;
+  private async generateCSV(
+    data: FeedbackSchemaType[] | FeedbackGetSummaryResponseDto,
+    type: ReportDownloadQueryDto['type'],
+  ): Promise<Buffer> {
+    const delimiter = '   ';
+    const quote = false;
 
-  const toCSV = (rows: object[], fields: string[]) =>
-    parse(rows, { fields, delimiter, quote });
+    const toCSV = (rows: object[], fields: string[]) =>
+      parse(rows, { fields, delimiter, quote });
 
-  let csv: string;
+    let csv: string;
 
-  if (type === 'detailed') {
-    const detailedData = (data as FeedbackSchemaType[]).map(f => ({
-      Feedback: f.content,
-      Sentiment: f.sentiment,
-      Confidence: f.confidence,
-    }));
-    csv = toCSV(detailedData, ['Feedback', 'Sentiment', 'Confidence']);
-  } else {
-    const summaryArray = data as FeedbackGetSummaryResponseDto;
-    const summaryData = summaryArray.map(f => ({
-      Sentiment: f.sentiment,
-      Count: f.count,
-      Percentage: `${f.percentage.toFixed(2)}%`,
-    }));
-    csv = toCSV(summaryData, ['Sentiment', 'Count', 'Percentage']);
+    if (type === 'detailed') {
+      const detailedData = (data as FeedbackSchemaType[]).map((f) => ({
+        Feedback: f.content,
+        Sentiment: f.sentiment,
+        Confidence: f.confidence,
+      }));
+      csv = toCSV(detailedData, ['Feedback', 'Sentiment', 'Confidence']);
+    } else {
+      const summaryArray = data as FeedbackGetSummaryResponseDto;
+      const summaryData = summaryArray.map((f) => ({
+        Sentiment: f.sentiment,
+        Count: f.count,
+        Percentage: `${f.percentage.toFixed(2)}%`,
+      }));
+      csv = toCSV(summaryData, ['Sentiment', 'Count', 'Percentage']);
+    }
+
+    return Buffer.from(csv, 'utf-8');
   }
-
-  return Buffer.from(csv, 'utf-8');
-}
-
 
   private async generatePDF(
-  data: FeedbackSchemaType[] | FeedbackGetSummaryResponseDto,
-  type: ReportDownloadQueryDto['type'],
-): Promise<Buffer> {
-  const pdfDoc = await PDFDocument.create();
-  const page = pdfDoc.addPage([595, 842]); // A4
-  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    data: FeedbackSchemaType[] | FeedbackGetSummaryResponseDto,
+    type: ReportDownloadQueryDto['type'],
+  ): Promise<Buffer> {
+    const pdfDoc = await PDFDocument.create();
+    const page = pdfDoc.addPage([595, 842]); // A4
+    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
-  let yPos = 800;
-  const fontSizeTitle = 18;
-  const fontSizeHeader = 12;
-  const fontSizeRow = 10;
+    let yPos = 800;
+    const fontSizeTitle = 18;
+    const fontSizeHeader = 12;
+    const fontSizeRow = 10;
 
-  const drawText = (text: string, x: number, y: number, size = fontSizeRow) =>
-    page.drawText(text, { x, y, size, font, color: rgb(0, 0, 0) });
+    const drawText = (text: string, x: number, y: number, size = fontSizeRow) =>
+      page.drawText(text, { x, y, size, font, color: rgb(0, 0, 0) });
 
-  // Title
-  drawText(`Feedback ${type} Report`, 50, yPos, fontSizeTitle);
-  yPos -= 30;
+    // Title
+    drawText(`Feedback ${type} Report`, 50, yPos, fontSizeTitle);
+    yPos -= 30;
 
-  if (type === 'detailed' && Array.isArray(data)) {
-    // Headers
-    drawText('Feedback', 50, yPos, fontSizeHeader);
-    drawText('Sentiment', 300, yPos, fontSizeHeader);
-    drawText('Confidence', 450, yPos, fontSizeHeader);
-    yPos -= 20;
+    if (type === 'detailed') {
+      // Headers
+      drawText('Feedback', 50, yPos, fontSizeHeader);
+      drawText('Sentiment', 300, yPos, fontSizeHeader);
+      drawText('Confidence', 450, yPos, fontSizeHeader);
+      yPos -= 20;
 
-    // Rows
-    data.forEach(f => {
-      drawText(f.content.slice(0, 40), 50, yPos);
-      drawText(f.sentiment, 300, yPos);
-      drawText(f.confidence.toString(), 450, yPos);
-      yPos -= 15;
-    });
-  } else if (!Array.isArray(data)) {
-    // Summary case
-    const summaryArray = data as FeedbackGetSummaryResponseDto;
-    const total = summaryArray.reduce((sum, f) => sum + f.count, 0);
+      // Rows
+      data.forEach((f) => {
+        drawText(f.content.slice(0, 40), 50, yPos);
+        drawText(f.sentiment, 300, yPos);
+        drawText(f.confidence.toString(), 450, yPos);
+        yPos -= 15;
+      });
+    } else if (type === 'summary') {
+      // Summary case
+      const summaryArray = data as FeedbackGetSummaryResponseDto;
+      const total = summaryArray.reduce((sum, f) => sum + f.count, 0);
 
-    // Headers
-    drawText('Sentiment', 50, yPos, fontSizeHeader);
-    drawText('Count', 200, yPos, fontSizeHeader);
-    drawText('Percentage', 300, yPos, fontSizeHeader);
-    yPos -= 20;
+      // Headers
+      drawText('Sentiment', 50, yPos, fontSizeHeader);
+      drawText('Count', 200, yPos, fontSizeHeader);
+      drawText('Percentage', 300, yPos, fontSizeHeader);
+      yPos -= 20;
 
-    // Rows
-    summaryArray.forEach(f => {
-      const percentage = total > 0 ? ((f.count / total) * 100).toFixed(2) + '%' : '0%';
-      drawText(f.sentiment, 50, yPos);
-      drawText(f.count.toString(), 200, yPos);
-      drawText(percentage, 300, yPos);
-      yPos -= 15;
-    });
+      // Rows
+      summaryArray.forEach((f) => {
+        const percentage =
+          total > 0 ? ((f.count / total) * 100).toFixed(2) + '%' : '0%';
+        drawText(f.sentiment, 50, yPos);
+        drawText(f.count.toString(), 200, yPos);
+        drawText(percentage, 300, yPos);
+        yPos -= 15;
+      });
+    }
 
+    const pdfBytes = await pdfDoc.save();
+    return Buffer.from(pdfBytes);
   }
-
-  const pdfBytes = await pdfDoc.save();
-  return Buffer.from(pdfBytes);
-}
-
 }

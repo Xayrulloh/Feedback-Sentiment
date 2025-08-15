@@ -33,7 +33,7 @@ import {
   FeedbackGetSummaryResponseDto,
   FeedbackGroupedArrayResponseDto,
   FeedbackGroupedArrayResponseSchema,
-  type FeedbackManualRequestDto,
+  FeedbackManualRequestDto,
   FeedbackResponseDto,
   FeedbackResponseSchema,
   FilteredFeedbackResponseSchema,
@@ -50,13 +50,13 @@ import { FeedbackService } from './feedback.service';
 export class FeedbackController {
   constructor(private readonly feedbackService: FeedbackService) {}
 
+  @Post('manual')
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'))
-  @Post('manual')
   @HttpCode(HttpStatus.CREATED)
-  @ApiCreatedResponse({
-    type: FeedbackResponseDto,
-  })
+  @ApiBody({ type: FeedbackManualRequestDto })
+  @ApiCreatedResponse({ type: FeedbackResponseDto })
+  @ZodSerializerDto(FeedbackResponseSchema)
   @ApiOperation({
     summary: 'Sending text based feedback and getting the ai analyze',
   })
@@ -68,17 +68,14 @@ export class FeedbackController {
     return this.feedbackService.feedbackManual(body, req.user);
   }
 
-
+  @Post('upload')
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'))
-  @Post('upload')
-  @UseInterceptors(FileInterceptor('file'))
   @HttpCode(HttpStatus.CREATED)
   @ApiConsumes('multipart/form-data')
-  @ApiOperation({
-    summary: 'Upload CSV feedback file',
-    description: 'Upload a CSV file containing feedback data for processing',
-  })
+  @ZodSerializerDto(FeedbackResponseSchema)
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiOperation({ summary: 'Upload CSV feedback file' })
   @ApiBody({
     schema: {
       type: 'object',
@@ -133,11 +130,7 @@ export class FeedbackController {
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'))
   @Get('sentiment-summary')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Get sentiment summary for user',
-    description: 'Retrieve sentiment analysis summary for a specific user',
-  })
+  @ApiOperation({ summary: 'Get sentiment summary for user' })
   @ApiOkResponse({
     type: FeedbackGetSummaryResponseDto,
   })
@@ -176,12 +169,11 @@ export class FeedbackController {
   //   );
   // }
 
+  @Get('grouped')
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'))
-  @Get('grouped')
-  @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Get grouped feedback',
+    summary: 'Get feedbacks grouped by sentiment',
   })
   @ApiOkResponse({
     type: FeedbackGroupedArrayResponseDto,
@@ -193,16 +185,18 @@ export class FeedbackController {
     return this.feedbackService.feedbackGrouped(req.user.id);
   }
 
+  @Get()
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'))
-  @Get()
   @ApiQuery({ name: 'sentiment', required: false, enum: SentimentEnum.options })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
-  @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({
+    type: FeedbackResponseDto,
+  })
+  @ZodSerializerDto(FilteredFeedbackResponseSchema)
   @ApiOperation({
     summary: 'Filter feedback by sentiment',
-    description: 'Filtering feedback by sentimant with pagination',
   })
   @ZodSerializerDto(FilteredFeedbackResponseSchema)
   async feedbackFiltered(
@@ -215,15 +209,13 @@ export class FeedbackController {
 
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'))
-  @ApiOperation({
-    summary: 'Download either pdf or csv report file',
-    description:
-      'Download either pdf or csv file report with full details or just summary',
+  @ApiOperation({ summary: 'Download either pdf or csv report file' })
+  @ApiOkResponse({
+    description: 'Download report file',
   })
-  @HttpCode(HttpStatus.OK)
   @Get('report')
-  @ApiQuery({ name: 'format', required: true, type: String })
-  @ApiQuery({ name: 'type', required: true, type: String })
+  @ApiQuery({ name: 'format', enum: ['csv', 'pdf'], required: true })
+  @ApiQuery({ name: 'type', enum: ['detailed', 'summary'], required: true })
   async getFeedbackReport(
     @Query() query: ReportDownloadQueryDto,
     @Req() req: AuthenticatedRequest,

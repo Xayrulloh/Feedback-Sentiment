@@ -12,7 +12,7 @@ const AuthCredentialsSchema = UserSchema.pick({ email: true }).merge(
   z.object({
     password: z.string().min(8).describe('User password'),
   }),
-);
+).describe('Credentials for user authentication, including email and password');
 
 const AuthResponseSchema = z.object({
   token: z.string().describe('JWT token'),
