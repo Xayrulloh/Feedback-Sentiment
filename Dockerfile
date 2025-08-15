@@ -1,16 +1,16 @@
-FROM docker.io/node:lts-alpine
-
+FROM node:lts-alpine
 ENV HOST=0.0.0.0
 ENV PORT=3000
 
 WORKDIR /src
+RUN addgroup -S app && adduser -S -G app app
 
-RUN addgroup --system src && \
-          adduser --system -G src
+COPY . .
 
-COPY dist/src src/
-RUN chown -R src:src .
+RUN npm install -g pnpm
 
-RUN npm --prefix src --omit=dev -f install
+RUN pnpm install --frozen-lockfile --prefer-offline --ignore-scripts
 
-CMD [ "node", "src" ]
+EXPOSE 3000
+
+CMD ["pnpm", "start"]
