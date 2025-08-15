@@ -6,6 +6,8 @@ import { env } from './config/env/env';
 import { setupSwagger } from './config/swagger/swagger.config';
 import { CLIENT_URL, GLOBAL_PREFIX } from './utils/constants';
 
+const number: string = 2
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
