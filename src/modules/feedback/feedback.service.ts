@@ -85,7 +85,7 @@ export class FeedbackService {
     const data = parseResult.data as Record<string, string>[];
 
     const feedbacks = data.map((row) => {
-      return row['feedback'] || row['feedbacks'];
+      return row.feedback || row.feedbacks
     });
 
     const validationResult = FeedbackManualRequestSchema.parse({ feedbacks });
