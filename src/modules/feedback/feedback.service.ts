@@ -13,14 +13,14 @@ import type {
 // biome-ignore lint/style/useImportType: Needed for DI
 import { AIService } from '../AI/AI.service';
 import {
-  type FeedbackGetSummaryResponseDto,
+  type FeedbackSummaryResponseDto,
   type FeedbackGroupedArrayResponseType,
   type FeedbackManualRequestDto,
   FeedbackManualRequestSchema,
   type FeedbackResponseDto,
   FeedbackSummaryResponseSchema,
-  type FilteredFeedbackResponseSchemaType,
-  type GetFeedbackQuerySchemaDto,
+  type FeedbackFilteredResponseSchemaType,
+  type FeedbackQuerySchemaDto,
   type ReportDownloadQueryDto,
 } from './dto/feedback.dto';
 // biome-ignore lint/style/useImportType: Needed for DI
@@ -102,9 +102,9 @@ export class FeedbackService {
   }
 
   async feedbackFiltered(
-    query: GetFeedbackQuerySchemaDto,
+    query: FeedbackQuerySchemaDto,
     user: UserSchemaType,
-  ): Promise<FilteredFeedbackResponseSchemaType> {
+  ): Promise<FeedbackFilteredResponseSchemaType> {
     const { sentiment, limit, page } = query;
 
     const whereConditions = [eq(schema.feedbacksSchema.userId, user.id)];
@@ -169,9 +169,7 @@ export class FeedbackService {
       .limit(20);
   }
 
-  async feedbackSummary(
-    userId: string,
-  ): Promise<FeedbackGetSummaryResponseDto> {
+  async feedbackSummary(userId: string): Promise<FeedbackSummaryResponseDto> {
     const results = await this.db
       .select({
         sentiment: schema.feedbacksSchema.sentiment,
@@ -199,7 +197,7 @@ export class FeedbackService {
   ) {
     const { format, type } = query;
 
-    let data: FeedbackSchemaType[] | FeedbackGetSummaryResponseDto;
+    let data: FeedbackSchemaType[] | FeedbackSummaryResponseDto;
     if (type === 'detailed') {
       data = await this.getAllFeedback(user);
     } else {

@@ -63,7 +63,7 @@ const FeedbackSchema = z
       .min(0)
       .max(100)
       .describe('Confidence of the sentiment'),
-    summary: z.string().describe("Summary of the feedback"),
+    summary: z.string().describe('Summary of the feedback'),
     userId: z.string().uuid().describe('User ID'),
     fileId: z.string().uuid().nullable().describe('File ID'),
   })

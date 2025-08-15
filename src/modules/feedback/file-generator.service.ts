@@ -3,7 +3,7 @@ import { parse } from 'json2csv';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import type { FeedbackSchemaType } from 'src/utils/zod.schemas';
 import type {
-  FeedbackGetSummaryResponseDto,
+  FeedbackSummaryResponseDto,
   ReportDownloadQueryDto,
 } from './dto/feedback.dto';
 
@@ -12,7 +12,7 @@ export class FileGeneratorService {
   async generate(
     format: ReportDownloadQueryDto['format'],
     type: ReportDownloadQueryDto['type'],
-    data: FeedbackSchemaType[] | FeedbackGetSummaryResponseDto,
+    data: FeedbackSchemaType[] | FeedbackSummaryResponseDto,
   ): Promise<Buffer> {
     if (format === 'csv') {
       return this.generateCSV(data, type);
@@ -21,7 +21,7 @@ export class FileGeneratorService {
   }
 
   private async generateCSV(
-    data: FeedbackSchemaType[] | FeedbackGetSummaryResponseDto,
+    data: FeedbackSchemaType[] | FeedbackSummaryResponseDto,
     type: ReportDownloadQueryDto['type'],
   ): Promise<Buffer> {
     const delimiter = '   ';
@@ -40,7 +40,7 @@ export class FileGeneratorService {
       }));
       csv = toCSV(detailedData, ['Feedback', 'Sentiment', 'Confidence']);
     } else {
-      const summaryArray = data as FeedbackGetSummaryResponseDto;
+      const summaryArray = data as FeedbackSummaryResponseDto;
       const summaryData = summaryArray.map((f) => ({
         Sentiment: f.sentiment,
         Count: f.count,
@@ -53,7 +53,7 @@ export class FileGeneratorService {
   }
 
   private async generatePDF(
-    data: FeedbackSchemaType[] | FeedbackGetSummaryResponseDto,
+    data: FeedbackSchemaType[] | FeedbackSummaryResponseDto,
     type: ReportDownloadQueryDto['type'],
   ): Promise<Buffer> {
     const pdfDoc = await PDFDocument.create();
@@ -88,7 +88,7 @@ export class FileGeneratorService {
       });
     } else if (type === 'summary') {
       // Summary case
-      const summaryArray = data as FeedbackGetSummaryResponseDto;
+      const summaryArray = data as FeedbackSummaryResponseDto;
       const total = summaryArray.reduce((sum, f) => sum + f.count, 0);
 
       // Headers

@@ -47,7 +47,6 @@ type FeedbackSummaryResponseSchemaType = z.infer<
   typeof FeedbackSummaryResponseSchema
 >;
 
-
 // DTOs
 class FeedbackManualRequestDto extends createZodDto(
   FeedbackManualRequestSchema,
@@ -61,32 +60,35 @@ const SentimentEnum = z.enum([
   FeedbackSentimentEnum.UNKNOWN,
 ]);
 
-
-const GetFeedbackQuerySchema = z.object({
- sentiment: SentimentEnum.optional(),
+const FeedbackQuerySchema = z.object({
+  sentiment: SentimentEnum.optional(),
   limit: z.coerce.number().int().min(1).max(100).default(20),
   page: z.coerce.number().int().min(1).default(1),
 });
 
-class GetFeedbackQuerySchemaDto extends createZodDto(GetFeedbackQuerySchema) {}
+class FeedbackQuerySchemaDto extends createZodDto(FeedbackQuerySchema) {}
 
-const FilteredFeedbackResponseSchema = z.object({
+const FeedbackFilteredResponseSchema = z.object({
   data: FeedbackSchema.array(),
   pagination: PaginationSchema,
 });
 
-type FilteredFeedbackResponseSchemaType = z.infer<typeof FilteredFeedbackResponseSchema>;
+type FeedbackFilteredResponseSchemaType = z.infer<
+  typeof FeedbackFilteredResponseSchema
+>;
 
 const FeedbackGroupedResponseSchema = z.object({
   summary: z.string().describe('Summary of grouped feedback items'),
   count: z.number().describe('Number of feedback items in this group'),
-  items: z.array(
-    FeedbackSchema.pick({
-      id: true,
-      content: true,
-      sentiment: true,
-    })
-  ).describe('Array of feedback items in this group'),
+  items: z
+    .array(
+      FeedbackSchema.pick({
+        id: true,
+        content: true,
+        sentiment: true,
+      }),
+    )
+    .describe('Array of feedback items in this group'),
 });
 
 const FeedbackGroupedArrayResponseSchema =
@@ -95,7 +97,6 @@ const FeedbackGroupedArrayResponseSchema =
 class FeedbackGroupedResponseDto extends createZodDto(
   FeedbackGroupedResponseSchema,
 ) {}
-
 
 const ReportDownloadQuerySchema = z.object({
   format: z.enum(['pdf', 'csv']),
@@ -115,7 +116,7 @@ type FeedbackGroupedArrayResponseType = z.infer<
   typeof FeedbackGroupedArrayResponseSchema
 >;
 
-class FeedbackGetSummaryResponseDto extends createZodDto(
+class FeedbackSummaryResponseDto extends createZodDto(
   FeedbackSummaryResponseSchema,
 ) {}
 
@@ -133,11 +134,11 @@ export {
   FeedbackSummaryResponseSchema,
   FeedbackManualRequestDto,
   FeedbackResponseDto,
-  FeedbackGetSummaryResponseDto,
-  type FilteredFeedbackResponseSchemaType,
-  FilteredFeedbackResponseSchema,
-  GetFeedbackQuerySchema,
-  GetFeedbackQuerySchemaDto,
+  FeedbackSummaryResponseDto,
+  type FeedbackFilteredResponseSchemaType,
+  FeedbackFilteredResponseSchema,
+  FeedbackQuerySchema,
+  FeedbackQuerySchemaDto,
   SentimentEnum,
   type FeedbackSummaryResponseSchemaType,
 };

@@ -3,7 +3,6 @@ import { ConfigService } from '@nestjs/config';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
-import type { EnvType } from 'src/config/env/env-validation';
 import * as schema from './schema';
 
 export const DrizzleAsyncProvider = 'DrizzleAsyncProvider';

@@ -2,7 +2,7 @@ import { FeedbackManualRequestSchema } from 'src/modules/feedback/dto/feedback.d
 import { FeedbackSchema } from 'src/utils/zod.schemas';
 import { z } from 'zod';
 
-const AIRequestSchema = FeedbackManualRequestSchema; 
+const AIRequestSchema = FeedbackManualRequestSchema;
 
 const MistralResponseSchema = z.object({
   choices: z

@@ -27,19 +27,20 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import type { Express, Response } from 'express';
-import { ZodSerializerDto, ZodValidationPipe } from 'nestjs-zod';
+import { ZodSerializerDto } from 'nestjs-zod';
 import type { AuthenticatedRequest } from 'src/shared/types/request-with-user';
 import {
-  FeedbackGetSummaryResponseDto,
+  FeedbackSummaryResponseDto,
   FeedbackGroupedArrayResponseDto,
   FeedbackGroupedArrayResponseSchema,
   FeedbackManualRequestDto,
   FeedbackResponseDto,
   FeedbackResponseSchema,
-  FilteredFeedbackResponseSchema,
-  GetFeedbackQuerySchemaDto,
+  FeedbackFilteredResponseSchema,
+  type FeedbackQuerySchemaDto,
   type ReportDownloadQueryDto,
   SentimentEnum,
+  FeedbackQuerySchema,
 } from './dto/feedback.dto';
 // biome-ignore lint/style/useImportType: Needed for DI
 import { FeedbackService } from './feedback.service';
@@ -132,12 +133,12 @@ export class FeedbackController {
   @Get('sentiment-summary')
   @ApiOperation({ summary: 'Get sentiment summary for user' })
   @ApiOkResponse({
-    type: FeedbackGetSummaryResponseDto,
+    type: FeedbackSummaryResponseDto,
   })
-  @ZodSerializerDto(FeedbackGetSummaryResponseDto)
+  @ZodSerializerDto(FeedbackSummaryResponseDto)
   async getSentimentSummary(
     @Req() req: AuthenticatedRequest,
-  ): Promise<FeedbackGetSummaryResponseDto> {
+  ): Promise<FeedbackSummaryResponseDto> {
     return this.feedbackService.feedbackSummary(req.user.id);
   }
 
@@ -194,14 +195,14 @@ export class FeedbackController {
   @ApiOkResponse({
     type: FeedbackResponseDto,
   })
-  @ZodSerializerDto(FilteredFeedbackResponseSchema)
+  @ZodSerializerDto(FeedbackFilteredResponseSchema)
   @ApiOperation({
     summary: 'Filter feedback by sentiment',
   })
-  @ZodSerializerDto(FilteredFeedbackResponseSchema)
+  @ZodSerializerDto(FeedbackFilteredResponseSchema)
   async feedbackFiltered(
-    @Query(new ZodValidationPipe(GetFeedbackQuerySchemaDto))
-    query: GetFeedbackQuerySchemaDto,
+    @Query(FeedbackQuerySchema)
+    query: FeedbackQuerySchemaDto,
     @Req() req: AuthenticatedRequest,
   ) {
     return this.feedbackService.feedbackFiltered(query, req.user);
