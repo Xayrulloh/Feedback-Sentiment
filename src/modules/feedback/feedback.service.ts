@@ -1,5 +1,5 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
-import { and, count, desc, eq, inArray, sql } from 'drizzle-orm';
+import { and, count, desc, eq, sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { Response } from 'express';
 import * as Papa from 'papaparse';
@@ -19,9 +19,10 @@ import {
   FeedbackManualRequestSchema,
   type FeedbackResponseDto,
   FeedbackSummaryResponseSchema,
-  type FilteredFeedbackSchemaType,
+  type FilteredFeedbackResponseSchemaType,
   type GetFeedbackQuerySchemaDto,
-  type ReportDownloadRequestDto,
+  type ReportDownloadQueryDto,
+
 } from './dto/feedback.dto';
 // biome-ignore lint/style/useImportType: Needed for DI
 import { FileGeneratorService } from './file-generator.service';
@@ -66,7 +67,9 @@ export class FeedbackService {
   async feedbackUpload(
     file: Express.Multer.File,
     user: UserSchemaType,
+
   ): Promise<FeedbackResponseDto> {
+
     const csvContent = file.buffer.toString('utf8');
     const parseResult = Papa.parse(csvContent, {
       header: true,
@@ -104,14 +107,14 @@ export class FeedbackService {
   async feedbackFiltered(
     query: GetFeedbackQuerySchemaDto,
     user: UserSchemaType,
-  ): Promise<FilteredFeedbackSchemaType> {
+  ): Promise<FilteredFeedbackResponseSchemaType> {
     const { sentiment, limit, page } = query;
 
     const whereConditions = [eq(schema.feedbacksSchema.userId, user.id)];
 
     if (sentiment && sentiment.length > 0) {
       whereConditions.push(
-        inArray(schema.feedbacksSchema.sentiment, sentiment),
+        eq(schema.feedbacksSchema.sentiment, sentiment),
       );
     }
 
@@ -195,7 +198,7 @@ export class FeedbackService {
   }
 
   async feedbackReportDownload(
-    query: ReportDownloadRequestDto,
+    query: ReportDownloadQueryDto,
     user: UserSchemaType,
     res: Response,
   ) {

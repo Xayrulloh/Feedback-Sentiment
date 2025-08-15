@@ -14,8 +14,6 @@ const AuthCredentialsSchema = UserSchema.pick({ email: true }).merge(
   }),
 );
 
-class AuthCredentialsDto extends createZodDto(AuthCredentialsSchema) {}
-
 const AuthResponseSchema = z.object({
   token: z.string().describe('JWT token'),
   role: z.enum(['USER', 'ADMIN']).describe('User role'),
@@ -24,11 +22,10 @@ const AuthResponseSchema = z.object({
     .describe('Redirection path after authentication'),
 });
 
+class AuthCredentialsDto extends createZodDto(AuthCredentialsSchema) {}
 class AuthResponseDto extends createZodDto(AuthResponseSchema) {}
 
 type AuthResponseSchemaType = z.infer<typeof AuthResponseSchema>;
-
-// TODO: make all as grouped (first enums, then zod schemas, then zod dtos, then types)
 
 export {
   AuthCredentialsDto,
