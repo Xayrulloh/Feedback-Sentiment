@@ -9,7 +9,7 @@ COPY . .
 
 RUN npm install -g pnpm
 
-RUN pnpm install --frozen-lockfile=true
+RUN pnpm install --frozen-lockfile --prefer-offline --ignore-scripts
 
 EXPOSE 3000
 
