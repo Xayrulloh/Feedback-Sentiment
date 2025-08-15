@@ -1,20 +1,18 @@
 import { createZodDto } from 'nestjs-zod/dto';
-import { UserSchema } from 'src/utils/zod.schemas';
+import { UserRoleEnum, UserSchema } from 'src/utils/zod.schemas';
 import { z } from 'zod';
 
 type JWTPayloadType = {
   sub: string;
   email: string;
-  role: 'USER' | 'ADMIN';
+  role: UserRoleEnum;
 };
 
 const AuthCredentialsSchema = UserSchema.pick({ email: true }).merge(
   z.object({
     password: z.string().min(8).describe('User password'),
   }),
-);
-
-class AuthCredentialsDto extends createZodDto(AuthCredentialsSchema) {}
+).describe('Credentials for user authentication, including email and password');
 
 const AuthResponseSchema = z.object({
   token: z.string().describe('JWT token'),
@@ -24,6 +22,7 @@ const AuthResponseSchema = z.object({
     .describe('Redirection path after authentication'),
 });
 
+class AuthCredentialsDto extends createZodDto(AuthCredentialsSchema) {}
 class AuthResponseDto extends createZodDto(AuthResponseSchema) {}
 
 type AuthResponseSchemaType = z.infer<typeof AuthResponseSchema>;

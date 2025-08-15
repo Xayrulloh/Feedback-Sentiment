@@ -1,114 +1,114 @@
 import { Injectable } from '@nestjs/common';
-import { FeedbackSchemaType } from 'src/utils/zod.schemas';
 import { parse } from 'json2csv';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
-import { FeedbackGetSummaryResponseDto, FeedbackSummaryEventDto, ReportDownloadRequestDto } from './dto/feedback.dto';
+import type { FeedbackSchemaType } from 'src/utils/zod.schemas';
+import type {
+  FeedbackGetSummaryResponseDto,
+  ReportDownloadQueryDto,
+} from './dto/feedback.dto';
 
 @Injectable()
 export class FileGeneratorService {
-  async generate(format: ReportDownloadRequestDto['format'], type: ReportDownloadRequestDto['type'], data: FeedbackSchemaType[] | FeedbackGetSummaryResponseDto): Promise<Buffer> {
+  async generate(
+    format: ReportDownloadQueryDto['format'],
+    type: ReportDownloadQueryDto['type'],
+    data: FeedbackSchemaType[] | FeedbackGetSummaryResponseDto,
+  ): Promise<Buffer> {
     if (format === 'csv') {
       return this.generateCSV(data, type);
     }
     return this.generatePDF(data, type);
   }
 
- private async generateCSV(
-  data: FeedbackSchemaType[] | Record<string, any>,
-  type: ReportDownloadRequestDto['type']
-): Promise<Buffer> {
-  let csv: string;
+  private async generateCSV(
+    data: FeedbackSchemaType[] | FeedbackGetSummaryResponseDto,
+    type: ReportDownloadQueryDto['type'],
+  ): Promise<Buffer> {
+    const delimiter = '   ';
+    const quote = false;
 
-  if (type === 'detailed') {
-    const detailedData = (data as FeedbackSchemaType[]).map(f => ({
-      'Feedback': f.content,
-      Sentiment: f.sentiment,
-      Confidence: f.confidence
-    }));
+    const toCSV = (rows: object[], fields: string[]) =>
+      parse(rows, { fields, delimiter, quote });
 
-    csv = parse(detailedData, {
-      fields: ['Feedback', 'Sentiment', 'Confidence'],
-      delimiter: '   ',
-      quote: false,
-    });
-  } else {
-  const summaryArray = (data as FeedbackGetSummaryResponseDto).data;
-  const total = summaryArray.reduce((sum, f) => sum + f.count, 0);
+    let csv: string;
 
-  const summaryData = summaryArray.map(f => ({
-    Sentiment: f.sentiment,
-    Count: f.count,
-    Percentage: f.percentage.toFixed(2) + '%',
-  }));
+    if (type === 'detailed') {
+      const detailedData = (data as FeedbackSchemaType[]).map((f) => ({
+        Feedback: f.content,
+        Sentiment: f.sentiment,
+        Confidence: f.confidence,
+      }));
+      csv = toCSV(detailedData, ['Feedback', 'Sentiment', 'Confidence']);
+    } else {
+      const summaryArray = data as FeedbackGetSummaryResponseDto;
+      const summaryData = summaryArray.map((f) => ({
+        Sentiment: f.sentiment,
+        Count: f.count,
+        Percentage: `${f.percentage.toFixed(2)}%`,
+      }));
+      csv = toCSV(summaryData, ['Sentiment', 'Count', 'Percentage']);
+    }
 
-  csv = parse(summaryData, {
-    fields: ['Sentiment', 'Count', 'Percentage'],
-    delimiter: '   ',
-    quote: false,
-  });
-}
-
-  return Buffer.from(csv, 'utf-8');
-}
-
- private async generatePDF(
-  data: FeedbackSchemaType[] | FeedbackGetSummaryResponseDto,
-  type: ReportDownloadRequestDto['type']
-): Promise<Buffer> {
-  const pdfDoc = await PDFDocument.create();
-  const page = pdfDoc.addPage([595, 842]); // A4 size
-  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-
-  let yPos = 800;
-  const fontSizeTitle = 18;
-  const fontSizeText = 12;
-
-  // Title
-  page.drawText(`Feedback ${type} Report`, {
-    x: 50,
-    y: yPos,
-    size: fontSizeTitle,
-    font,
-    color: rgb(0, 0, 0),
-  });
-  yPos -= 30;
-
-  if (type === 'detailed' && Array.isArray(data)) {
-    // Detailed headers
-    page.drawText('Feedback', { x: 50, y: yPos, size: fontSizeText, font });
-    page.drawText('Sentiment', { x: 300, y: yPos, size: fontSizeText, font });
-    page.drawText('Confidence', { x: 450, y: yPos, size: fontSizeText, font });
-    yPos -= 20;
-
-    data.forEach(f => {
-      page.drawText(f.content.slice(0, 40), { x: 50, y: yPos, size: 10, font });
-      page.drawText(f.sentiment, { x: 300, y: yPos, size: 10, font });
-      page.drawText(f.confidence.toString(), { x: 450, y: yPos, size: 10, font });
-      yPos -= 15;
-    });
-
-  } else if (!Array.isArray(data)) {
-    // Summary case
-    const summaryArray = data.data;
-    const total = summaryArray.reduce((sum, f) => sum + f.count, 0);
-
-    page.drawText('Sentiment', { x: 50, y: yPos, size: fontSizeText, font });
-    page.drawText('Count', { x: 200, y: yPos, size: fontSizeText, font });
-    page.drawText('Percentage', { x: 300, y: yPos, size: fontSizeText, font });
-    yPos -= 20;
-
-    summaryArray.forEach(f => {
-      const percentage = total > 0 ? ((f.count / total) * 100).toFixed(2) + '%' : '0%';
-      page.drawText(f.sentiment, { x: 50, y: yPos, size: 10, font });
-      page.drawText(f.count.toString(), { x: 200, y: yPos, size: 10, font });
-      page.drawText(percentage, { x: 300, y: yPos, size: 10, font });
-      yPos -= 15;
-    });
+    return Buffer.from(csv, 'utf-8');
   }
 
-  const pdfBytes = await pdfDoc.save();
-  return Buffer.from(pdfBytes);
-}
+  private async generatePDF(
+    data: FeedbackSchemaType[] | FeedbackGetSummaryResponseDto,
+    type: ReportDownloadQueryDto['type'],
+  ): Promise<Buffer> {
+    const pdfDoc = await PDFDocument.create();
+    const page = pdfDoc.addPage([595, 842]); // A4
+    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
+    let yPos = 800;
+    const fontSizeTitle = 18;
+    const fontSizeHeader = 12;
+    const fontSizeRow = 10;
 
+    const drawText = (text: string, x: number, y: number, size = fontSizeRow) =>
+      page.drawText(text, { x, y, size, font, color: rgb(0, 0, 0) });
+
+    // Title
+    drawText(`Feedback ${type} Report`, 50, yPos, fontSizeTitle);
+    yPos -= 30;
+
+    if (type === 'detailed') {
+      // Headers
+      drawText('Feedback', 50, yPos, fontSizeHeader);
+      drawText('Sentiment', 300, yPos, fontSizeHeader);
+      drawText('Confidence', 450, yPos, fontSizeHeader);
+      yPos -= 20;
+
+      // Rows
+      data.forEach((f) => {
+        drawText(f.content.slice(0, 40), 50, yPos);
+        drawText(f.sentiment, 300, yPos);
+        drawText(f.confidence.toString(), 450, yPos);
+        yPos -= 15;
+      });
+    } else if (type === 'summary') {
+      // Summary case
+      const summaryArray = data as FeedbackGetSummaryResponseDto;
+      const total = summaryArray.reduce((sum, f) => sum + f.count, 0);
+
+      // Headers
+      drawText('Sentiment', 50, yPos, fontSizeHeader);
+      drawText('Count', 200, yPos, fontSizeHeader);
+      drawText('Percentage', 300, yPos, fontSizeHeader);
+      yPos -= 20;
+
+      // Rows
+      summaryArray.forEach((f) => {
+        const percentage =
+          total > 0 ? ((f.count / total) * 100).toFixed(2) + '%' : '0%';
+        drawText(f.sentiment, 50, yPos);
+        drawText(f.count.toString(), 200, yPos);
+        drawText(percentage, 300, yPos);
+        yPos -= 15;
+      });
+    }
+
+    const pdfBytes = await pdfDoc.save();
+    return Buffer.from(pdfBytes);
+  }
 }

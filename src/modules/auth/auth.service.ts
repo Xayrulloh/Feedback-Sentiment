@@ -4,15 +4,18 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
+// biome-ignore lint/style/useImportType: Needed for DI
 import { JwtService } from '@nestjs/jwt';
-import * as schema from 'src/database/schema';
 import * as bcrypt from 'bcrypt';
-import { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { DrizzleAsyncProvider } from 'src/database/drizzle.provider';
-
 import { and, eq, isNull } from 'drizzle-orm';
-import { UserRoleEnum, UserSchemaType } from 'src/utils/zod.schemas';
-import { AuthCredentialsDto, AuthResponseSchemaType } from './dto/auth.dto';
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { DrizzleAsyncProvider } from 'src/database/drizzle.provider';
+import * as schema from 'src/database/schema';
+import { UserRoleEnum, type UserSchemaType } from 'src/utils/zod.schemas';
+import type {
+  AuthCredentialsDto,
+  AuthResponseSchemaType,
+} from './dto/auth.dto';
 
 @Injectable()
 export class AuthService {
@@ -23,9 +26,9 @@ export class AuthService {
   ) {}
 
   async register(input: AuthCredentialsDto): Promise<AuthResponseSchemaType> {
-    const existing = await this.getUser(input.email);
+    const existingUser = await this.getUser(input.email);
 
-    if (existing) {
+    if (existingUser) {
       throw new BadRequestException('Email already in use');
     }
 
@@ -68,9 +71,7 @@ export class AuthService {
       role: user.role,
     };
 
-    const token = await this.jwtService.signAsync(payload, {
-      expiresIn: '1h',
-    });
+    const token = await this.jwtService.signAsync(payload);
 
     return {
       token,
@@ -81,7 +82,10 @@ export class AuthService {
 
   async getUser(email: string) {
     return this.db.query.usersSchema.findFirst({
-      where: and(eq(schema.usersSchema.email, email), isNull(schema.usersSchema.deletedAt)),
+      where: and(
+        eq(schema.usersSchema.email, email),
+        isNull(schema.usersSchema.deletedAt),
+      ),
     });
   }
 }

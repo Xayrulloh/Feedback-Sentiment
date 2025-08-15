@@ -1,13 +1,14 @@
-import { Injectable, Inject, UnauthorizedException } from '@nestjs/common';
-import { PassportStrategy } from '@nestjs/passport';
-import { ExtractJwt, Strategy } from 'passport-jwt';
-import { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import * as schema from 'src/database/schema';
-import { DrizzleAsyncProvider } from 'src/database/drizzle.provider';
-import { and, eq, isNull } from 'drizzle-orm';
+import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+// biome-ignore lint/style/useImportType: Needed for DI
 import { ConfigService } from '@nestjs/config';
-import { EnvType } from 'src/config/env/env-validation';
-import { JWTPayloadType } from 'src/modules/auth/dto/auth.dto';
+import { PassportStrategy } from '@nestjs/passport';
+import { and, eq, isNull } from 'drizzle-orm';
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { ExtractJwt, Strategy } from 'passport-jwt';
+import type { EnvType } from 'src/config/env/env-validation';
+import { DrizzleAsyncProvider } from 'src/database/drizzle.provider';
+import * as schema from 'src/database/schema';
+import type { JWTPayloadType } from 'src/modules/auth/dto/auth.dto';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {

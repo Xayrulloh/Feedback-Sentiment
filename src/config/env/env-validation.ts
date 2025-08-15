@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import { z } from 'zod';
 
-const envSchema = z.object({
+const envSchema = z.object({ 
   MISTRAL_API_KEY: z.string().min(1),
   DATABASE_URL: z.string().url(),
   PORT: z.string().length(4).transform(Number),
