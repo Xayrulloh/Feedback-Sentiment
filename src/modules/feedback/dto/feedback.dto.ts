@@ -1,64 +1,57 @@
 import * as z from 'zod';
 import { createZodDto } from 'nestjs-zod';
-import { FeedbackSchema, FeedbackSentimentEnum,  PaginationSchema } from 'src/utils/zod.schemas';
-import { MIN_FEEDBACK_LENGTH } from 'src/utils/constants';
-
+import {
+  FeedbackSchema,
+  FeedbackSentimentEnum,
+  PaginationSchema,
+} from 'src/utils/zod.schemas';
 
 // Request schema
-const FeedbackRequestSchema = z.object({
+const FeedbackManualRequestSchema = z.object({
   feedbacks: z
-    .array(
-      z
-        .string()
-        .min(
-          MIN_FEEDBACK_LENGTH,
-          `Feedback must be at least ${MIN_FEEDBACK_LENGTH} characters long`,
-        ),
-    )
+    .array(z.string().min(10, `Feedback must be at least 10 characters long`))
     .nonempty('At least one feedback is required')
     .describe('Array of feedback entries, each meeting the minimum length'),
 });
 
 // Response schemas
-const FeedbackResponseSchema = FeedbackSchema;
-const FeedbackArrayResponseSchema = FeedbackResponseSchema.array();
+const FeedbackResponseSchema = FeedbackSchema.array();
 
-const FeedbackGetSummaryResponseSchema = z
-  .object({
-    data: z.array(
-      z.object({
-        sentiment: z.enum([
+const FeedbackSummaryResponseSchema = z
+  .array(
+    z.object({
+      sentiment: z
+        .enum([
           FeedbackSentimentEnum.POSITIVE,
           FeedbackSentimentEnum.NEUTRAL,
           FeedbackSentimentEnum.NEGATIVE,
           FeedbackSentimentEnum.UNKNOWN,
-        ]),
-        count: z.coerce.number().min(0),
-        percentage: z.coerce.number().min(0).max(100),
-      }),
-    ),
-    updatedAt: z.string().datetime(),
-  })
+        ])
+        .describe('Sentiment type of the feedback'),
+      count: z.coerce
+        .number()
+        .min(0)
+        .describe('Count of feedbacks with this sentiment'),
+      percentage: z.coerce
+        .number()
+        .min(0)
+        .max(100)
+        .describe('Percentage of feedbacks with this sentiment'),
+    }),
+  )
   .describe(
     'Summary of feedback sentiment analysis, including counts and percentages for each sentiment type',
   );
 
-  type FeedbackGetSummaryResponseSchemaType = z.infer<typeof FeedbackGetSummaryResponseSchema>;
-
-// SSE
-const FeedbackSummaryEventSchema = z
-  .object({
-    type: z.string().describe('Event type identifier'),
-  })
-  .merge(FeedbackGetSummaryResponseSchema)
-  .describe('Server-sent event for feedback summary updates');
+type FeedbackSummaryResponseSchemaType = z.infer<
+  typeof FeedbackSummaryResponseSchema
+>;
 
 // DTOs
-class FeedbackRequestDto extends createZodDto(FeedbackRequestSchema) {}
-class FeedbackResponseDto extends createZodDto(FeedbackResponseSchema) {}
-class FeedbackArrayResponseDto extends createZodDto(
-  FeedbackArrayResponseSchema,
+class FeedbackManualRequestDto extends createZodDto(
+  FeedbackManualRequestSchema,
 ) {}
+class FeedbackResponseDto extends createZodDto(FeedbackResponseSchema) {}
 
 const SentimentEnum = z.enum([
   FeedbackSentimentEnum.NEGATIVE,
@@ -67,78 +60,55 @@ const SentimentEnum = z.enum([
   FeedbackSentimentEnum.UNKNOWN,
 ]);
 
-function isValidSentiment(val: string): val is FeedbackSentimentEnum {
-  return SentimentEnum.options.includes(val as FeedbackSentimentEnum);
-}
-
-const GetFeedbackQuerySchema = z.object({
-    sentiment: z
-    .union([
-      SentimentEnum.array(),
-      z.string()
-    ])
-    .optional()
-    .transform((val) => {
-  if (!val) return undefined;
-  if (Array.isArray(val)) return val;
-  return val.split(',').map(s => s.trim());
-})
-.refine(
-  (arr) =>
-    arr === undefined || arr.every(isValidSentiment),
-  { message: 'Invalid sentiment value(s) provided' }
-),
-
-  limit: z.coerce.number().int().max(100).default(20),
+const FeedbackQuerySchema = z.object({
+  sentiment: SentimentEnum.optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
   page: z.coerce.number().int().min(1).default(1),
-})
+});
 
-class GetFeedbackQuerySchemaDto extends createZodDto(GetFeedbackQuerySchema) {}
+class FeedbackQuerySchemaDto extends createZodDto(FeedbackQuerySchema) {}
 
-
-const FilteredFeedbackSchema = z.object({
+const FeedbackFilteredResponseSchema = z.object({
   data: FeedbackSchema.array(),
   pagination: PaginationSchema,
-})
-
-type FilteredFeedbackSchemaType = z.infer<typeof FilteredFeedbackSchema>;
-
-
-
-const FeedbackGroupedItemSchema = FeedbackSchema.pick({
-  id: true,
-  content: true,
-  sentiment: true,
 });
+
+type FeedbackFilteredResponseSchemaType = z.infer<
+  typeof FeedbackFilteredResponseSchema
+>;
 
 const FeedbackGroupedResponseSchema = z.object({
   summary: z.string().describe('Summary of grouped feedback items'),
   count: z.number().describe('Number of feedback items in this group'),
-  items: FeedbackGroupedItemSchema.array().describe(
-    'Array of feedback items in this group',
-  ),
+  items: z
+    .array(
+      FeedbackSchema.pick({
+        id: true,
+        content: true,
+        sentiment: true,
+      }),
+    )
+    .describe('Array of feedback items in this group'),
 });
 
 const FeedbackGroupedArrayResponseSchema =
   FeedbackGroupedResponseSchema.array();
 
-class FeedbackGroupedItemDto extends createZodDto(FeedbackGroupedItemSchema) {}
 class FeedbackGroupedResponseDto extends createZodDto(
   FeedbackGroupedResponseSchema,
 ) {}
 
-const ReportDownloadRequestSchema = z.object({
+const ReportDownloadQuerySchema = z.object({
   format: z.enum(['pdf', 'csv']),
   type: z.enum(['summary', 'detailed']),
 });
 
-class ReportDownloadRequestDto extends createZodDto(ReportDownloadRequestSchema){}
+class ReportDownloadQueryDto extends createZodDto(ReportDownloadQuerySchema) {}
 
 class FeedbackGroupedArrayResponseDto extends createZodDto(
   FeedbackGroupedArrayResponseSchema,
 ) {}
 
-type FeedbackGroupedItemType = z.infer<typeof FeedbackGroupedItemSchema>;
 type FeedbackGroupedResponseType = z.infer<
   typeof FeedbackGroupedResponseSchema
 >;
@@ -146,39 +116,29 @@ type FeedbackGroupedArrayResponseType = z.infer<
   typeof FeedbackGroupedArrayResponseSchema
 >;
 
-class FeedbackGetSummaryResponseDto extends createZodDto(
-  FeedbackGetSummaryResponseSchema,
-) {}
-class FeedbackSummaryEventDto extends createZodDto(
-  FeedbackSummaryEventSchema,
+class FeedbackSummaryResponseDto extends createZodDto(
+  FeedbackSummaryResponseSchema,
 ) {}
 
 export {
-  ReportDownloadRequestSchema,
-  ReportDownloadRequestDto,
-  FeedbackRequestSchema,
-  FeedbackResponseSchema,
-  FeedbackArrayResponseSchema,
-  FeedbackGroupedItemDto,
+  ReportDownloadQuerySchema,
+  ReportDownloadQueryDto,
+  FeedbackManualRequestSchema,
   FeedbackGroupedResponseDto,
   FeedbackGroupedArrayResponseDto,
-  FeedbackGroupedItemSchema,
   FeedbackGroupedResponseSchema,
   FeedbackGroupedArrayResponseSchema,
-  type FeedbackGroupedItemType,
+  FeedbackResponseSchema,
   type FeedbackGroupedResponseType,
   type FeedbackGroupedArrayResponseType,
-  FeedbackGetSummaryResponseSchema,
-  FeedbackSummaryEventSchema,
-  FeedbackRequestDto,
+  FeedbackSummaryResponseSchema,
+  FeedbackManualRequestDto,
   FeedbackResponseDto,
-  FeedbackArrayResponseDto,
-  FeedbackGetSummaryResponseDto,
-  FeedbackSummaryEventDto,
-  type FilteredFeedbackSchemaType,
-  FilteredFeedbackSchema,
-  GetFeedbackQuerySchema,
-  GetFeedbackQuerySchemaDto,
+  FeedbackSummaryResponseDto,
+  type FeedbackFilteredResponseSchemaType,
+  FeedbackFilteredResponseSchema,
+  FeedbackQuerySchema,
+  FeedbackQuerySchemaDto,
   SentimentEnum,
-  type FeedbackGetSummaryResponseSchemaType,
+  type FeedbackSummaryResponseSchemaType,
 };

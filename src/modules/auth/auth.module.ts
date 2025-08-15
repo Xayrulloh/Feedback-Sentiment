@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common';
-import { AuthService } from './auth.service';
-import { AuthController } from './auth.controller';
-import { DrizzleModule } from 'src/database/drizzle.module';
-import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from 'src/common/strategies/jwt.strategy';
+import type { EnvType } from 'src/config/env/env-validation';
+import { DrizzleModule } from 'src/database/drizzle.module';
+import { AuthController } from './auth.controller';
+import { AuthService } from './auth.service';
 
 @Module({
   imports: [
@@ -14,10 +15,10 @@ import { JwtStrategy } from 'src/common/strategies/jwt.strategy';
       global: true,
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: async (configService) => ({
-        secret: configService.get('JWT_SECRET'),
+      useFactory: async (configService: ConfigService<EnvType>) => ({
+        secret: configService.getOrThrow('JWT_SECRET'),
         signOptions: {
-          expiresIn: '1h',
+          expiresIn: '1d',
         },
       }),
     }),

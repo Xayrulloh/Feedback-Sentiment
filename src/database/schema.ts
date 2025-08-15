@@ -45,7 +45,7 @@ export const filesSchema = pgTable('files', {
 
 export const feedbacksSchema = pgTable('feedbacks', {
   userId: uuid('user_id').notNull(),
-  fileId: uuid('file_id'), 
+  fileId: uuid('file_id'),
   content: text('content').notNull(),
   sentiment: DrizzleFeedbackSentimentEnum('sentiment').notNull(),
   confidence: integer('confidence').notNull(),
@@ -55,7 +55,9 @@ export const feedbacksSchema = pgTable('feedbacks', {
 
 // relations
 export const usersRelations = relations(usersSchema, ({ many }) => ({
-  feedbacks: many(feedbacksSchema, { relationName: 'feedbacks_user_id_users_id_fk' }),
+  feedbacks: many(feedbacksSchema, {
+    relationName: 'feedbacks_user_id_users_id_fk',
+  }),
   files: many(filesSchema, { relationName: 'files_user_id_users_id_fk' }),
 }));
 

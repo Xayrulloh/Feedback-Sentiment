@@ -41,7 +41,7 @@ const enum FeedbackSentimentEnum {
 }
 
 const PaginationSchema = z.object({
-  limit: z.number().int().min(1),
+  limit: z.number().int().min(1).max(100),
   page: z.number().int().min(1),
   total: z.number().int().min(0),
   pages: z.number().int().min(0),
@@ -63,7 +63,7 @@ const FeedbackSchema = z
       .min(0)
       .max(100)
       .describe('Confidence of the sentiment'),
-    summary: z.string(),
+    summary: z.string().describe('Summary of the feedback'),
     userId: z.string().uuid().describe('User ID'),
     fileId: z.string().uuid().nullable().describe('File ID'),
   })
