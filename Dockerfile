@@ -5,13 +5,12 @@ ENV PORT=3000
 WORKDIR /src
 RUN addgroup -S app && adduser -S -G app app
 
-RUN corepack enable
-COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --prod --frozen-lockfile
+COPY . .
 
-COPY dist/src ./dist
+RUN npm install -g pnpm
 
-RUN chown -R app:app .
-USER app
+RUN pnpm install --frozen-lockfile=true
 
-CMD ["node", "dist/main.js"]
+EXPOSE 3000
+
+CMD ["pnpm", "start"]
