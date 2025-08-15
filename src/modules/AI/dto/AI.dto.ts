@@ -1,9 +1,8 @@
+import { FeedbackManualRequestSchema } from 'src/modules/feedback/dto/feedback.dto';
 import { FeedbackSchema } from 'src/utils/zod.schemas';
 import { z } from 'zod';
 
-const AIRequestSchema = z.object({ // TODO: remove this object and assign FeedbackManualRequestSchema
-  feedbacks: z.array(z.string().min(3)),
-});
+const AIRequestSchema = FeedbackManualRequestSchema; 
 
 const MistralResponseSchema = z.object({
   choices: z

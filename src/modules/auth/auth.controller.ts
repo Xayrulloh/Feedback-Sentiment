@@ -1,13 +1,14 @@
 import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
-import {
-  AuthCredentialsDto,
-  AuthResponseDto,
-  AuthResponseSchema,
-  AuthResponseSchemaType,
-} from './dto/auth.dto';
-import { AuthService } from './auth.service'; // FIXME: fix all imports
 import { ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { ZodSerializerDto } from 'nestjs-zod';
+// biome-ignore lint/style/useImportType: Needed for DI
+import { AuthService } from './auth.service';
+import {
+  type AuthCredentialsDto,
+  AuthResponseDto,
+  AuthResponseSchema,
+  type AuthResponseSchemaType,
+} from './dto/auth.dto';
 
 @ApiTags('Auth')
 @Controller('auth')

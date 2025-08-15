@@ -5,6 +5,7 @@ import { DrizzleModule } from 'src/database/drizzle.module';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtStrategy } from 'src/common/strategies/jwt.strategy';
+import { EnvType } from 'src/config/env/env-validation';
 
 @Module({
   imports: [
@@ -14,10 +15,10 @@ import { JwtStrategy } from 'src/common/strategies/jwt.strategy';
       global: true,
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: async (configService) => ({ // FIXME: give type to configService
-        secret: configService.get('JWT_SECRET'), // FIXME: don't use get but getOrThrow
+      useFactory: async (configService: ConfigService<EnvType>) => ({ 
+        secret: configService.getOrThrow('JWT_SECRET'), 
         signOptions: {
-          expiresIn: '1h', // TODO: set it to 1 day
+          expiresIn: '1d', 
         },
       }),
     }),
