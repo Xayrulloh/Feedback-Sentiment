@@ -1,0 +1,32 @@
+name: CD
+
+on:
+  push:
+    branches:
+        - main
+
+jobs:
+  build-deploy:
+     name: Build and Deploy
+     runs-on: ubuntu-latest
+     steps:
+       - name: Checkout code
+         uses: actions/checkout@v4
+
+       - name: Setup SSH
+         run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.AWS_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H 13.53.200.47 >> ~/.ssh/known_hosts
+
+       - name: Deploy to EC2
+         run: |
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@13.53.200.47 << 'EOF'
+            cd Feedback-Sentiment
+            git pull origin main
+            docker-compose down
+            docker-compose build
+            docker-compose up -d
+          EOF
+         
