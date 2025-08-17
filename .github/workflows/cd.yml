@@ -3,7 +3,7 @@ name: CD
 on:
   push:
     branches:
-      - develop
+      - refactor/aws-cd
   workflow_dispatch:
 
 permissions:
