@@ -13,14 +13,14 @@ import type {
 // biome-ignore lint/style/useImportType: Needed for DI
 import { AIService } from '../AI/AI.service';
 import {
-  type FeedbackSummaryResponseDto,
+  type FeedbackFilteredResponseSchemaType,
   type FeedbackGroupedArrayResponseType,
   type FeedbackManualRequestDto,
   FeedbackManualRequestSchema,
-  type FeedbackResponseDto,
-  FeedbackSummaryResponseSchema,
-  type FeedbackFilteredResponseSchemaType,
   type FeedbackQuerySchemaDto,
+  type FeedbackResponseDto,
+  type FeedbackSummaryResponseDto,
+  FeedbackSummaryResponseSchema,
   type ReportDownloadQueryDto,
 } from './dto/feedback.dto';
 // biome-ignore lint/style/useImportType: Needed for DI
@@ -85,7 +85,7 @@ export class FeedbackService {
     const data = parseResult.data as Record<string, string>[];
 
     const feedbacks = data.map((row) => {
-      return row.feedback || row.feedbacks
+      return row.feedback || row.feedbacks;
     });
 
     const validationResult = FeedbackManualRequestSchema.parse({ feedbacks });

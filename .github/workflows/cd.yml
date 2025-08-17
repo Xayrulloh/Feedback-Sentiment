@@ -1,0 +1,66 @@
+name: CD
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
+    branches:
+      - main
+
+jobs:
+  build-deploy:
+     if: ${{ github.event.workflow_run.conclusion == 'success' }}
+     name: Build and Deploy
+     runs-on: ubuntu-latest
+     
+     steps:
+       - name: Checkout code
+         uses: actions/checkout@v4
+
+       - name: Setup SSH
+         run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.AWS_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+
+       - name: Deploy to EC2
+         run: |
+          ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa ubuntu@13.53.200.47 << 'EOF'
+            cd Feedback-Sentiment
+            
+            rollback() {
+              echo "Deployment failed, rolling back..."
+              git checkout $PREVIOUS_COMMIT
+              docker-compose down
+              docker-compose up -d
+              echo "Rollback completed"
+              exit 1
+            }
+            
+            trap rollback ERR
+            set -e
+            
+            PREVIOUS_COMMIT=$(git rev-parse HEAD)
+            echo "Current commit: $PREVIOUS_COMMIT"
+            
+            git fetch origin main
+            git reset --hard origin/main
+            NEW_COMMIT=$(git rev-parse HEAD)
+            echo "Deploying commit: $NEW_COMMIT"
+            
+            docker-compose build --no-cache
+            docker-compose up -d --remove-orphans
+            
+            echo "Performing health checks..."
+            sleep 15
+            
+            if ! docker-compose ps | grep -q "Up"; then
+              echo "Health check failed - containers not running"
+              exit 1
+            fi
+            
+            docker system prune -f
+            
+            echo "Deployment successful"
+          EOF

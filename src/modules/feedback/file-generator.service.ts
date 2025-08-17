@@ -99,10 +99,7 @@ export class FileGeneratorService {
 
       // Rows
       summaryArray.forEach((f) => {
-        const percentage =
-          total > 0
-            ? `${(f.count / total) * 100}%`
-            : '0%';
+        const percentage = total > 0 ? `${(f.count / total) * 100}%` : '0%';
         drawText(f.sentiment, 50, yPos);
         drawText(f.count.toString(), 200, yPos);
         drawText(percentage, 300, yPos);
