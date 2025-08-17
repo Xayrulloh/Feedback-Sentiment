@@ -7,6 +7,9 @@ on:
       - completed
     branches:
       - main
+      - cd-testing
+  workflow_dispatch:
+
 
 jobs:
   build-deploy:
