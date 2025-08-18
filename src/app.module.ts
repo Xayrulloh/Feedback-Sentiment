@@ -17,8 +17,9 @@ import { HttpResponseInterceptor } from './common/interceptors/http.response.int
       provide: APP_PIPE,
       useClass: ZodValidationPipe,
     },
-    { provide: APP_INTERCEPTOR, useClass: ZodSerializerInterceptorCustom },
     { provide: APP_INTERCEPTOR, useClass: HttpResponseInterceptor },
+    { provide: APP_INTERCEPTOR, useClass: ZodSerializerInterceptorCustom },
+    
   ],
 })
 export class AppModule {}

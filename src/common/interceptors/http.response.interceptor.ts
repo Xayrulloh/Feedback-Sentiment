@@ -25,10 +25,12 @@ export class HttpResponseInterceptor<T extends ZodTypeAny>
     return next.handle().pipe(
       map((data: T) => {
         const statusCode = response.statusCode;
+        const isError = statusCode >= 400;
 
         return {
           statusCode,
-          message: statusCode >= 400 ? 'Error' : 'Success',
+          status: isError ? 'Error' : 'Success',
+          message: isError ? 'Request failed' : 'Request successful',
           errors: null,
           timestamp: Date.now(),
           path: request.url,
@@ -44,17 +46,24 @@ export class HttpResponseInterceptor<T extends ZodTypeAny>
       //   const errorMessage =
       //     err instanceof HttpException ? err.message : 'Internal server error';
 
-      //   const errorName =
-      //     err instanceof HttpException ? err.name : 'InternalServerError';
+      //   // Extract error details if available
+      //   const errorDetails =
+      //     err instanceof HttpException ? err.getResponse() : null;
+
+      //   const errors = Array.isArray(errorDetails?.message)
+      //     ? errorDetails.message
+      //     : errorDetails?.message
+      //       ? [errorDetails.message]
+      //       : [errorMessage];
 
       //   const errorResponse: ResponseType<{}> = {
       //     statusCode,
+      //     status: 'Error',
       //     message: errorMessage,
-      //     error: errorName,
+      //     errors,
       //     timestamp: Date.now(),
-      //     version: 'v2',
       //     path: request.url,
-      //     data: {},
+      //     data: {} as T,
       //   };
 
       //   // Log the error for debugging
