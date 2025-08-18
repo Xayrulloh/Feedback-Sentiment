@@ -1,14 +1,18 @@
 import {
   type CallHandler,
   type ExecutionContext,
+  HttpException,
+  HttpStatus,
   Injectable,
   type NestInterceptor,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import type { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { throwError } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
 import type { ResponseType } from 'src/utils/zod.schemas';
 import type { ZodTypeAny } from 'zod';
+import { ZodError } from 'zod';
 
 @Injectable()
 export class HttpResponseInterceptor<T extends ZodTypeAny>
@@ -37,45 +41,60 @@ export class HttpResponseInterceptor<T extends ZodTypeAny>
           data: data as T,
         } as ResponseType<T>;
       }),
-      // catchError((err: any) => {
-      //   const statusCode =
-      //     err instanceof HttpException
-      //       ? err.getStatus()
-      //       : HttpStatus.INTERNAL_SERVER_ERROR;
+      catchError((err: any) => {
+        const statusCode = this.getStatusCode(err);
+        const { message, errors } = this.extractErrors(err);
 
-      //   const errorMessage =
-      //     err instanceof HttpException ? err.message : 'Internal server error';
+        const errorResponse: ResponseType<T> = {
+          statusCode,
+          status: 'Error',
+          message,
+          errors,
+          timestamp: Date.now(),
+          path: request.url,
+          data: null 
+        };
 
-      //   // Extract error details if available
-      //   const errorDetails =
-      //     err instanceof HttpException ? err.getResponse() : null;
-
-      //   const errors = Array.isArray(errorDetails?.message)
-      //     ? errorDetails.message
-      //     : errorDetails?.message
-      //       ? [errorDetails.message]
-      //       : [errorMessage];
-
-      //   const errorResponse: ResponseType<{}> = {
-      //     statusCode,
-      //     status: 'Error',
-      //     message: errorMessage,
-      //     errors,
-      //     timestamp: Date.now(),
-      //     path: request.url,
-      //     data: {} as T,
-      //   };
-
-      //   // Log the error for debugging
-      //   console.error('Response Interceptor Error:', {
-      //     statusCode,
-      //     message: errorMessage,
-      //     path: request.url,
-      //     stack: err.stack,
-      //   });
-
-      //   return throwError(() => new HttpException(errorResponse, statusCode));
-      // }),
+        response.status(statusCode);
+        return throwError(() => new HttpException(errorResponse, statusCode));
+      }),
     );
+  }
+
+  private getStatusCode(err: any): number {
+    if (err instanceof HttpException) return err.getStatus();
+    if (err instanceof ZodError) return HttpStatus.BAD_REQUEST;
+    return HttpStatus.INTERNAL_SERVER_ERROR;
+  }
+
+  private extractErrors(err: any): { message: string; errors: string[] } {
+    if (err instanceof ZodError) {
+      return {
+        message: 'Validation failed',
+        errors: err.errors.map((e) => e.message),
+      };
+    }
+
+    if (err instanceof HttpException) {
+      const response = err.getResponse() as any;
+
+      const errorArray = Array.isArray(response?.message)
+        ? response.message
+        : Array.isArray(response?.errors)
+          ? response.errors
+          : typeof response?.message === 'string'
+            ? [response.message]
+            : [err.message];
+
+      return {
+        message: err.message,
+        errors: errorArray,
+      };
+    }
+
+    return {
+      message: 'Internal server error',
+      errors: [err.message || 'An unexpected error occurred'],
+    };
   }
 }
