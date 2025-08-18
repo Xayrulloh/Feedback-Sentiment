@@ -35,9 +35,33 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiBody({ type: AuthCredentialsDto })
   @ApiOkResponse({ type: AuthResponseDto })
+  @ZodSerializerDto(AuthResponseSchema)
   async login(
     @Body() body: AuthCredentialsDto,
   ): Promise<AuthResponseSchemaType> {
     return this.authService.login(body);
+  }
+
+    @Post('register/admin')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiBody({ type: AuthCredentialsDto })
+  @ApiCreatedResponse({ type: AuthResponseDto })
+  @ZodSerializerDto(AuthResponseSchema)
+  async registerAdmin(
+    @Body() body: AuthCredentialsDto,
+  ): Promise<AuthResponseSchemaType> {
+    return this.authService.registerAdmin(body);
+  }
+
+  
+  @Post('login/admin')
+  @HttpCode(HttpStatus.OK)
+  @ApiBody({ type: AuthCredentialsDto })
+  @ApiOkResponse({ type: AuthResponseDto })
+   @ZodSerializerDto(AuthResponseSchema)
+  async loginAdmin(
+    @Body() body: AuthCredentialsDto,
+  ): Promise<AuthResponseSchemaType> {
+    return this.authService.loginAdmin(body);
   }
 }
