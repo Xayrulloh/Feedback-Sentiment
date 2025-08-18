@@ -71,6 +71,21 @@ const FeedbackSchema = z
 
 type FeedbackSchemaType = z.infer<typeof FeedbackSchema>;
 
+// Response schemas
+const ResponseSchema = <T extends z.ZodTypeAny>(dataSchema: T) => {
+  return z.object({
+    status: z.enum(['Error', 'Success']).describe('Response status indicator'),
+    message: z.string().describe('Success message'),
+    data: dataSchema.describe('Response data payload'),
+    statusCode: z.number().int().describe('HTTP status code'),
+    errors: z.array(z.string()).nullable().describe('Array of error messages or null'),
+    timestamp: z.number().describe('Timestamp of the response'),
+    path: z.string().describe('Request path'),
+  });
+};
+
+type ResponseType<T extends z.ZodTypeAny> = z.infer<ReturnType<typeof ResponseSchema<T>>>;
+
 export {
   UserSchema,
   type UserSchemaType,
@@ -81,4 +96,6 @@ export {
   FeedbackSchema,
   type FeedbackSchemaType,
   FeedbackSentimentEnum,
+  ResponseSchema,
+  type ResponseType,
 };
