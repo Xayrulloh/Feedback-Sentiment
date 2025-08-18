@@ -3,7 +3,7 @@ name: CD
 on:
   push:
     branches:
-      - develop
+      - main
   workflow_dispatch:
 
 permissions:
@@ -17,6 +17,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: 'main'
 
       - name: Deploy to EC2 using SSH Action
         uses: appleboy/ssh-action@v1.0.0
@@ -28,9 +30,9 @@ jobs:
             set -euo pipefail
             cd Feedback-Sentiment
 
-            git fetch -q origin develop
-            git reset --hard origin/develop
-            echo "Deploying latest commit on develop: $(git rev-parse HEAD)"
+            git fetch -q origin main
+            git reset --hard origin/main
+            echo "Deploying latest commit on main: $(git rev-parse HEAD)"
 
             export COMPOSE_DOCKER_CLI_BUILD=0
             {
