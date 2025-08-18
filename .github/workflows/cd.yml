@@ -1,0 +1,47 @@
+name: CD
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: 'main'
+
+      - name: Deploy to EC2 using SSH Action
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.AWS_KEY }}
+          script: |
+            set -euo pipefail
+            cd Feedback-Sentiment
+
+            git fetch -q origin main
+            git reset --hard origin/main
+            echo "Deploying latest commit on main: $(git rev-parse HEAD)"
+
+            export COMPOSE_DOCKER_CLI_BUILD=0
+            {
+              docker-compose build
+              docker-compose up -d --remove-orphans
+            } 2>&1 | grep -v "Container" | grep -v "level=warning" || true
+
+            echo "Waiting for services..."
+            sleep 10
+
+            docker system prune -f
+            echo "✨ Deployment successful"

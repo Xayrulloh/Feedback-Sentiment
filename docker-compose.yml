@@ -1,4 +1,28 @@
 services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: feedback-sentiment-api
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    ports:
+      - "${PORT}:${PORT}"
+    restart: unless-stopped
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
   db:
     image: postgres:14-alpine
     container_name: feedback-sentiment-postgres
