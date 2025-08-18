@@ -6,9 +6,10 @@ import { EnvModule } from './config/env/env.module';
 import { AiModule } from './modules/AI/AI.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { FeedbackModule } from './modules/feedback/feedback.module';
+import { UsersModule } from './modules/users/users.module';
 
 @Module({
-  imports: [EnvModule, AuthModule, AiModule, FeedbackModule],
+  imports: [EnvModule, AuthModule, AiModule, FeedbackModule, UsersModule],
 
   controllers: [],
   providers: [
