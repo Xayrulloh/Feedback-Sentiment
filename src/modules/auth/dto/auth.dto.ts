@@ -21,8 +21,8 @@ const AuthCredentialsSchema = UserSchema.pick({ email: true })
 const AuthResponseSchema = z.object({
   token: z.string().describe('JWT token'),
   role: z.enum(['USER', 'ADMIN']).describe('User role'),
-  redirectTo: z.union([
-    z.literal('/dashboard'), z.literal('/admin')])
+  redirectTo: z
+    .union([z.literal('/dashboard'), z.literal('/admin')])
     .describe('Redirection path after authentication'),
 });
 

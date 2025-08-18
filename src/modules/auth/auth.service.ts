@@ -63,9 +63,8 @@ export class AuthService {
   }
 
   async registerAdmin(
-    input: AuthCredentialsDto
+    input: AuthCredentialsDto,
   ): Promise<AuthResponseSchemaType> {
-     
     const existingUser = await this.getUser(input.email);
 
     if (existingUser) {
@@ -84,12 +83,9 @@ export class AuthService {
       .returning();
 
     return this.generateTokens(newAdmin);
-
   }
 
-  async loginAdmin(
-    input: AuthCredentialsDto,
-  ): Promise<AuthResponseSchemaType> {
+  async loginAdmin(input: AuthCredentialsDto): Promise<AuthResponseSchemaType> {
     const user = await this.getUser(input.email);
 
     if (!user || user.role !== UserRoleEnum.ADMIN) {
@@ -105,7 +101,7 @@ export class AuthService {
     return this.generateTokens(user);
   }
 
-   async generateTokens(
+  async generateTokens(
     user: Pick<UserSchemaType, 'id' | 'email' | 'role'>,
   ): Promise<AuthResponseSchemaType> {
     const payload = {
@@ -131,5 +127,4 @@ export class AuthService {
       ),
     });
   }
-
 }

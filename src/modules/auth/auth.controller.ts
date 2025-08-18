@@ -42,7 +42,7 @@ export class AuthController {
     return this.authService.login(body);
   }
 
-    @Post('register/admin')
+  @Post('register/admin')
   @HttpCode(HttpStatus.CREATED)
   @ApiBody({ type: AuthCredentialsDto })
   @ApiCreatedResponse({ type: AuthResponseDto })
@@ -53,12 +53,11 @@ export class AuthController {
     return this.authService.registerAdmin(body);
   }
 
-  
   @Post('login/admin')
   @HttpCode(HttpStatus.OK)
   @ApiBody({ type: AuthCredentialsDto })
   @ApiOkResponse({ type: AuthResponseDto })
-   @ZodSerializerDto(AuthResponseSchema)
+  @ZodSerializerDto(AuthResponseSchema)
   async loginAdmin(
     @Body() body: AuthCredentialsDto,
   ): Promise<AuthResponseSchemaType> {
