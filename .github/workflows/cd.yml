@@ -42,7 +42,7 @@ jobs:
             echo "Waiting for services..."
             sleep 10
 
-            if ! docker inspect --format='{{json .State.Health.Status}}' feedback_app | grep -q "healthy"; then
+            if ! docker inspect --format='{{json .State.Health.Status}}' feedback-sentiment-api | grep -q "healthy"; then
               echo "Deployment failed, rolling back..."
               [ "$PREVIOUS_COMMIT" != "none" ] && git reset --hard "$PREVIOUS_COMMIT"
               docker-compose up -d --remove-orphans
