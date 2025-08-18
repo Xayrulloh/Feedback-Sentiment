@@ -115,7 +115,7 @@ export class AuthService {
     return {
       token,
       role: user.role,
-      redirectTo: user.role == 'ADMIN' ? '/admin' : '/dashboard',
+      redirectTo: user.role === 'ADMIN' ? '/admin' : '/dashboard',
     };
   }
 
