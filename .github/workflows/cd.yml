@@ -28,13 +28,9 @@ jobs:
             set -euo pipefail
             cd Feedback-Sentiment
 
-            PREVIOUS_COMMIT=$(git rev-parse HEAD || echo "none")
-            echo "Previous commit: $PREVIOUS_COMMIT"
-
             git fetch origin develop
             git reset --hard origin/develop
-            NEW_COMMIT=$(git rev-parse HEAD)
-            echo "Deploying commit: $NEW_COMMIT"
+            echo "Deploying latest commit on develop: $(git rev-parse HEAD)"
 
             docker-compose build
             docker-compose up -d --remove-orphans
