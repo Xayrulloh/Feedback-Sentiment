@@ -28,12 +28,15 @@ jobs:
             set -euo pipefail
             cd Feedback-Sentiment
 
-            git fetch origin develop
+            git fetch -q origin develop
             git reset --hard origin/develop
             echo "Deploying latest commit on develop: $(git rev-parse HEAD)"
 
-            docker-compose build
-            docker-compose up -d --remove-orphans
+            export COMPOSE_DOCKER_CLI_BUILD=0
+            {
+              docker-compose build
+              docker-compose up -d --remove-orphans
+            } 2>&1 | grep -v "Container" | grep -v "level=warning" || true
 
             echo "Waiting for services..."
             sleep 10
