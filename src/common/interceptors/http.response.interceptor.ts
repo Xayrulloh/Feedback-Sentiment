@@ -16,6 +16,21 @@ import type {
 } from 'src/utils/zod.schemas';
 import { ZodError } from 'zod';
 
+interface ErrorDetail {
+  path?: (string | number)[];
+  field?: string;
+  message?: string;
+  code?: string;
+}
+
+interface DatabaseError {
+  code?: string;
+  constraint?: string;
+  detail?: string;
+  table?: string;
+  column?: string;
+}
+
 @Injectable()
 export class HttpResponseInterceptor<T>
   implements NestInterceptor<T, ApiSuccessResponseSchemaType<T>>
@@ -29,7 +44,7 @@ export class HttpResponseInterceptor<T>
 
     return next.handle().pipe(
       map((data: T) => this.formatSuccess(data, response)),
-      catchError((error: any) => this.formatError(error, response)),
+      catchError((error: unknown) => this.formatError(error, response)),
     );
   }
 
@@ -46,7 +61,7 @@ export class HttpResponseInterceptor<T>
     };
   }
 
-  private formatError(error: any, response: Response): Observable<never> {
+  private formatError(error: unknown, response: Response): Observable<never> {
     const { statusCode, message, errors } = this.parseError(error);
 
     const errorResponse: ApiErrorResponseSchemaType = {
@@ -61,25 +76,31 @@ export class HttpResponseInterceptor<T>
     return throwError(() => new HttpException(errorResponse, statusCode));
   }
 
-  private parseError(error: any) {
+  private parseError(error: unknown) {
     if (error instanceof HttpException) {
       const status = error.getStatus();
       const response = error.getResponse();
 
-      if (typeof response === 'object' && response && 'errors' in response) {
-        const errors = Array.isArray(response.errors)
-          ? response.errors.map((err: any) => ({
-              field: Array.isArray(err.path)
-                ? err.path.join('.')
-                : err.field || 'unknown',
-              message: err.message || String(err),
-              code: err.code.toUpperCase(),
-            }))
-          : undefined;
+      if (
+        typeof response === 'object' &&
+        response !== null &&
+        'errors' in response &&
+        Array.isArray((response as { errors: unknown }).errors)
+      ) {
+        const errors = (response as { errors: ErrorDetail[] }).errors.map(
+          (err) => ({
+            field: Array.isArray(err.path)
+              ? err.path.join('.')
+              : err.field || 'unknown',
+            message: err.message || 'Unknown error',
+            code: err.code?.toUpperCase() || 'UNKNOWN',
+          }),
+        );
 
         return {
           statusCode: status,
-          message: (response as any).message || 'Validation failed',
+          message:
+            (response as { message?: string }).message || 'Validation failed',
           errors,
         };
       }
@@ -112,6 +133,7 @@ export class HttpResponseInterceptor<T>
               {
                 field: dbError.field,
                 message: dbError.message,
+                code: 'DB_ERROR',
               },
             ]
           : undefined,
@@ -133,11 +155,18 @@ export class HttpResponseInterceptor<T>
     return messages[statusCode] || 'Success';
   }
 
-  private isDatabaseError(error: any): boolean {
-    return error?.code || error?.constraint || error?.detail || error?.table;
+  private isDatabaseError(error: unknown): error is DatabaseError {
+    return (
+      typeof error === 'object' &&
+      error !== null &&
+      ('code' in error ||
+        'constraint' in error ||
+        'detail' in error ||
+        'table' in error)
+    );
   }
 
-  private parseDatabaseError(error: any) {
+  private parseDatabaseError(error: DatabaseError) {
     const code = error.code;
 
     switch (code) {
