@@ -17,14 +17,18 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
+  ApiBadRequestResponse,
   ApiBearerAuth,
   ApiBody,
   ApiConsumes,
   ApiCreatedResponse,
+  ApiForbiddenResponse,
+  ApiInternalServerErrorResponse,
   ApiOkResponse,
   ApiOperation,
   ApiQuery,
   ApiTags,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import type { Express, Response } from 'express';
 import { ZodSerializerDto } from 'nestjs-zod';
@@ -49,6 +53,77 @@ import { FeedbackService } from './feedback.service';
 
 @ApiTags('Feedback')
 @ApiBearerAuth()
+@ApiForbiddenResponse({
+  description: 'Forbidden - user is disabled or suspended',
+  schema: {
+    type: 'object',
+    properties: {
+      success: { type: 'boolean', example: false },
+      statusCode: { type: 'number', example: 403 },
+      message: { type: 'string', example: 'User account is disabled' },
+      errors: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            field: { type: 'string', example: 'user' },
+            message: { type: 'string', example: 'User is suspended' },
+            code: { type: 'string', example: 'USER_SUSPENDED' },
+          },
+        },
+        example: [
+          {
+            field: 'user',
+            message: 'User is suspended',
+            code: 'USER_SUSPENDED',
+          },
+        ],
+      },
+      timestamp: { type: 'string', example: new Date().toISOString() },
+    },
+  },
+})
+@ApiUnauthorizedResponse({
+  description: 'Unauthorized - JWT missing or invalid',
+  schema: {
+    type: 'object',
+    properties: {
+      success: { type: 'boolean', example: false },
+      statusCode: { type: 'number', example: 401 },
+      message: { type: 'string', example: 'Invalid or expired token' },
+      errors: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            message: { type: 'string', example: 'Token is invalid or expired' },
+            code: { type: 'string', example: 'INVALID_TOKEN' },
+          },
+        },
+        example: [
+          { message: 'Token is invalid or expired', code: 'INVALID_TOKEN' },
+        ],
+      },
+      timestamp: { type: 'string', example: new Date().toISOString() },
+    },
+  },
+})
+@ApiInternalServerErrorResponse({
+  schema: {
+    example: {
+      success: false,
+      statusCode: 500,
+      message: 'Internal server error',
+      errors: [
+        {
+          code: 'INTERNAL_ERROR',
+          message: 'An unexpected error occurred. Please try again later.',
+        },
+      ],
+      timestamp: new Date().toISOString(),
+    },
+  },
+})
 @Controller('feedback')
 export class FeedbackController {
   constructor(private readonly feedbackService: FeedbackService) {}
@@ -63,6 +138,28 @@ export class FeedbackController {
       FeedbackResponseSchema,
       'FeedbackResponseSchema',
     ),
+  })
+  @ApiBadRequestResponse({
+    schema: {
+      example: {
+        success: false,
+        statusCode: 400,
+        message: 'Validation failed',
+        errors: [
+          {
+            field: 'feedbacks',
+            message: 'At least one feedback is required',
+            code: 'EMPTY_ARRAY',
+          },
+          {
+            field: 'feedbacks[0]',
+            message: 'Feedback must be at least 10 characters long',
+            code: 'TOO_SHORT',
+          },
+        ],
+        timestamp: new Date().toISOString(),
+      },
+    },
   })
   @ZodSerializerDto(FeedbackResponseSchema)
   @ApiOperation({
@@ -101,6 +198,38 @@ export class FeedbackController {
       FeedbackResponseSchema,
       'FeedbackResponseSchema',
     ),
+  })
+  @ApiBadRequestResponse({
+    schema: {
+      example: {
+        success: false,
+        statusCode: 400,
+        message: 'Validation failed',
+        errors: [
+          {
+            field: 'file',
+            message: 'File is required',
+            code: 'FILE_MISSING',
+          },
+          {
+            field: 'file',
+            message: 'The uploaded file must include a "feedback" column',
+            code: 'MISSING_FEEDBACK_COLUMN',
+          },
+          {
+            field: 'file',
+            message: 'The uploaded file must contain at least one row',
+            code: 'EMPTY_FILE',
+          },
+          {
+            field: 'file',
+            message: 'Feedback column contains empty values',
+            code: 'EMPTY_FEEDBACK_VALUES',
+          },
+        ],
+        timestamp: new Date().toISOString(),
+      },
+    },
   })
   @ZodSerializerDto(FeedbackResponseSchema)
   async feedbackUpload(

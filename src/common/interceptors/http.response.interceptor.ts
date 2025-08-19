@@ -10,7 +10,10 @@ import type { Response } from 'express';
 import type { Observable } from 'rxjs';
 import { throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
-import type { ApiErrorResponseSchemaType, ApiSuccessResponseSchemaType } from 'src/utils/zod.schemas';
+import type {
+  ApiErrorResponseSchemaType,
+  ApiSuccessResponseSchemaType,
+} from 'src/utils/zod.schemas';
 import { ZodError } from 'zod';
 
 @Injectable()
@@ -30,7 +33,10 @@ export class HttpResponseInterceptor<T>
     );
   }
 
-  private formatSuccess(data: T, response: Response): ApiSuccessResponseSchemaType<T> {
+  private formatSuccess(
+    data: T,
+    response: Response,
+  ): ApiSuccessResponseSchemaType<T> {
     return {
       success: true,
       statusCode: response.statusCode,
@@ -67,7 +73,7 @@ export class HttpResponseInterceptor<T>
                 ? err.path.join('.')
                 : err.field || 'unknown',
               message: err.message || String(err),
-              code: err.code,
+              code: err.code.toUpperCase(),
             }))
           : undefined;
 
@@ -91,7 +97,7 @@ export class HttpResponseInterceptor<T>
         errors: error.issues.map((issue) => ({
           field: issue.path.length > 0 ? issue.path.join('.') : 'root',
           message: issue.message,
-          code: issue.code,
+          code: issue.code.toUpperCase(),
         })),
       };
     }

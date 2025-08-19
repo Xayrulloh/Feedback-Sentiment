@@ -72,50 +72,45 @@ const FeedbackSchema = z
 
 type FeedbackSchemaType = z.infer<typeof FeedbackSchema>;
 
+const ApiSuccessResponseSchema = <T extends z.ZodTypeAny>(dataSchema?: T) =>
+  z.object({
+    success: z.boolean(),
+    statusCode: z.number(),
+    message: z.string(),
+    data: dataSchema ? dataSchema.optional() : z.any().optional(),
+    timestamp: z.string(),
+  });
 
-const ApiSuccessResponseSchema = <T extends z.ZodTypeAny>(dataSchema?: T) => z.object({
-  success: z.boolean(),
-  statusCode: z.number(),
-  message: z.string(),
-  data: dataSchema ? dataSchema.optional() : z.any().optional(),
-  timestamp: z.string(),
-});
+type ApiSuccessResponseSchemaType<T = z.ZodTypeAny> = z.infer<
+  ReturnType<typeof ApiSuccessResponseSchema<z.ZodType<T>>>
+>;
 
-type ApiSuccessResponseSchemaType<T = any> = z.infer<ReturnType<typeof ApiSuccessResponseSchema<z.ZodType<T>>>>;
-
-const ApiErrorResponseSchema = <T extends z.ZodTypeAny>(dataSchema?: T) => z.object({
+const ApiErrorResponseSchema = z.object({
   success: z.boolean().default(false),
   statusCode: z.number(),
   message: z.string(),
-  errors: z.array(z.object({
-    field: z.string().optional(),
-    message: z.string(),
-    code: z.string().optional(),
-  })).optional(),
+  errors: z
+    .array(
+      z.object({
+        field: z.string().optional(),
+        message: z.string(),
+        code: z.string().optional(),
+      }),
+    )
+    .optional(),
   timestamp: z.string(),
 });
 
-type ApiErrorResponseSchemaType<T = any> = z.infer<ReturnType<typeof ApiErrorResponseSchema<z.ZodType<T>>>>;
+type ApiErrorResponseSchemaType = z.infer<typeof ApiErrorResponseSchema>;
 
 function createSuccessApiResponseDto(schema: z.ZodTypeAny, name: string) {
-  const responseSchema = ApiSuccessResponseSchema(schema); 
+  const responseSchema = ApiSuccessResponseSchema(schema);
   const className = `ApiResponse${name}Dto`;
-  
-  const namedClass = {
-    [className]: class extends createZodDto(responseSchema) {}
-  };
-  
-  return namedClass[className];
-}
 
-function createErrorApiResponseDto(schema: z.ZodTypeAny, name: string) {
-  const responseSchema = ApiErrorResponseSchema(schema);
-  const className = `ApiErrorResponse${name}Dto`;
-  
   const namedClass = {
-    [className]: class extends createZodDto(responseSchema) {}
+    [className]: class extends createZodDto(responseSchema) {},
   };
-  
+
   return namedClass[className];
 }
 
@@ -134,8 +129,4 @@ export {
   createSuccessApiResponseDto,
   ApiErrorResponseSchema,
   type ApiErrorResponseSchemaType,
-  createErrorApiResponseDto,
-
 };
-
-
