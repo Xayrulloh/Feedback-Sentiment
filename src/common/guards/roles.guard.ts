@@ -4,7 +4,7 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import type { Reflector } from '@nestjs/core';
+import { Reflector } from '@nestjs/core';
 import { ROLES_KEY } from 'src/modules/auth/decorators/roles.decorator';
 import type { UserRoleEnum } from 'src/utils/zod.schemas';
 
