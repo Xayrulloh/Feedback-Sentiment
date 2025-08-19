@@ -9,6 +9,9 @@ import { ZodSerializerDto } from 'nestjs-zod';
 // biome-ignore lint/style/useImportType: Needed for DI
 import { AuthService } from './auth.service';
 import {
+  AdminAuthResponseDto,
+  AdminAuthResponseSchema,
+  type AdminAuthSchemaType,
   AuthCredentialsDto,
   AuthResponseDto,
   AuthResponseSchema,
@@ -35,9 +38,32 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiBody({ type: AuthCredentialsDto })
   @ApiOkResponse({ type: AuthResponseDto })
+  @ZodSerializerDto(AuthResponseSchema)
   async login(
     @Body() body: AuthCredentialsDto,
   ): Promise<AuthResponseSchemaType> {
     return this.authService.login(body);
+  }
+
+  @Post('register/admin')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiBody({ type: AuthCredentialsDto })
+  @ApiCreatedResponse({ type: AdminAuthResponseDto })
+  @ZodSerializerDto(AdminAuthResponseSchema)
+  async registerAdmin(
+    @Body() body: AuthCredentialsDto,
+  ): Promise<AdminAuthSchemaType> {
+    return this.authService.registerAdmin(body);
+  }
+
+  @Post('login/admin')
+  @HttpCode(HttpStatus.OK)
+  @ApiBody({ type: AuthCredentialsDto })
+  @ApiOkResponse({ type: AdminAuthResponseDto })
+  @ZodSerializerDto(AdminAuthResponseSchema)
+  async loginAdmin(
+    @Body() body: AuthCredentialsDto,
+  ): Promise<AdminAuthSchemaType> {
+    return this.authService.loginAdmin(body);
   }
 }

@@ -14,7 +14,6 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiBearerAuth,
@@ -28,6 +27,7 @@ import {
 } from '@nestjs/swagger';
 import type { Express, Response } from 'express';
 import { ZodSerializerDto } from 'nestjs-zod';
+import { JwtAnyAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import type { AuthenticatedRequest } from 'src/shared/types/request-with-user';
 import {
   FeedbackFilteredResponseSchema,
@@ -53,7 +53,7 @@ export class FeedbackController {
 
   @Post('manual')
   @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(JwtAnyAuthGuard)
   @HttpCode(HttpStatus.CREATED)
   @ApiBody({ type: FeedbackManualRequestDto })
   @ApiCreatedResponse({ type: FeedbackResponseDto })
@@ -71,7 +71,7 @@ export class FeedbackController {
 
   @Post('upload')
   @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(JwtAnyAuthGuard)
   @HttpCode(HttpStatus.CREATED)
   @ApiConsumes('multipart/form-data')
   @ZodSerializerDto(FeedbackResponseSchema)
@@ -129,7 +129,7 @@ export class FeedbackController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(JwtAnyAuthGuard)
   @Get('sentiment-summary')
   @ApiOperation({ summary: 'Get sentiment summary for user' })
   @ApiOkResponse({
@@ -172,7 +172,7 @@ export class FeedbackController {
 
   @Get('grouped')
   @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(JwtAnyAuthGuard)
   @ApiOperation({
     summary: 'Get feedbacks grouped by sentiment',
   })
@@ -188,7 +188,7 @@ export class FeedbackController {
 
   @Get()
   @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(JwtAnyAuthGuard)
   @ApiQuery({ name: 'sentiment', required: false, enum: SentimentEnum.options })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -209,7 +209,7 @@ export class FeedbackController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(JwtAnyAuthGuard)
   @ApiOperation({ summary: 'Download either pdf or csv report file' })
   @ApiOkResponse({
     description: 'Download report file',
