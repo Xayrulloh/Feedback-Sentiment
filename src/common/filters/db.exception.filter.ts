@@ -17,9 +17,10 @@ export class DatabaseExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(DatabaseExceptionFilter.name);
 
   catch(exception: unknown, host: ArgumentsHost): void {
-    const ctx = host.switchToHttp();
-    const response = ctx.getResponse<Response>();
-    const request = ctx.getRequest<Request>();
+    const [response, request] = [
+      host.switchToHttp().getResponse<Response>(),
+      host.switchToHttp().getRequest<Request>(),
+    ];
 
     let statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
     let message = 'Database error occurred';
@@ -37,10 +38,12 @@ export class DatabaseExceptionFilter implements ExceptionFilter {
               code: 'DB_ERROR',
             },
           ];
+
           break;
         case '23503': // Foreign key violation
           statusCode = HttpStatus.BAD_REQUEST;
           message = 'Referenced resource does not exist';
+
           break;
         case '23502': // Not null violation
           statusCode = HttpStatus.BAD_REQUEST;
@@ -52,7 +55,9 @@ export class DatabaseExceptionFilter implements ExceptionFilter {
               code: 'DB_ERROR',
             },
           ];
+
           break;
+
         default:
           this.logger.error(exception);
       }
@@ -79,8 +84,12 @@ export class DatabaseExceptionFilter implements ExceptionFilter {
   }
 
   private extractFieldFromDetail(detail?: string): string | undefined {
-    if (!detail) return undefined;
+    if (!detail) {
+      return undefined;
+    }
+
     const match = detail.match(/Key \((.+?)\)=/);
+
     return match?.[1];
   }
 }

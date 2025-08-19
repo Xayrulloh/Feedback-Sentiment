@@ -9,13 +9,12 @@ import type { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
 @Injectable()
-export class SuccessResponseInterceptor<T>
-  implements NestInterceptor<T, unknown>
-{
+export class ResponseInterceptor<T> implements NestInterceptor<T, unknown> {
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
-    const ctx = context.switchToHttp();
-    const response = ctx.getResponse<Response>();
-    const request = ctx.getRequest<Request>();
+    const [response, request] = [
+      context.switchToHttp().getResponse<Response>(),
+      context.switchToHttp().getRequest<Request>(),
+    ];
 
     return next.handle().pipe(
       map((data: T) => ({

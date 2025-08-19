@@ -228,7 +228,7 @@ export class FeedbackController {
             code: 'EMPTY_FEEDBACK_VALUES',
           },
         ],
-        path: '/feedback/upload', 
+        path: '/feedback/upload',
         timestamp: new Date().toISOString(),
       },
     },

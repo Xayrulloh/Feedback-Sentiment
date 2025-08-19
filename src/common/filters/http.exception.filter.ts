@@ -18,15 +18,16 @@ interface HttpErrorResponse {
 @Catch(HttpException)
 export class HttpExceptionFilter implements ExceptionFilter {
   catch(exception: HttpException, host: ArgumentsHost): void {
-    const ctx = host.switchToHttp();
-    const response = ctx.getResponse<Response>();
-    const request = ctx.getRequest<Request>();
+    const [response, request] = [
+      host.switchToHttp().getResponse<Response>(),
+      host.switchToHttp().getRequest<Request>(),
+    ];
 
     const status = exception.getStatus();
     const rawResponse = exception.getResponse();
 
     let message: string;
-    let errors: ErrorDetailType[] | undefined; 
+    let errors: ErrorDetailType[] | undefined;
 
     if (typeof rawResponse === 'string') {
       message = rawResponse;
@@ -45,16 +46,16 @@ export class HttpExceptionFilter implements ExceptionFilter {
       message = exception.message;
     }
 
-    const errorResponse: ApiBaseResponseType & { errors?: ErrorDetailType[] } = {
-      success: false,
-      statusCode: status,
-      message,
-      ...(errors ? { errors } : {}), 
-      timestamp: new Date().toISOString(),
-      path: request.url,
-    };
+    const errorResponse: ApiBaseResponseType & { errors?: ErrorDetailType[] } =
+      {
+        success: false,
+        statusCode: status,
+        message,
+        ...(errors ? { errors } : {}),
+        timestamp: new Date().toISOString(),
+        path: request.url,
+      };
 
     response.status(status).json(errorResponse);
   }
 }
-
