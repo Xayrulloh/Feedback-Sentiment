@@ -85,24 +85,6 @@ type ApiSuccessResponseSchemaType<T = z.ZodTypeAny> = z.infer<
   ReturnType<typeof ApiSuccessResponseSchema<z.ZodType<T>>>
 >;
 
-const ApiErrorResponseSchema = z.object({
-  success: z.boolean().default(false),
-  statusCode: z.number(),
-  message: z.string(),
-  errors: z
-    .array(
-      z.object({
-        field: z.string().optional(),
-        message: z.string(),
-        code: z.string().optional(),
-      }),
-    )
-    .optional(),
-  timestamp: z.string(),
-});
-
-type ApiErrorResponseSchemaType = z.infer<typeof ApiErrorResponseSchema>;
-
 function createSuccessApiResponseDto(schema: z.ZodTypeAny, name: string) {
   const responseSchema = ApiSuccessResponseSchema(schema);
   const className = `ApiResponse${name}Dto`;
@@ -113,6 +95,39 @@ function createSuccessApiResponseDto(schema: z.ZodTypeAny, name: string) {
 
   return namedClass[className];
 }
+
+const ErrorDetailSchema = z.object({
+  field: z.string().optional(),
+  message: z.string(),
+  code: z.string().optional(),
+});
+
+type ErrorDetailType = z.infer<typeof ErrorDetailSchema>;
+
+const ApiBaseResponseSchema = <T extends z.ZodTypeAny>(dataSchema: T) =>
+  z.object({
+    success: z.boolean(),
+    statusCode: z.number(),
+    message: z.string(),
+    data: dataSchema.nullable(),
+    errors: z.array(ErrorDetailSchema).nullable(),
+    timestamp: z.string(),
+    path: z.string(),
+  });
+
+type ApiBaseResponseType = z.infer<
+  ReturnType<typeof ApiBaseResponseSchema<z.ZodTypeAny>>
+>;
+
+const DatabaseErrorSchema = z.object({
+  code: z.string().optional(),
+  constraint: z.string().optional(),
+  detail: z.string().optional(),
+  table: z.string().optional(),
+  column: z.string().optional(),
+});
+
+type DatabaseErrorType = z.infer<typeof DatabaseErrorSchema>;
 
 export {
   UserSchema,
@@ -127,6 +142,10 @@ export {
   ApiSuccessResponseSchema,
   type ApiSuccessResponseSchemaType,
   createSuccessApiResponseDto,
-  ApiErrorResponseSchema,
-  type ApiErrorResponseSchemaType,
+  ErrorDetailSchema,
+  ApiBaseResponseSchema,
+  type ApiBaseResponseType,
+  DatabaseErrorSchema,
+  type DatabaseErrorType,
+  type ErrorDetailType,
 };
