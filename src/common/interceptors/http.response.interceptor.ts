@@ -6,95 +6,166 @@ import {
   Injectable,
   type NestInterceptor,
 } from '@nestjs/common';
-import type { Request, Response } from 'express';
+import type { Response } from 'express';
 import type { Observable } from 'rxjs';
 import { throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
-import type { ResponseType } from 'src/utils/zod.schemas';
-import type { ZodTypeAny } from 'zod';
+import type { ApiErrorResponseSchemaType, ApiSuccessResponseSchemaType } from 'src/utils/zod.schemas';
 import { ZodError } from 'zod';
 
 @Injectable()
-export class HttpResponseInterceptor<T extends ZodTypeAny>
-  implements NestInterceptor<T, ResponseType<T>>
+export class HttpResponseInterceptor<T>
+  implements NestInterceptor<T, ApiSuccessResponseSchemaType<T>>
 {
   intercept(
     context: ExecutionContext,
     next: CallHandler,
-  ): Observable<ResponseType<T>> {
+  ): Observable<ApiSuccessResponseSchemaType<T>> {
     const ctx = context.switchToHttp();
-    const request = ctx.getRequest<Request>();
     const response = ctx.getResponse<Response>();
 
     return next.handle().pipe(
-      map((data: T) => {
-        const statusCode = response.statusCode;
-        const isError = statusCode >= 400;
-
-        return {
-          statusCode,
-          status: isError ? 'Error' : 'Success',
-          message: isError ? 'Request failed' : 'Request successful',
-          errors: null,
-          timestamp: Date.now(),
-          path: request.url,
-          data: data as T,
-        } as ResponseType<T>;
-      }),
-      catchError((err: any) => {
-        const statusCode = this.getStatusCode(err);
-        const { message, errors } = this.extractErrors(err);
-
-        const errorResponse: ResponseType<T> = {
-          statusCode,
-          status: 'Error',
-          message,
-          errors,
-          timestamp: Date.now(),
-          path: request.url,
-          data: null 
-        };
-
-        response.status(statusCode);
-        return throwError(() => new HttpException(errorResponse, statusCode));
-      }),
+      map((data: T) => this.formatSuccess(data, response)),
+      catchError((error: any) => this.formatError(error, response)),
     );
   }
 
-  private getStatusCode(err: any): number {
-    if (err instanceof HttpException) return err.getStatus();
-    if (err instanceof ZodError) return HttpStatus.BAD_REQUEST;
-    return HttpStatus.INTERNAL_SERVER_ERROR;
+  private formatSuccess(data: T, response: Response): ApiSuccessResponseSchemaType<T> {
+    return {
+      success: true,
+      statusCode: response.statusCode,
+      message: this.getSuccessMessage(response.statusCode),
+      data,
+      timestamp: new Date().toISOString(),
+    };
   }
 
-  private extractErrors(err: any): { message: string; errors: string[] } {
-    if (err instanceof ZodError) {
+  private formatError(error: any, response: Response): Observable<never> {
+    const { statusCode, message, errors } = this.parseError(error);
+
+    const errorResponse: ApiErrorResponseSchemaType = {
+      success: false,
+      statusCode,
+      message,
+      errors,
+      timestamp: new Date().toISOString(),
+    };
+
+    response.status(statusCode);
+    return throwError(() => new HttpException(errorResponse, statusCode));
+  }
+
+  private parseError(error: any) {
+    if (error instanceof HttpException) {
+      const status = error.getStatus();
+      const response = error.getResponse();
+
+      if (typeof response === 'object' && response && 'errors' in response) {
+        const errors = Array.isArray(response.errors)
+          ? response.errors.map((err: any) => ({
+              field: Array.isArray(err.path)
+                ? err.path.join('.')
+                : err.field || 'unknown',
+              message: err.message || String(err),
+              code: err.code,
+            }))
+          : undefined;
+
+        return {
+          statusCode: status,
+          message: (response as any).message || 'Validation failed',
+          errors,
+        };
+      }
+
       return {
-        message: 'Validation failed',
-        errors: err.errors.map((e) => e.message),
+        statusCode: status,
+        message: typeof response === 'string' ? response : error.message,
       };
     }
 
-    if (err instanceof HttpException) {
-      const response = err.getResponse() as any;
-
-      const errorArray = Array.isArray(response?.message)
-        ? response.message
-        : Array.isArray(response?.errors)
-          ? response.errors
-          : typeof response?.message === 'string'
-            ? [response.message]
-            : [err.message];
-
+    if (error instanceof ZodError) {
       return {
-        message: err.message,
-        errors: errorArray,
+        statusCode: HttpStatus.BAD_REQUEST,
+        message: 'Validation failed',
+        errors: error.issues.map((issue) => ({
+          field: issue.path.length > 0 ? issue.path.join('.') : 'root',
+          message: issue.message,
+          code: issue.code,
+        })),
+      };
+    }
+
+    if (this.isDatabaseError(error)) {
+      const dbError = this.parseDatabaseError(error);
+      return {
+        statusCode: dbError.statusCode,
+        message: dbError.message,
+        errors: dbError.field
+          ? [
+              {
+                field: dbError.field,
+                message: dbError.message,
+              },
+            ]
+          : undefined,
       };
     }
 
     return {
+      statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
       message: 'Internal server error',
-      errors: [err.message || 'An unexpected error occurred'],
     };
+  }
+
+  private getSuccessMessage(statusCode: number): string {
+    const messages: Record<number, string> = {
+      200: 'Success',
+      201: 'Created successfully',
+      204: 'No content',
+    };
+    return messages[statusCode] || 'Success';
+  }
+
+  private isDatabaseError(error: any): boolean {
+    return error?.code || error?.constraint || error?.detail || error?.table;
+  }
+
+  private parseDatabaseError(error: any) {
+    const code = error.code;
+
+    switch (code) {
+      case '23505': // Unique violation
+        return {
+          statusCode: HttpStatus.CONFLICT,
+          message: 'Resource already exists',
+          field: this.extractFieldFromDetail(error.detail),
+        };
+
+      case '23503': // Foreign key violation
+        return {
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'Referenced resource does not exist',
+        };
+
+      case '23502': // Not null violation
+        return {
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'Required field missing',
+          field: error.column,
+        };
+
+      default:
+        return {
+          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+          message: 'Database error occurred',
+        };
+    }
+  }
+
+  private extractFieldFromDetail(detail?: string): string | undefined {
+    if (!detail) return undefined;
+    const match = detail.match(/Key \((.+?)\)=/);
+    return match?.[1];
   }
 }

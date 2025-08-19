@@ -1,3 +1,4 @@
+import { createZodDto } from 'nestjs-zod';
 import * as z from 'zod';
 
 // base
@@ -71,20 +72,52 @@ const FeedbackSchema = z
 
 type FeedbackSchemaType = z.infer<typeof FeedbackSchema>;
 
-// Response schemas
-const ResponseSchema = <T extends z.ZodTypeAny>(dataSchema: T) => {
-  return z.object({
-    status: z.enum(['Error', 'Success']).describe('Response status indicator'),
-    message: z.string().describe('Success message'),
-    data: dataSchema.describe('Response data payload'),
-    statusCode: z.number().int().describe('HTTP status code'),
-    errors: z.array(z.string()).nullable().describe('Array of error messages or null'),
-    timestamp: z.number().describe('Timestamp of the response'),
-    path: z.string().describe('Request path'),
-  });
-};
 
-type ResponseType<T extends z.ZodTypeAny> = z.infer<ReturnType<typeof ResponseSchema<T>>>;
+const ApiSuccessResponseSchema = <T extends z.ZodTypeAny>(dataSchema?: T) => z.object({
+  success: z.boolean(),
+  statusCode: z.number(),
+  message: z.string(),
+  data: dataSchema ? dataSchema.optional() : z.any().optional(),
+  timestamp: z.string(),
+});
+
+type ApiSuccessResponseSchemaType<T = any> = z.infer<ReturnType<typeof ApiSuccessResponseSchema<z.ZodType<T>>>>;
+
+const ApiErrorResponseSchema = <T extends z.ZodTypeAny>(dataSchema?: T) => z.object({
+  success: z.boolean().default(false),
+  statusCode: z.number(),
+  message: z.string(),
+  errors: z.array(z.object({
+    field: z.string().optional(),
+    message: z.string(),
+    code: z.string().optional(),
+  })).optional(),
+  timestamp: z.string(),
+});
+
+type ApiErrorResponseSchemaType<T = any> = z.infer<ReturnType<typeof ApiErrorResponseSchema<z.ZodType<T>>>>;
+
+function createSuccessApiResponseDto(schema: z.ZodTypeAny, name: string) {
+  const responseSchema = ApiSuccessResponseSchema(schema); 
+  const className = `ApiResponse${name}Dto`;
+  
+  const namedClass = {
+    [className]: class extends createZodDto(responseSchema) {}
+  };
+  
+  return namedClass[className];
+}
+
+function createErrorApiResponseDto(schema: z.ZodTypeAny, name: string) {
+  const responseSchema = ApiErrorResponseSchema(schema);
+  const className = `ApiErrorResponse${name}Dto`;
+  
+  const namedClass = {
+    [className]: class extends createZodDto(responseSchema) {}
+  };
+  
+  return namedClass[className];
+}
 
 export {
   UserSchema,
@@ -96,6 +129,13 @@ export {
   FeedbackSchema,
   type FeedbackSchemaType,
   FeedbackSentimentEnum,
-  ResponseSchema,
-  type ResponseType,
+  ApiSuccessResponseSchema,
+  type ApiSuccessResponseSchemaType,
+  createSuccessApiResponseDto,
+  ApiErrorResponseSchema,
+  type ApiErrorResponseSchemaType,
+  createErrorApiResponseDto,
+
 };
+
+

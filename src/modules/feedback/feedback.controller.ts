@@ -29,16 +29,18 @@ import {
 import type { Express, Response } from 'express';
 import { ZodSerializerDto } from 'nestjs-zod';
 import type { AuthenticatedRequest } from 'src/shared/types/request-with-user';
+import { createSuccessApiResponseDto } from 'src/utils/zod.schemas';
 import {
   FeedbackFilteredResponseSchema,
-  FeedbackGroupedArrayResponseDto,
+  type FeedbackGroupedArrayResponseDto,
   FeedbackGroupedArrayResponseSchema,
   FeedbackManualRequestDto,
   FeedbackQuerySchema,
   type FeedbackQuerySchemaDto,
-  FeedbackResponseDto,
+  type FeedbackResponseDto,
   FeedbackResponseSchema,
   FeedbackSummaryResponseDto,
+  FeedbackSummaryResponseSchema,
   type ReportDownloadQueryDto,
   SentimentEnum,
 } from './dto/feedback.dto';
@@ -56,7 +58,12 @@ export class FeedbackController {
   @UseGuards(AuthGuard('jwt'))
   @HttpCode(HttpStatus.CREATED)
   @ApiBody({ type: FeedbackManualRequestDto })
-  @ApiCreatedResponse({ type: FeedbackResponseDto })
+  @ApiCreatedResponse({
+    type: createSuccessApiResponseDto(
+      FeedbackResponseSchema,
+      'FeedbackResponseSchema',
+    ),
+  })
   @ZodSerializerDto(FeedbackResponseSchema)
   @ApiOperation({
     summary: 'Sending text based feedback and getting the ai analyze',
@@ -90,7 +97,10 @@ export class FeedbackController {
     },
   })
   @ApiCreatedResponse({
-    type: FeedbackResponseDto,
+    type: createSuccessApiResponseDto(
+      FeedbackResponseSchema,
+      'FeedbackResponseSchema',
+    ),
   })
   @ZodSerializerDto(FeedbackResponseSchema)
   async feedbackUpload(
@@ -133,7 +143,10 @@ export class FeedbackController {
   @Get('sentiment-summary')
   @ApiOperation({ summary: 'Get sentiment summary for user' })
   @ApiOkResponse({
-    type: FeedbackSummaryResponseDto,
+    type: createSuccessApiResponseDto(
+      FeedbackSummaryResponseSchema,
+      'FeedbackSummaryResponseSchema',
+    ),
   })
   @ZodSerializerDto(FeedbackSummaryResponseDto)
   async getSentimentSummary(
@@ -177,7 +190,10 @@ export class FeedbackController {
     summary: 'Get feedbacks grouped by sentiment',
   })
   @ApiOkResponse({
-    type: FeedbackGroupedArrayResponseDto,
+    type: createSuccessApiResponseDto(
+      FeedbackGroupedArrayResponseSchema,
+      'FeedbackGroupedArrayResponseSchema',
+    ),
   })
   @ZodSerializerDto(FeedbackGroupedArrayResponseSchema)
   async feedbackGrouped(
@@ -193,7 +209,10 @@ export class FeedbackController {
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiOkResponse({
-    type: FeedbackResponseDto,
+    type: createSuccessApiResponseDto(
+      FeedbackResponseSchema,
+      'FeedbackResponseSchema',
+    ),
   })
   @ZodSerializerDto(FeedbackFilteredResponseSchema)
   @ApiOperation({
