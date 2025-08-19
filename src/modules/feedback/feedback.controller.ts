@@ -27,8 +27,11 @@ import {
 } from '@nestjs/swagger';
 import type { Express, Response } from 'express';
 import { ZodSerializerDto } from 'nestjs-zod';
-import { JwtAnyAuthGuard } from 'src/common/guards/jwt-auth.guard';
+import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
+import { RolesGuard } from 'src/common/guards/roles.guard';
 import type { AuthenticatedRequest } from 'src/shared/types/request-with-user';
+import { UserRoleEnum } from 'src/utils/zod.schemas';
+import { Roles } from '../auth/decorators/roles.decorator';
 import {
   FeedbackFilteredResponseSchema,
   FeedbackGroupedArrayResponseDto,
@@ -53,7 +56,8 @@ export class FeedbackController {
 
   @Post('manual')
   @ApiBearerAuth()
-  @UseGuards(JwtAnyAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRoleEnum.ADMIN)
   @HttpCode(HttpStatus.CREATED)
   @ApiBody({ type: FeedbackManualRequestDto })
   @ApiCreatedResponse({ type: FeedbackResponseDto })
@@ -71,7 +75,8 @@ export class FeedbackController {
 
   @Post('upload')
   @ApiBearerAuth()
-  @UseGuards(JwtAnyAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRoleEnum.ADMIN, UserRoleEnum.USER)
   @HttpCode(HttpStatus.CREATED)
   @ApiConsumes('multipart/form-data')
   @ZodSerializerDto(FeedbackResponseSchema)
@@ -129,7 +134,8 @@ export class FeedbackController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAnyAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRoleEnum.ADMIN, UserRoleEnum.USER)
   @Get('sentiment-summary')
   @ApiOperation({ summary: 'Get sentiment summary for user' })
   @ApiOkResponse({
@@ -172,7 +178,8 @@ export class FeedbackController {
 
   @Get('grouped')
   @ApiBearerAuth()
-  @UseGuards(JwtAnyAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRoleEnum.ADMIN, UserRoleEnum.USER)
   @ApiOperation({
     summary: 'Get feedbacks grouped by sentiment',
   })
@@ -188,7 +195,8 @@ export class FeedbackController {
 
   @Get()
   @ApiBearerAuth()
-  @UseGuards(JwtAnyAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRoleEnum.ADMIN, UserRoleEnum.USER)
   @ApiQuery({ name: 'sentiment', required: false, enum: SentimentEnum.options })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -209,7 +217,8 @@ export class FeedbackController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAnyAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRoleEnum.ADMIN, UserRoleEnum.USER)
   @ApiOperation({ summary: 'Download either pdf or csv report file' })
   @ApiOkResponse({
     description: 'Download report file',
