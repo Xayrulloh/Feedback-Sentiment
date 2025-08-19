@@ -9,7 +9,7 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { ZodSerializerDto } from 'nestjs-zod';
-import { createSuccessApiResponseDto } from 'src/utils/zod.schemas';
+import { createBaseResponseDto } from 'src/utils/zod.schemas';
 // biome-ignore lint/style/useImportType: Needed for DI
 import { AuthService } from './auth.service';
 import {
@@ -27,7 +27,7 @@ export class AuthController {
   @HttpCode(HttpStatus.CREATED)
   @ApiBody({ type: AuthCredentialsDto })
   @ApiCreatedResponse({
-    type: createSuccessApiResponseDto(AuthResponseSchema, 'AuthResponseSchema'),
+    type: createBaseResponseDto(AuthResponseSchema, 'AuthResponseSchema'),
   })
   @ApiConflictResponse({
     description: 'Email already in use',
@@ -89,7 +89,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiBody({ type: AuthCredentialsDto })
   @ApiOkResponse({
-    type: createSuccessApiResponseDto(AuthResponseSchema, 'AuthResponseSchema'),
+    type: createBaseResponseDto(AuthResponseSchema, 'AuthResponseSchema'),
   })
   @ApiBadRequestResponse({
     description: 'Validation failed',

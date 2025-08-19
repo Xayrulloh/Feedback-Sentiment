@@ -72,7 +72,7 @@ const FeedbackSchema = z
 
 type FeedbackSchemaType = z.infer<typeof FeedbackSchema>;
 
-const ApiSuccessResponseSchema = <T extends z.ZodTypeAny>(dataSchema?: T) =>
+const BaseSuccessResponseSchema = <T extends z.ZodTypeAny>(dataSchema?: T) =>
   z.object({
     success: z.boolean(),
     statusCode: z.number(),
@@ -81,12 +81,12 @@ const ApiSuccessResponseSchema = <T extends z.ZodTypeAny>(dataSchema?: T) =>
     timestamp: z.string(),
   });
 
-type ApiSuccessResponseSchemaType<T = z.ZodTypeAny> = z.infer<
-  ReturnType<typeof ApiSuccessResponseSchema<z.ZodType<T>>>
+type BaseSuccessResponseSchemaType<T = z.ZodTypeAny> = z.infer<
+  ReturnType<typeof BaseSuccessResponseSchema<z.ZodType<T>>>
 >;
 
-function createSuccessApiResponseDto(schema: z.ZodTypeAny, name: string) {
-  const responseSchema = ApiSuccessResponseSchema(schema);
+function createBaseResponseDto(schema: z.ZodTypeAny, name: string) {
+  const responseSchema = BaseSuccessResponseSchema(schema);
   const className = `ApiResponse${name}Dto`;
 
   const namedClass = {
@@ -104,7 +104,7 @@ const ErrorDetailSchema = z.object({
 
 type ErrorDetailType = z.infer<typeof ErrorDetailSchema>;
 
-const ApiBaseResponseSchema = <T extends z.ZodTypeAny>(dataSchema: T) =>
+const BaseErrorResponseSchema = <T extends z.ZodTypeAny>(dataSchema: T) =>
   z.object({
     success: z.boolean(),
     statusCode: z.number(),
@@ -116,7 +116,7 @@ const ApiBaseResponseSchema = <T extends z.ZodTypeAny>(dataSchema: T) =>
   });
 
 type ApiBaseResponseType = z.infer<
-  ReturnType<typeof ApiBaseResponseSchema<z.ZodTypeAny>>
+  ReturnType<typeof BaseErrorResponseSchema<z.ZodTypeAny>>
 >;
 
 const DatabaseErrorSchema = z.object({
@@ -139,11 +139,11 @@ export {
   FeedbackSchema,
   type FeedbackSchemaType,
   FeedbackSentimentEnum,
-  ApiSuccessResponseSchema,
-  type ApiSuccessResponseSchemaType,
-  createSuccessApiResponseDto,
+  BaseSuccessResponseSchema,
+  type BaseSuccessResponseSchemaType,
+  createBaseResponseDto,
   ErrorDetailSchema,
-  ApiBaseResponseSchema,
+  BaseErrorResponseSchema,
   type ApiBaseResponseType,
   DatabaseErrorSchema,
   type DatabaseErrorType,

@@ -33,7 +33,7 @@ import {
 import type { Express, Response } from 'express';
 import { ZodSerializerDto } from 'nestjs-zod';
 import type { AuthenticatedRequest } from 'src/shared/types/request-with-user';
-import { createSuccessApiResponseDto } from 'src/utils/zod.schemas';
+import { createBaseResponseDto } from 'src/utils/zod.schemas';
 import {
   FeedbackFilteredResponseSchema,
   type FeedbackGroupedArrayResponseDto,
@@ -134,7 +134,7 @@ export class FeedbackController {
   @HttpCode(HttpStatus.CREATED)
   @ApiBody({ type: FeedbackManualRequestDto })
   @ApiCreatedResponse({
-    type: createSuccessApiResponseDto(
+    type: createBaseResponseDto(
       FeedbackResponseSchema,
       'FeedbackResponseSchema',
     ),
@@ -195,7 +195,7 @@ export class FeedbackController {
     },
   })
   @ApiCreatedResponse({
-    type: createSuccessApiResponseDto(
+    type: createBaseResponseDto(
       FeedbackResponseSchema,
       'FeedbackResponseSchema',
     ),
@@ -274,7 +274,7 @@ export class FeedbackController {
   @Get('sentiment-summary')
   @ApiOperation({ summary: 'Get sentiment summary for user' })
   @ApiOkResponse({
-    type: createSuccessApiResponseDto(
+    type: createBaseResponseDto(
       FeedbackSummaryResponseSchema,
       'FeedbackSummaryResponseSchema',
     ),
@@ -321,7 +321,7 @@ export class FeedbackController {
     summary: 'Get feedbacks grouped by sentiment',
   })
   @ApiOkResponse({
-    type: createSuccessApiResponseDto(
+    type: createBaseResponseDto(
       FeedbackGroupedArrayResponseSchema,
       'FeedbackGroupedArrayResponseSchema',
     ),
@@ -340,7 +340,7 @@ export class FeedbackController {
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiOkResponse({
-    type: createSuccessApiResponseDto(
+    type: createBaseResponseDto(
       FeedbackResponseSchema,
       'FeedbackResponseSchema',
     ),
