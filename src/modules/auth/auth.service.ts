@@ -1,5 +1,5 @@
 import {
-  BadRequestException,
+  ConflictException,
   Inject,
   Injectable,
   UnauthorizedException,
@@ -29,7 +29,7 @@ export class AuthService {
     const existingUser = await this.getUser(input.email);
 
     if (existingUser) {
-      throw new BadRequestException('Email already in use');
+      throw new ConflictException('Email already in use');
     }
 
     const passwordHash = await bcrypt.hash(input.password, 10);
