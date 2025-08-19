@@ -14,18 +14,19 @@ export class ZodExceptionFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
 
+    const issues = exception.issues.map((issue) => ({
+      field: issue.path.length > 0 ? issue.path.join('.') : 'root',
+      message: issue.message,
+      code: issue.code.toUpperCase(),
+    }));
+    
     response.status(HttpStatus.BAD_REQUEST).json({
       success: false,
       statusCode: HttpStatus.BAD_REQUEST,
-      message: 'Validation failed',
-      data: null,
-      errors: exception.issues.map((issue) => ({
-        field: issue.path.length > 0 ? issue.path.join('.') : 'root',
-        message: issue.message,
-        code: issue.code.toUpperCase(),
-      })),
+      ...(issues.length > 0 ? { errors: issues } : {}), 
       timestamp: new Date().toISOString(),
       path: request.url,
     });
+    
   }
 }

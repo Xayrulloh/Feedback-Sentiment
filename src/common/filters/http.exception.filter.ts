@@ -26,24 +26,30 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const rawResponse = exception.getResponse();
 
     let message: string;
-    let errors: ErrorDetailType[] | null = null;
+    let errors: ErrorDetailType[] | undefined; 
 
     if (typeof rawResponse === 'string') {
       message = rawResponse;
     } else if (typeof rawResponse === 'object' && rawResponse !== null) {
       const typed = rawResponse as HttpErrorResponse;
       message = typed.message ?? exception.message;
-      errors = typed.errors ?? null;
+
+      if (typed.errors) {
+        errors = typed.errors.map((issue) => ({
+          field: issue.field ?? 'root',
+          message: issue.message,
+          code: issue.code?.toUpperCase(),
+        }));
+      }
     } else {
       message = exception.message;
     }
 
-    const errorResponse: ApiBaseResponseType = {
+    const errorResponse: ApiBaseResponseType & { errors?: ErrorDetailType[] } = {
       success: false,
       statusCode: status,
       message,
-      data: null,
-      errors,
+      ...(errors ? { errors } : {}), 
       timestamp: new Date().toISOString(),
       path: request.url,
     };
@@ -51,3 +57,4 @@ export class HttpExceptionFilter implements ExceptionFilter {
     response.status(status).json(errorResponse);
   }
 }
+

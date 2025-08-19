@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import { ZodValidationPipe } from 'nestjs-zod';
-import { DatabaseExceptionFilter } from './common/filters/db.exception.filter';
 import { HttpExceptionFilter } from './common/filters/http.exception.filter';
 import { ZodExceptionFilter } from './common/filters/zod.exception.filter';
 import { SuccessResponseInterceptor } from './common/interceptors/success.response.interceptor';
@@ -18,9 +17,8 @@ import { FeedbackModule } from './modules/feedback/feedback.module';
   providers: [
     { provide: APP_PIPE, useClass: ZodValidationPipe },
     { provide: APP_INTERCEPTOR, useClass: SuccessResponseInterceptor },
-    { provide: APP_FILTER, useClass: ZodExceptionFilter },
     { provide: APP_FILTER, useClass: HttpExceptionFilter },
-    { provide: APP_FILTER, useClass: DatabaseExceptionFilter },
+    { provide: APP_FILTER, useClass: ZodExceptionFilter },
     { provide: APP_INTERCEPTOR, useClass: ZodSerializerInterceptorCustom },
   ],
 })

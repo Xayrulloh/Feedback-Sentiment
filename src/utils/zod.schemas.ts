@@ -110,7 +110,7 @@ const ApiBaseResponseSchema = <T extends z.ZodTypeAny>(dataSchema: T) =>
     statusCode: z.number(),
     message: z.string(),
     data: dataSchema.nullable(),
-    errors: z.array(ErrorDetailSchema).nullable(),
+    errors: z.array(ErrorDetailSchema).nullable().optional(),
     timestamp: z.string(),
     path: z.string(),
   });

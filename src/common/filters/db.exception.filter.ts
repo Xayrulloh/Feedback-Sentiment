@@ -62,7 +62,6 @@ export class DatabaseExceptionFilter implements ExceptionFilter {
       success: false,
       statusCode,
       message,
-      data: null,
       errors,
       timestamp: new Date().toISOString(),
       path: request.url,
