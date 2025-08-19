@@ -1,3 +1,4 @@
+import { STATUS_CODES } from 'node:http';
 import {
   type CallHandler,
   type ExecutionContext,
@@ -20,12 +21,7 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, unknown> {
       map((data: T) => ({
         success: true,
         statusCode: response.statusCode,
-        message:
-          response.statusCode === 201
-            ? 'Created successfully'
-            : response.statusCode === 204
-              ? 'No content'
-              : 'Success',
+        message: STATUS_CODES[response.statusCode] || 'OK',
         data,
         errors: null,
         timestamp: new Date().toISOString(),
