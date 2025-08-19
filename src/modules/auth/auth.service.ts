@@ -13,9 +13,12 @@ import { DrizzleAsyncProvider } from 'src/database/drizzle.provider';
 import * as schema from 'src/database/schema';
 import { UserRoleEnum, type UserSchemaType } from 'src/utils/zod.schemas';
 import type {
+  AdminAuthSchemaType,
   AuthCredentialsDto,
   AuthResponseSchemaType,
 } from './dto/auth.dto';
+
+type AnyAuthResponse = AuthResponseSchemaType | AdminAuthSchemaType;
 
 @Injectable()
 export class AuthService {
@@ -43,7 +46,7 @@ export class AuthService {
       })
       .returning();
 
-    return this.generateTokens(newUser);
+    return this.generateTokens<AuthResponseSchemaType>(newUser);
   }
 
   async login(input: AuthCredentialsDto): Promise<AuthResponseSchemaType> {
@@ -58,13 +61,10 @@ export class AuthService {
     if (!isValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
-
-    return this.generateTokens(user);
+    return this.generateTokens<AuthResponseSchemaType>(user);
   }
 
-  async registerAdmin(
-    input: AuthCredentialsDto,
-  ): Promise<AuthResponseSchemaType> {
+  async registerAdmin(input: AuthCredentialsDto): Promise<AdminAuthSchemaType> {
     const existingUser = await this.getUser(input.email);
 
     if (existingUser) {
@@ -81,11 +81,10 @@ export class AuthService {
         role: UserRoleEnum.ADMIN,
       })
       .returning();
-
-    return this.generateTokens(newAdmin);
+    return this.generateTokens<AdminAuthSchemaType>(newAdmin);
   }
 
-  async loginAdmin(input: AuthCredentialsDto): Promise<AuthResponseSchemaType> {
+  async loginAdmin(input: AuthCredentialsDto): Promise<AdminAuthSchemaType> {
     const user = await this.getUser(input.email);
 
     if (!user || user.role !== UserRoleEnum.ADMIN) {
@@ -98,25 +97,23 @@ export class AuthService {
       throw new UnauthorizedException('Invalid admin credentials');
     }
 
-    return this.generateTokens(user);
+    return this.generateTokens<AdminAuthSchemaType>(user);
   }
 
-  async generateTokens(
+  async generateTokens<T extends AnyAuthResponse>(
     user: Pick<UserSchemaType, 'id' | 'email' | 'role'>,
-  ): Promise<AuthResponseSchemaType> {
-    const payload = {
+  ): Promise<T> {
+    const token = await this.jwtService.signAsync({
       sub: user.id,
       email: user.email,
       role: user.role,
-    };
+    });
 
-    const token = await this.jwtService.signAsync(payload);
+    if (user.role === 'ADMIN') {
+      return { token, role: 'ADMIN', redirectTo: '/admin' } as T;
+    }
 
-    return {
-      token,
-      role: user.role,
-      redirectTo: user.role === 'ADMIN' ? '/admin' : '/dashboard',
-    };
+    return { token, role: 'USER', redirectTo: '/dashboard' } as T;
   }
 
   async getUser(email: string) {

@@ -22,7 +22,7 @@ const AuthResponseSchema = z.object({
   token: z.string().describe('JWT token'),
   role: z.enum(['USER', 'ADMIN']).describe('User role'),
   redirectTo: z
-    .union([z.literal('/dashboard'), z.literal('/admin')])
+    .literal('/dashboard')
     .describe('Redirection path after authentication'),
 });
 
@@ -31,10 +31,23 @@ class AuthResponseDto extends createZodDto(AuthResponseSchema) {}
 
 type AuthResponseSchemaType = z.infer<typeof AuthResponseSchema>;
 
+export const AdminAuthResponseSchema = z.object({
+  token: z.string().describe('JWT token'),
+  role: z.literal('ADMIN').describe('Admin role'),
+  redirectTo: z
+    .literal('/admin')
+    .describe('Redirection path after authentication'),
+});
+
+class AdminAuthResponseDto extends createZodDto(AdminAuthResponseSchema) {}
+
+type AdminAuthSchemaType = z.infer<typeof AdminAuthResponseSchema>;
+
 export {
   AuthCredentialsDto,
   AuthResponseDto,
+  AdminAuthResponseDto,
   AuthCredentialsSchema,
   AuthResponseSchema,
 };
-export type { JWTPayloadType, AuthResponseSchemaType };
+export type { JWTPayloadType, AuthResponseSchemaType, AdminAuthSchemaType };
