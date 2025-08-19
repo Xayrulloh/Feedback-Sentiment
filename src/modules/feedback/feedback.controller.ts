@@ -50,14 +50,14 @@ import { FeedbackService } from './feedback.service';
 
 @ApiTags('Feedback')
 @ApiBearerAuth()
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(UserRoleEnum.ADMIN, UserRoleEnum.USER)
 @Controller('feedback')
 export class FeedbackController {
   constructor(private readonly feedbackService: FeedbackService) {}
 
   @Post('manual')
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRoleEnum.ADMIN)
   @HttpCode(HttpStatus.CREATED)
   @ApiBody({ type: FeedbackManualRequestDto })
   @ApiCreatedResponse({ type: FeedbackResponseDto })
@@ -75,8 +75,6 @@ export class FeedbackController {
 
   @Post('upload')
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRoleEnum.ADMIN, UserRoleEnum.USER)
   @HttpCode(HttpStatus.CREATED)
   @ApiConsumes('multipart/form-data')
   @ZodSerializerDto(FeedbackResponseSchema)
@@ -134,8 +132,6 @@ export class FeedbackController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRoleEnum.ADMIN, UserRoleEnum.USER)
   @Get('sentiment-summary')
   @ApiOperation({ summary: 'Get sentiment summary for user' })
   @ApiOkResponse({
@@ -178,8 +174,6 @@ export class FeedbackController {
 
   @Get('grouped')
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRoleEnum.ADMIN, UserRoleEnum.USER)
   @ApiOperation({
     summary: 'Get feedbacks grouped by sentiment',
   })
@@ -195,8 +189,6 @@ export class FeedbackController {
 
   @Get()
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRoleEnum.ADMIN, UserRoleEnum.USER)
   @ApiQuery({ name: 'sentiment', required: false, enum: SentimentEnum.options })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -217,8 +209,6 @@ export class FeedbackController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRoleEnum.ADMIN, UserRoleEnum.USER)
   @ApiOperation({ summary: 'Download either pdf or csv report file' })
   @ApiOkResponse({
     description: 'Download report file',

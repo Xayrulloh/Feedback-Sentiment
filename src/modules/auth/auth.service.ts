@@ -4,8 +4,7 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-// biome-ignore lint/style/useImportType: Needed for DI
-import { JwtService } from '@nestjs/jwt';
+import type { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { and, eq, isNull } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
@@ -13,12 +12,10 @@ import { DrizzleAsyncProvider } from 'src/database/drizzle.provider';
 import * as schema from 'src/database/schema';
 import { UserRoleEnum, type UserSchemaType } from 'src/utils/zod.schemas';
 import type {
-  AdminAuthSchemaType,
+  AuthAdminResponseSchemaType,
   AuthCredentialsDto,
-  AuthResponseSchemaType,
+  AuthUserResponseSchemaType,
 } from './dto/auth.dto';
-
-type AnyAuthResponse = AuthResponseSchemaType | AdminAuthSchemaType;
 
 @Injectable()
 export class AuthService {
@@ -28,7 +25,9 @@ export class AuthService {
     private db: NodePgDatabase<typeof schema>,
   ) {}
 
-  async register(input: AuthCredentialsDto): Promise<AuthResponseSchemaType> {
+  async register(
+    input: AuthCredentialsDto,
+  ): Promise<AuthUserResponseSchemaType> {
     const existingUser = await this.getUser(input.email);
 
     if (existingUser) {
@@ -46,10 +45,10 @@ export class AuthService {
       })
       .returning();
 
-    return this.generateTokens<AuthResponseSchemaType>(newUser);
+    return this.generateTokens(newUser);
   }
 
-  async login(input: AuthCredentialsDto): Promise<AuthResponseSchemaType> {
+  async login(input: AuthCredentialsDto): Promise<AuthUserResponseSchemaType> {
     const user = await this.getUser(input.email);
 
     if (!user) {
@@ -61,10 +60,12 @@ export class AuthService {
     if (!isValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
-    return this.generateTokens<AuthResponseSchemaType>(user);
+    return this.generateTokens(user);
   }
 
-  async registerAdmin(input: AuthCredentialsDto): Promise<AdminAuthSchemaType> {
+  async registerAdmin(
+    input: AuthCredentialsDto,
+  ): Promise<AuthAdminResponseSchemaType> {
     const existingUser = await this.getUser(input.email);
 
     if (existingUser) {
@@ -81,10 +82,13 @@ export class AuthService {
         role: UserRoleEnum.ADMIN,
       })
       .returning();
-    return this.generateTokens<AdminAuthSchemaType>(newAdmin);
+
+    return this.generateTokens(newAdmin);
   }
 
-  async loginAdmin(input: AuthCredentialsDto): Promise<AdminAuthSchemaType> {
+  async loginAdmin(
+    input: AuthCredentialsDto,
+  ): Promise<AuthAdminResponseSchemaType> {
     const user = await this.getUser(input.email);
 
     if (!user || user.role !== UserRoleEnum.ADMIN) {
@@ -97,23 +101,31 @@ export class AuthService {
       throw new UnauthorizedException('Invalid admin credentials');
     }
 
-    return this.generateTokens<AdminAuthSchemaType>(user);
+    return this.generateTokens(user);
   }
 
-  async generateTokens<T extends AnyAuthResponse>(
-    user: Pick<UserSchemaType, 'id' | 'email' | 'role'>,
-  ): Promise<T> {
+  private async generateTokens<
+    T extends AuthUserResponseSchemaType | AuthAdminResponseSchemaType,
+  >(user: Pick<UserSchemaType, 'id' | 'email' | 'role'>): Promise<T> {
     const token = await this.jwtService.signAsync({
       sub: user.id,
       email: user.email,
       role: user.role,
     });
 
-    if (user.role === 'ADMIN') {
-      return { token, role: 'ADMIN', redirectTo: '/admin' } as T;
+    if (user.role === UserRoleEnum.ADMIN) {
+      return {
+        token,
+        role: user.role,
+        redirectTo: '/admin',
+      } as T;
     }
 
-    return { token, role: 'USER', redirectTo: '/dashboard' } as T;
+    return {
+      token,
+      role: user.role,
+      redirectTo: '/dashboard',
+    } as T;
   }
 
   async getUser(email: string) {

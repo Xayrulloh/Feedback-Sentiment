@@ -9,13 +9,13 @@ import { ZodSerializerDto } from 'nestjs-zod';
 // biome-ignore lint/style/useImportType: Needed for DI
 import { AuthService } from './auth.service';
 import {
-  AdminAuthResponseDto,
-  AdminAuthResponseSchema,
-  type AdminAuthSchemaType,
+  AuthAdminResponseDto,
+  AuthAdminResponseSchema,
+  type AuthAdminResponseSchemaType,
   AuthCredentialsDto,
-  AuthResponseDto,
-  AuthResponseSchema,
-  type AuthResponseSchemaType,
+  AuthUserResponseDto,
+  AuthUserResponseSchema,
+  type AuthUserResponseSchemaType,
 } from './dto/auth.dto';
 
 @ApiTags('Auth')
@@ -26,44 +26,44 @@ export class AuthController {
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
   @ApiBody({ type: AuthCredentialsDto })
-  @ApiCreatedResponse({ type: AuthResponseDto })
-  @ZodSerializerDto(AuthResponseSchema)
-  async register(
+  @ApiCreatedResponse({ type: AuthUserResponseDto })
+  @ZodSerializerDto(AuthUserResponseSchema)
+  async registerUser(
     @Body() body: AuthCredentialsDto,
-  ): Promise<AuthResponseSchemaType> {
+  ): Promise<AuthUserResponseSchemaType> {
     return this.authService.register(body);
   }
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiBody({ type: AuthCredentialsDto })
-  @ApiOkResponse({ type: AuthResponseDto })
-  @ZodSerializerDto(AuthResponseSchema)
-  async login(
+  @ApiOkResponse({ type: AuthUserResponseDto })
+  @ZodSerializerDto(AuthUserResponseSchema)
+  async loginUser(
     @Body() body: AuthCredentialsDto,
-  ): Promise<AuthResponseSchemaType> {
+  ): Promise<AuthUserResponseSchemaType> {
     return this.authService.login(body);
   }
 
   @Post('register/admin')
   @HttpCode(HttpStatus.CREATED)
   @ApiBody({ type: AuthCredentialsDto })
-  @ApiCreatedResponse({ type: AdminAuthResponseDto })
-  @ZodSerializerDto(AdminAuthResponseSchema)
+  @ApiCreatedResponse({ type: AuthAdminResponseDto })
+  @ZodSerializerDto(AuthAdminResponseSchema)
   async registerAdmin(
     @Body() body: AuthCredentialsDto,
-  ): Promise<AdminAuthSchemaType> {
+  ): Promise<AuthAdminResponseSchemaType> {
     return this.authService.registerAdmin(body);
   }
 
   @Post('login/admin')
   @HttpCode(HttpStatus.OK)
   @ApiBody({ type: AuthCredentialsDto })
-  @ApiOkResponse({ type: AdminAuthResponseDto })
-  @ZodSerializerDto(AdminAuthResponseSchema)
+  @ApiOkResponse({ type: AuthAdminResponseDto })
+  @ZodSerializerDto(AuthAdminResponseSchema)
   async loginAdmin(
     @Body() body: AuthCredentialsDto,
-  ): Promise<AdminAuthSchemaType> {
+  ): Promise<AuthAdminResponseSchemaType> {
     return this.authService.loginAdmin(body);
   }
 }
