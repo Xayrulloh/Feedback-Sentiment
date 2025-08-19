@@ -96,13 +96,13 @@ function createBaseResponseDto(schema: z.ZodTypeAny, name: string) {
   return namedClass[className];
 }
 
-const ErrorDetailSchema = z.object({
+const ErrorDetailsSchema = z.object({
   field: z.string().optional(),
   message: z.string(),
   code: z.string().optional(),
 });
 
-type ErrorDetailType = z.infer<typeof ErrorDetailSchema>;
+type ErrorDetailsSchemaType = z.infer<typeof ErrorDetailsSchema>;
 
 const BaseErrorResponseSchema = <T extends z.ZodTypeAny>(dataSchema: T) =>
   z.object({
@@ -110,12 +110,12 @@ const BaseErrorResponseSchema = <T extends z.ZodTypeAny>(dataSchema: T) =>
     statusCode: z.number(),
     message: z.string(),
     data: dataSchema.nullable(),
-    errors: z.array(ErrorDetailSchema).nullable().optional(),
+    errors: z.array(ErrorDetailsSchema).nullable().optional(),
     timestamp: z.string(),
     path: z.string(),
   });
 
-type ApiBaseResponseType = z.infer<
+type BaseErrorResponseSchemaType = z.infer<
   ReturnType<typeof BaseErrorResponseSchema<z.ZodTypeAny>>
 >;
 
@@ -127,7 +127,7 @@ const DatabaseErrorSchema = z.object({
   column: z.string().optional(),
 });
 
-type DatabaseErrorType = z.infer<typeof DatabaseErrorSchema>;
+type DatabaseErrorSchemaType = z.infer<typeof DatabaseErrorSchema>;
 
 export {
   UserSchema,
@@ -142,10 +142,10 @@ export {
   BaseSuccessResponseSchema,
   type BaseSuccessResponseSchemaType,
   createBaseResponseDto,
-  ErrorDetailSchema,
+  ErrorDetailsSchema,
   BaseErrorResponseSchema,
-  type ApiBaseResponseType,
+  type BaseErrorResponseSchemaType,
   DatabaseErrorSchema,
-  type DatabaseErrorType,
-  type ErrorDetailType,
+  type DatabaseErrorSchemaType,
+  type ErrorDetailsSchemaType,
 };

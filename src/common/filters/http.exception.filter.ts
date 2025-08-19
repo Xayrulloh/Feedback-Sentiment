@@ -6,13 +6,13 @@ import {
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import type {
-  ApiBaseResponseType,
-  ErrorDetailType,
+  BaseErrorResponseSchemaType,
+  ErrorDetailsSchemaType,
 } from 'src/utils/zod.schemas';
 
 interface HttpErrorResponse {
   message?: string;
-  errors?: ErrorDetailType[];
+  errors?: ErrorDetailsSchemaType[];
 }
 
 @Catch(HttpException)
@@ -27,7 +27,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const rawResponse = exception.getResponse();
 
     let message: string;
-    let errors: ErrorDetailType[] | undefined;
+    let errors: ErrorDetailsSchemaType[] | undefined;
 
     if (typeof rawResponse === 'string') {
       message = rawResponse;
@@ -46,7 +46,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       message = exception.message;
     }
 
-    const errorResponse: ApiBaseResponseType & { errors?: ErrorDetailType[] } =
+    const errorResponse: BaseErrorResponseSchemaType & { errors?: ErrorDetailsSchemaType[] } =
       {
         success: false,
         statusCode: status,

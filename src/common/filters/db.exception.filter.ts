@@ -7,9 +7,9 @@ import {
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import type {
-  ApiBaseResponseType,
-  DatabaseErrorType,
-  ErrorDetailType,
+  BaseErrorResponseSchemaType,
+  DatabaseErrorSchemaType,
+  ErrorDetailsSchemaType,
 } from 'src/utils/zod.schemas';
 
 @Catch()
@@ -24,7 +24,7 @@ export class DatabaseExceptionFilter implements ExceptionFilter {
 
     let statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
     let message = 'Database error occurred';
-    let errors: ErrorDetailType[] | null = null;
+    let errors: ErrorDetailsSchemaType[] | null = null;
 
     if (this.isDatabaseError(exception)) {
       switch (exception.code) {
@@ -63,7 +63,7 @@ export class DatabaseExceptionFilter implements ExceptionFilter {
       }
     }
 
-    const errorResponse: ApiBaseResponseType = {
+    const errorResponse: BaseErrorResponseSchemaType = {
       success: false,
       statusCode,
       message,
@@ -75,7 +75,7 @@ export class DatabaseExceptionFilter implements ExceptionFilter {
     response.status(statusCode).json(errorResponse);
   }
 
-  private isDatabaseError(error: unknown): error is DatabaseErrorType {
+  private isDatabaseError(error: unknown): error is DatabaseErrorSchemaType {
     return (
       typeof error === 'object' &&
       error !== null &&
