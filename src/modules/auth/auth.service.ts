@@ -25,7 +25,7 @@ export class AuthService {
     private db: NodePgDatabase<typeof schema>,
   ) {}
 
-  async register(
+  async registerUser(
     input: AuthCredentialsDto,
   ): Promise<AuthUserResponseSchemaType> {
     const existingUser = await this.getUser(input.email);
@@ -48,7 +48,7 @@ export class AuthService {
     return this.generateTokens(newUser);
   }
 
-  async login(input: AuthCredentialsDto): Promise<AuthUserResponseSchemaType> {
+  async loginUser(input: AuthCredentialsDto): Promise<AuthUserResponseSchemaType> {
     const user = await this.getUser(input.email);
 
     if (!user) {

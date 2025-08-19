@@ -31,7 +31,7 @@ export class AuthController {
   async registerUser(
     @Body() body: AuthCredentialsDto,
   ): Promise<AuthUserResponseSchemaType> {
-    return this.authService.register(body);
+    return this.authService.registerUser(body);
   }
 
   @Post('login')
@@ -42,7 +42,7 @@ export class AuthController {
   async loginUser(
     @Body() body: AuthCredentialsDto,
   ): Promise<AuthUserResponseSchemaType> {
-    return this.authService.login(body);
+    return this.authService.loginUser(body);
   }
 
   @Post('register/admin')
