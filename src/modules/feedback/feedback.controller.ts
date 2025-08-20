@@ -39,7 +39,6 @@ import {
   type FeedbackGroupedArrayResponseDto,
   FeedbackGroupedArrayResponseSchema,
   FeedbackManualRequestDto,
-  FeedbackQuerySchema,
   FeedbackQuerySchemaDto,
   type FeedbackResponseDto,
   FeedbackResponseSchema,
