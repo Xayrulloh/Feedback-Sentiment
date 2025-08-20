@@ -38,7 +38,7 @@ export class FileService {
       .offset((page - 1) * limit);
 
     return {
-      data: userFiles,
+      files: userFiles,
       pagination: {
         limit,
         page,

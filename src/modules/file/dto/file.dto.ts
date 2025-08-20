@@ -3,7 +3,7 @@ import { FileSchema, PaginationSchema } from 'src/utils/zod.schemas';
 import * as z from 'zod';
 
 const FileResponseSchema = z.object({
-  data: FileSchema.array(),
+  files: FileSchema.array(),
   pagination: PaginationSchema,
 });
 
