@@ -22,14 +22,14 @@ import {
 import { ZodSerializerDto } from 'nestjs-zod';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
-import {
-  createBaseResponseDto,
-  UserRoleEnum,
-} from 'src/utils/zod.schemas';
+import { createBaseResponseDto, UserRoleEnum } from 'src/utils/zod.schemas';
 import { Roles } from '../auth/decorators/roles.decorator';
 // biome-ignore lint/style/useImportType: Needed for DI
 import { AdminService } from './admin.service';
-import { AdminDisableSuspendResponseSchema } from './dto/admin.dto';
+import {
+  AdminDisableSuspendResponseSchema,
+  type AdminDisableSuspendResponseSchemaType,
+} from './dto/admin.dto';
 
 @ApiTags('Admin')
 @ApiBearerAuth()
@@ -100,10 +100,10 @@ import { AdminDisableSuspendResponseSchema } from './dto/admin.dto';
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
-  @Post('disable/:id')
+  @Post('disable/:userId')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Toggle disable/enable a user (admin only)' })
-  @ApiParam({ name: 'id', type: 'string', description: 'User ID (uuid)' })
+  @ApiParam({ name: 'userId', type: 'string', description: 'User ID (uuid)' })
   @ApiOkResponse({
     type: createBaseResponseDto(
       AdminDisableSuspendResponseSchema,
@@ -111,14 +111,16 @@ export class AdminController {
     ),
   })
   @ZodSerializerDto(AdminDisableSuspendResponseSchema)
-  async adminDisable(@Param('id', ParseUUIDPipe) id: string) {
-    return this.adminService.adminDisable(id);
+  async adminDisable(
+    @Param('userId', ParseUUIDPipe) userId: string,
+  ): Promise<AdminDisableSuspendResponseSchemaType> {
+    return this.adminService.adminDisable(userId);
   }
 
-  @Post('suspend/:id')
+  @Post('suspend/:userId')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Suspend (soft-delete) a user (admin only)' })
-  @ApiParam({ name: 'id', type: 'string', description: 'User ID (uuid)' })
+  @ApiParam({ name: 'userId', type: 'string', description: 'User ID (uuid)' })
   @ApiOkResponse({
     type: createBaseResponseDto(
       AdminDisableSuspendResponseSchema,
@@ -126,7 +128,9 @@ export class AdminController {
     ),
   })
   @ZodSerializerDto(AdminDisableSuspendResponseSchema)
-  async adminSuspend(@Param('id', ParseUUIDPipe) id: string) {
-    return this.adminService.adminSuspend(id);
+  async adminSuspend(
+    @Param('userId', ParseUUIDPipe) userId: string,
+  ): Promise<AdminDisableSuspendResponseSchemaType> {
+    return this.adminService.adminSuspend(userId);
   }
 }

@@ -21,13 +21,13 @@ export class AdminService {
       throw new NotFoundException('User not found');
     }
 
-    const updated = await this.db
+    const [disabledUser] = await this.db
       .update(schema.usersSchema)
       .set({ isDisabled: !user.isDisabled })
       .where(eq(schema.usersSchema.id, userId))
       .returning();
-
-    return updated[0];
+    console.log('User full details after disable/enable:', disabledUser);
+    return disabledUser;
   }
 
   async adminSuspend(userId: string) {
@@ -40,14 +40,14 @@ export class AdminService {
       throw new NotFoundException('User not found');
     }
 
-    const updated = await this.db
+    const [suspendedUser] = await this.db
       .update(schema.usersSchema)
       .set({
         deletedAt: new Date(),
       })
       .where(eq(schema.usersSchema.id, userId))
       .returning();
-
-    return updated[0];
+    console.log('User full details after suspension:', suspendedUser);
+    return suspendedUser;
   }
 }
