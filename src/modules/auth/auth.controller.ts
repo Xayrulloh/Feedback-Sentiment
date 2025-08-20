@@ -10,6 +10,7 @@ import {
 } from '@nestjs/swagger';
 import { ZodSerializerDto } from 'nestjs-zod';
 import { createBaseResponseDto } from 'src/utils/zod.schemas';
+// biome-ignore lint/style/useImportType: Needed for DI
 import { AuthService } from './auth.service';
 import {
   AuthAdminResponseDto,

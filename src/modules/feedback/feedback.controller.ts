@@ -49,6 +49,7 @@ import {
   type ReportDownloadQueryDto,
   SentimentEnum,
 } from './dto/feedback.dto';
+// biome-ignore lint/style/useImportType: Needed for DI
 import { FeedbackService } from './feedback.service';
 
 @ApiTags('Feedback')
