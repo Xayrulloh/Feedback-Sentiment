@@ -69,7 +69,7 @@ const FeedbackQuerySchema = z.object({
 class FeedbackQuerySchemaDto extends createZodDto(FeedbackQuerySchema) {}
 
 const FeedbackFilteredResponseSchema = z.object({
-  data: FeedbackSchema.array(),
+  feedbacks: FeedbackSchema.array(),
   pagination: PaginationSchema,
 });
 

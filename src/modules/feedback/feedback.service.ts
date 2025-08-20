@@ -156,7 +156,7 @@ export class FeedbackService {
       .offset((page - 1) * limit);
 
     return {
-      data: feedbacks,
+      feedbacks: feedbacks,
       pagination: {
         limit,
         page,
