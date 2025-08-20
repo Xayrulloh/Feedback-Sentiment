@@ -19,7 +19,7 @@ export class RolesGuard implements CanActivate {
       [ctx.getHandler(), ctx.getClass()],
     );
 
-    if (!requiredRoles) {
+    if (!requiredRoles.length) {
       return true;
     }
 
