@@ -134,28 +134,7 @@ export class AuthController {
       properties: {
         success: { type: 'boolean', example: false },
         statusCode: { type: 'number', example: 401 },
-        message: { type: 'string', example: 'Invalid email or password' },
-        errors: {
-          type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              field: { type: 'string', example: 'email' },
-              message: {
-                type: 'string',
-                example: 'Incorrect email or password',
-              },
-              code: { type: 'string', example: 'INVALID_CREDENTIALS' },
-            },
-          },
-          example: [
-            {
-              field: 'email',
-              message: 'Incorrect email or password',
-              code: 'INVALID_CREDENTIALS',
-            },
-          ],
-        },
+        message: { type: 'string', example: 'Invalid credentials' },
         path: { type: 'string', example: '/auth/login' },
         timestamp: { type: 'string', example: new Date().toISOString() },
       },
