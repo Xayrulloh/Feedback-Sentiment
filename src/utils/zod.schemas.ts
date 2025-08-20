@@ -1,3 +1,4 @@
+import { createZodDto } from 'nestjs-zod';
 import * as z from 'zod';
 
 // base
@@ -75,6 +76,63 @@ const FeedbackSchema = z
 
 type FeedbackSchemaType = z.infer<typeof FeedbackSchema>;
 
+const BaseSuccessResponseSchema = <T extends z.ZodTypeAny>(dataSchema?: T) =>
+  z.object({
+    success: z.boolean(),
+    statusCode: z.number(),
+    message: z.string(),
+    data: dataSchema ? dataSchema.optional() : z.any().optional(),
+    timestamp: z.string(),
+  });
+
+type BaseSuccessResponseSchemaType<T = z.ZodTypeAny> = z.infer<
+  ReturnType<typeof BaseSuccessResponseSchema<z.ZodType<T>>>
+>;
+
+function createBaseResponseDto(schema: z.ZodTypeAny, name: string) {
+  const responseSchema = BaseSuccessResponseSchema(schema);
+  const className = `ApiResponse${name}Dto`;
+
+  const namedClass = {
+    [className]: class extends createZodDto(responseSchema) {},
+  };
+
+  return namedClass[className];
+}
+
+const ErrorDetailsSchema = z.object({
+  field: z.string().optional(),
+  message: z.string(),
+  code: z.string().optional(),
+});
+
+type ErrorDetailsSchemaType = z.infer<typeof ErrorDetailsSchema>;
+
+const BaseErrorResponseSchema = <T extends z.ZodTypeAny>(dataSchema: T) =>
+  z.object({
+    success: z.boolean(),
+    statusCode: z.number(),
+    message: z.string(),
+    data: dataSchema.nullable(),
+    errors: z.array(ErrorDetailsSchema).nullable().optional(),
+    timestamp: z.string(),
+    path: z.string(),
+  });
+
+type BaseErrorResponseSchemaType = z.infer<
+  ReturnType<typeof BaseErrorResponseSchema<z.ZodTypeAny>>
+>;
+
+const DatabaseErrorSchema = z.object({
+  code: z.string().optional(),
+  constraint: z.string().optional(),
+  detail: z.string().optional(),
+  table: z.string().optional(),
+  column: z.string().optional(),
+});
+
+type DatabaseErrorSchemaType = z.infer<typeof DatabaseErrorSchema>;
+
 export {
   UserSchema,
   type UserSchemaType,
@@ -85,4 +143,13 @@ export {
   FeedbackSchema,
   type FeedbackSchemaType,
   FeedbackSentimentEnum,
+  BaseSuccessResponseSchema,
+  type BaseSuccessResponseSchemaType,
+  createBaseResponseDto,
+  ErrorDetailsSchema,
+  BaseErrorResponseSchema,
+  type BaseErrorResponseSchemaType,
+  DatabaseErrorSchema,
+  type DatabaseErrorSchemaType,
+  type ErrorDetailsSchemaType,
 };

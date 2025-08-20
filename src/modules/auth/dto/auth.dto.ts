@@ -18,20 +18,20 @@ const AuthCredentialsSchema = UserSchema.pick({ email: true })
     'Credentials for user authentication, including email and password',
   );
 
-const AuthResponseSchema = z.object({
+const AuthUserResponseSchema = z.object({
   token: z.string().describe('JWT token'),
-  role: z.enum(['USER', 'ADMIN']).describe('User role'),
+  role: z.literal('USER').describe('User role'),
   redirectTo: z
     .literal('/dashboard')
     .describe('Redirection path after authentication'),
 });
 
 class AuthCredentialsDto extends createZodDto(AuthCredentialsSchema) {}
-class AuthResponseDto extends createZodDto(AuthResponseSchema) {}
+class AuthUserResponseDto extends createZodDto(AuthUserResponseSchema) {}
 
-type AuthResponseSchemaType = z.infer<typeof AuthResponseSchema>;
+type AuthUserResponseSchemaType = z.infer<typeof AuthUserResponseSchema>;
 
-export const AdminAuthResponseSchema = z.object({
+export const AuthAdminResponseSchema = z.object({
   token: z.string().describe('JWT token'),
   role: z.literal('ADMIN').describe('Admin role'),
   redirectTo: z
@@ -39,15 +39,19 @@ export const AdminAuthResponseSchema = z.object({
     .describe('Redirection path after authentication'),
 });
 
-class AdminAuthResponseDto extends createZodDto(AdminAuthResponseSchema) {}
+class AuthAdminResponseDto extends createZodDto(AuthAdminResponseSchema) {}
 
-type AdminAuthSchemaType = z.infer<typeof AdminAuthResponseSchema>;
+type AuthAdminResponseSchemaType = z.infer<typeof AuthAdminResponseSchema>;
 
 export {
   AuthCredentialsDto,
-  AuthResponseDto,
-  AdminAuthResponseDto,
+  AuthUserResponseDto,
+  AuthAdminResponseDto,
   AuthCredentialsSchema,
-  AuthResponseSchema,
+  AuthUserResponseSchema,
 };
-export type { JWTPayloadType, AuthResponseSchemaType, AdminAuthSchemaType };
+export type {
+  JWTPayloadType,
+  AuthUserResponseSchemaType,
+  AuthAdminResponseSchemaType,
+};

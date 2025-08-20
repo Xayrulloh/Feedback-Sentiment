@@ -1,7 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 // biome-ignore lint/style/useImportType: Needed for DI
 import { ConfigService } from '@nestjs/config';
-import axios from 'axios';
+import axios, { type AxiosError } from 'axios';
 import type { EnvType } from 'src/config/env/env-validation';
 import {
   type AIRequestSchemaDto,
@@ -10,7 +14,6 @@ import {
   PromptResponseSchema,
   type PromptResponseSchemaType,
 } from './dto/AI.dto';
-
 import { generateSentimentPrompt } from './prompts/sentiment.prompt';
 
 @Injectable()
@@ -24,26 +27,33 @@ export class AIService {
 
   private async sendPrompt(
     prompt: string,
-    model: string = 'mistral-large-latest',
+    model: string = 'mistralai/mistral-7b-instruct',
   ): Promise<PromptResponseSchemaType> {
-    const { data } = await axios.post(
-      'https://api.mistral.ai/v1/chat/completions',
-      {
-        model,
-        messages: [{ role: 'user', content: prompt }],
-        response_format: { type: 'json_object' },
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${this.MISTRAL_API_KEY}`,
-          'Content-Type': 'application/json',
+    const { data } = await axios
+      .post(
+        'https://openrouter.ai/api/v1/chat/completions',
+        {
+          model,
+          messages: [{ role: 'user', content: prompt }],
+          response_format: { type: 'json_object' },
         },
-        timeout: 10000,
-      },
-    );
+        {
+          headers: {
+            Authorization: `Bearer ${this.MISTRAL_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          timeout: 10000,
+        },
+      )
+      .catch((err: AxiosError) => {
+        Logger.error(err, AIService.name);
+
+        throw new InternalServerErrorException('Error while sending prompt');
+      });
 
     const validatedResponse = MistralResponseSchema.parse(data);
     const content = validatedResponse.choices[0].message.content;
+    console.log('🚀 ~ sendPrompt ~ content:', content);
 
     return JSON.parse(content);
   }

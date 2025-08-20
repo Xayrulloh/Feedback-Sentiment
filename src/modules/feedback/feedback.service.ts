@@ -38,7 +38,7 @@ export class FeedbackService {
   async feedbackManual(
     input: FeedbackManualRequestDto,
     user: UserSchemaType,
-    fileId?: string,
+    fileId: string | null = null,
   ): Promise<FeedbackResponseDto> {
     const response: FeedbackResponseDto = await Promise.all(
       input.feedbacks.map(async (feedback) => {
