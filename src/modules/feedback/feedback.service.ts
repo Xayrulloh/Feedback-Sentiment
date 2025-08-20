@@ -99,6 +99,7 @@ export class FeedbackService {
 
     if (!hasFeedbackColumn) {
       const availableColumns = Object.keys(firstRow);
+      
       throw new BadRequestException(
         `Missing required column. Expected "feedback" or "feedbacks", found: ${availableColumns.join(', ')}`,
       );
