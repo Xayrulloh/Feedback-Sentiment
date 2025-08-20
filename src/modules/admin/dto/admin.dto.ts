@@ -1,5 +1,5 @@
 import { UserSchema } from 'src/utils/zod.schemas';
 
-const AdminUserResponseSchema = UserSchema;
+const AdminDisableSuspendResponseSchema = UserSchema;
 
-export { AdminUserResponseSchema };
+export { AdminDisableSuspendResponseSchema };

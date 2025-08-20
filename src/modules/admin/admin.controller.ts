@@ -25,12 +25,11 @@ import { RolesGuard } from 'src/common/guards/roles.guard';
 import {
   createBaseResponseDto,
   UserRoleEnum,
-  UserSchema,
 } from 'src/utils/zod.schemas';
 import { Roles } from '../auth/decorators/roles.decorator';
 // biome-ignore lint/style/useImportType: Needed for DI
 import { AdminService } from './admin.service';
-import { AdminUserResponseSchema } from './dto/admin.dto';
+import { AdminDisableSuspendResponseSchema } from './dto/admin.dto';
 
 @ApiTags('Admin')
 @ApiBearerAuth()
@@ -107,11 +106,11 @@ export class AdminController {
   @ApiParam({ name: 'id', type: 'string', description: 'User ID (uuid)' })
   @ApiOkResponse({
     type: createBaseResponseDto(
-      AdminUserResponseSchema,
-      'AdminUserResponseSchema',
+      AdminDisableSuspendResponseSchema,
+      'AdminDisableSuspendResponseSchema',
     ),
   })
-  @ZodSerializerDto(UserSchema)
+  @ZodSerializerDto(AdminDisableSuspendResponseSchema)
   async adminDisable(@Param('id', ParseUUIDPipe) id: string) {
     return this.adminService.adminDisable(id);
   }
@@ -122,11 +121,11 @@ export class AdminController {
   @ApiParam({ name: 'id', type: 'string', description: 'User ID (uuid)' })
   @ApiOkResponse({
     type: createBaseResponseDto(
-      AdminUserResponseSchema,
-      'AdminUserResponseSchema',
+      AdminDisableSuspendResponseSchema,
+      'AdminDisableSuspendResponseSchema',
     ),
   })
-  @ZodSerializerDto(UserSchema)
+  @ZodSerializerDto(AdminDisableSuspendResponseSchema)
   async adminSuspend(@Param('id', ParseUUIDPipe) id: string) {
     return this.adminService.adminSuspend(id);
   }
