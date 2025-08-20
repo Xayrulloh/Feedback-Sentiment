@@ -17,7 +17,9 @@ export class UsersService {
       .from(schema.usersSchema)
       .where(eq(schema.usersSchema.id, userId));
 
-    if (!user) throw new NotFoundException('User not found');
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
 
     const updated = await this.db
       .update(schema.usersSchema)
@@ -34,7 +36,9 @@ export class UsersService {
       .from(schema.usersSchema)
       .where(eq(schema.usersSchema.id, userId));
 
-    if (!user) throw new NotFoundException('User not found');
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
 
     const updated = await this.db
       .update(schema.usersSchema)
