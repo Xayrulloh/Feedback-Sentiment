@@ -91,7 +91,7 @@ type BaseSuccessResponseSchemaType<T = z.ZodTypeAny> = z.infer<
 
 function createBaseResponseDto(schema: z.ZodTypeAny, name: string) {
   const responseSchema = BaseSuccessResponseSchema(schema);
-  const className = `ApiResponse${name}Dto`;
+  const className = `${name}Dto`;
 
   const namedClass = {
     [className]: class extends createZodDto(responseSchema) {},

@@ -11,7 +11,7 @@ export class AdminService {
     private readonly db: NodePgDatabase<typeof schema>,
   ) {}
 
-  async userDisableToggle(userId: string) {
+  async adminDisable(userId: string) {
     const [user] = await this.db
       .select()
       .from(schema.usersSchema)
@@ -30,7 +30,7 @@ export class AdminService {
     return updated[0];
   }
 
-  async userSuspend(userId: string) {
+  async adminSuspend(userId: string) {
     const [user] = await this.db
       .select()
       .from(schema.usersSchema)

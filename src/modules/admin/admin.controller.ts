@@ -104,7 +104,7 @@ export class AdminController {
   @ApiOkResponse({ type: createBaseResponseDto(AdminUserResponseSchema, 'AdminUserResponseSchema') })
   @ZodSerializerDto(UserSchema)
   async adminDisable(@Param('id', ParseUUIDPipe) id: string) {
-    return this.adminService.userDisableToggle(id);
+    return this.adminService.adminDisable(id);
   }
 
   @Post('suspend/:id')
@@ -114,6 +114,6 @@ export class AdminController {
   @ApiOkResponse({ type: createBaseResponseDto(AdminUserResponseSchema, 'AdminUserResponseSchema') })
   @ZodSerializerDto(UserSchema)
   async adminSuspend(@Param('id', ParseUUIDPipe) id: string) {
-    return this.adminService.userSuspend(id);
+    return this.adminService.adminSuspend(id);
   }
 }
