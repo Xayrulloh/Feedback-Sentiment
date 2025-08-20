@@ -3,6 +3,7 @@ import {
   Catch,
   type ExceptionFilter,
   HttpException,
+  Logger,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import type {
@@ -18,6 +19,8 @@ interface HttpErrorResponse {
 @Catch(HttpException)
 export class HttpExceptionFilter implements ExceptionFilter {
   catch(exception: HttpException, host: ArgumentsHost): void {
+    Logger.error(exception, HttpExceptionFilter.name);
+
     const [response, request] = [
       host.switchToHttp().getResponse<Response>(),
       host.switchToHttp().getRequest<Request>(),
@@ -46,15 +49,16 @@ export class HttpExceptionFilter implements ExceptionFilter {
       message = exception.message;
     }
 
-    const errorResponse: BaseErrorResponseSchemaType & { errors?: ErrorDetailsSchemaType[] } =
-      {
-        success: false,
-        statusCode: status,
-        message,
-        ...(errors ? { errors } : {}),
-        timestamp: new Date().toISOString(),
-        path: request.url,
-      };
+    const errorResponse: BaseErrorResponseSchemaType & {
+      errors?: ErrorDetailsSchemaType[];
+    } = {
+      success: false,
+      statusCode: status,
+      message,
+      ...(errors ? { errors } : {}),
+      timestamp: new Date().toISOString(),
+      path: request.url,
+    };
 
     response.status(status).json(errorResponse);
   }

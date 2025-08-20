@@ -14,9 +14,9 @@ import type {
 
 @Catch()
 export class DatabaseExceptionFilter implements ExceptionFilter {
-  private readonly logger = new Logger(DatabaseExceptionFilter.name);
-
   catch(exception: unknown, host: ArgumentsHost): void {
+    Logger.error(exception, DatabaseExceptionFilter.name);
+
     const [response, request] = [
       host.switchToHttp().getResponse<Response>(),
       host.switchToHttp().getRequest<Request>(),
@@ -59,7 +59,7 @@ export class DatabaseExceptionFilter implements ExceptionFilter {
           break;
 
         default:
-          this.logger.error(exception);
+          Logger.error('DB unknown error');
       }
     }
 

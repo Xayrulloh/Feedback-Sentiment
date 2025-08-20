@@ -3,6 +3,7 @@ import {
   Catch,
   type ExceptionFilter,
   HttpStatus,
+  Logger,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { ZodError } from 'zod';
@@ -10,6 +11,8 @@ import { ZodError } from 'zod';
 @Catch(ZodError)
 export class ZodExceptionFilter implements ExceptionFilter {
   catch(exception: ZodError, host: ArgumentsHost) {
+    Logger.error(exception, ZodExceptionFilter.name);
+
     const [response, request] = [
       host.switchToHttp().getResponse<Response>(),
       host.switchToHttp().getRequest<Request>(),
