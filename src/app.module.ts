@@ -10,10 +10,17 @@ import { AiModule } from './modules/AI/AI.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { FeedbackModule } from './modules/feedback/feedback.module';
+import { FileModule } from './modules/file/file.module';
 
 @Module({
-  imports: [EnvModule, AuthModule, AiModule, FeedbackModule, AdminModule],
-
+  imports: [
+    EnvModule,
+    AuthModule,
+    AiModule,
+    FeedbackModule,
+    AdminModule,
+    FileModule,
+  ],
   controllers: [],
   providers: [
     { provide: APP_PIPE, useClass: ZodValidationPipe },

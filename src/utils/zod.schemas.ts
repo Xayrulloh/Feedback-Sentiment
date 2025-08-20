@@ -76,6 +76,15 @@ const FeedbackSchema = z
 
 type FeedbackSchemaType = z.infer<typeof FeedbackSchema>;
 
+const FileSchema = z
+  .object({
+    userId: z.string().uuid().describe('User who owns the files'),
+    name: z.string().min(1).describe('File name'),
+  })
+  .merge(BaseSchema);
+
+type FileSchemaType = z.infer<typeof FileSchema>;
+
 const BaseSuccessResponseSchema = <T extends z.ZodTypeAny>(dataSchema?: T) =>
   z.object({
     success: z.boolean(),
@@ -134,6 +143,8 @@ const DatabaseErrorSchema = z.object({
 type DatabaseErrorSchemaType = z.infer<typeof DatabaseErrorSchema>;
 
 export {
+  type FileSchemaType,
+  FileSchema,
   UserSchema,
   type UserSchemaType,
   UserRoleEnum,
