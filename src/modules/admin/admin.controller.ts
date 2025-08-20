@@ -22,15 +22,15 @@ import {
 import { ZodSerializerDto } from 'nestjs-zod';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
-import { UserRoleEnum, UserSchema } from 'src/utils/zod.schemas';
+import { createBaseResponseDto, UserRoleEnum, UserSchema } from 'src/utils/zod.schemas';
 import { Roles } from '../auth/decorators/roles.decorator';
-import { UsersResponseSchemaDto } from './dto/users.dto';
 // biome-ignore lint/style/useImportType: Needed for DI
-import { UsersService } from './users.service';
+import { AdminService } from './admin.service';
+import { AdminUserResponseSchema } from './dto/admin.dto';
 
-@ApiTags('Users')
+@ApiTags('Admin')
 @ApiBearerAuth()
-@Controller('users')
+@Controller('admin')
 @Roles(UserRoleEnum.ADMIN)
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiForbiddenResponse({
@@ -52,7 +52,7 @@ import { UsersService } from './users.service';
     properties: {
       success: { type: 'boolean', example: false },
       statusCode: { type: 'number', example: 401 },
-      message: { type: 'string', example: 'Forbidden resource' },
+      message: { type: 'string', example: 'Unauthorized' },
       timestamp: { type: 'string', example: new Date().toISOString() },
     },
   },
@@ -63,12 +63,6 @@ import { UsersService } from './users.service';
       success: false,
       statusCode: 500,
       message: 'Internal server error',
-      errors: [
-        {
-          code: 'INTERNAL_ERROR',
-          message: 'An unexpected error occurred. Please try again later.',
-        },
-      ],
       timestamp: new Date().toISOString(),
     },
   },
@@ -100,26 +94,26 @@ import { UsersService } from './users.service';
     },
   },
 })
-export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+export class AdminController {
+  constructor(private readonly adminService: AdminService) {}
 
   @Post('disable/:id')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Toggle disable/enable a user (admin only)' })
   @ApiParam({ name: 'id', type: 'string', description: 'User ID (uuid)' })
-  @ApiOkResponse({ type: UsersResponseSchemaDto })
+  @ApiOkResponse({ type: createBaseResponseDto(AdminUserResponseSchema, 'AdminUserResponseSchema') })
   @ZodSerializerDto(UserSchema)
-  async disable(@Param('id', ParseUUIDPipe) id: string) {
-    return this.usersService.userDisableToggle(id);
+  async adminDisable(@Param('id', ParseUUIDPipe) id: string) {
+    return this.adminService.userDisableToggle(id);
   }
 
   @Post('suspend/:id')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Suspend (soft-delete) a user (admin only)' })
   @ApiParam({ name: 'id', type: 'string', description: 'User ID (uuid)' })
-  @ApiOkResponse({ type: UsersResponseSchemaDto })
+  @ApiOkResponse({ type: createBaseResponseDto(AdminUserResponseSchema, 'AdminUserResponseSchema') })
   @ZodSerializerDto(UserSchema)
-  async suspend(@Param('id', ParseUUIDPipe) id: string) {
-    return this.usersService.userSuspend(id);
+  async adminSuspend(@Param('id', ParseUUIDPipe) id: string) {
+    return this.adminService.userSuspend(id);
   }
 }

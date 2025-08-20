@@ -5,7 +5,7 @@ import { DrizzleAsyncProvider } from 'src/database/drizzle.provider';
 import * as schema from 'src/database/schema';
 
 @Injectable()
-export class UsersService {
+export class AdminService {
   constructor(
     @Inject(DrizzleAsyncProvider)
     private readonly db: NodePgDatabase<typeof schema>,
