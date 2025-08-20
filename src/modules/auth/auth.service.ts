@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Inject,
   Injectable,
@@ -48,7 +49,9 @@ export class AuthService {
     return this.generateTokens(newUser);
   }
 
-  async loginUser(input: AuthCredentialsDto): Promise<AuthUserResponseSchemaType> {
+  async loginUser(
+    input: AuthCredentialsDto,
+  ): Promise<AuthUserResponseSchemaType> {
     const user = await this.getUser(input.email);
 
     if (!user) {

@@ -3,7 +3,6 @@ import {
   InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
-// biome-ignore lint/style/useImportType: Needed for DI
 import { ConfigService } from '@nestjs/config';
 import axios, { type AxiosError } from 'axios';
 import type { EnvType } from 'src/config/env/env-validation';
