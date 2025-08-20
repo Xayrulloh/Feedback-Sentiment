@@ -22,7 +22,11 @@ import {
 import { ZodSerializerDto } from 'nestjs-zod';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
-import { createBaseResponseDto, UserRoleEnum, UserSchema } from 'src/utils/zod.schemas';
+import {
+  createBaseResponseDto,
+  UserRoleEnum,
+  UserSchema,
+} from 'src/utils/zod.schemas';
 import { Roles } from '../auth/decorators/roles.decorator';
 // biome-ignore lint/style/useImportType: Needed for DI
 import { AdminService } from './admin.service';
@@ -101,7 +105,12 @@ export class AdminController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Toggle disable/enable a user (admin only)' })
   @ApiParam({ name: 'id', type: 'string', description: 'User ID (uuid)' })
-  @ApiOkResponse({ type: createBaseResponseDto(AdminUserResponseSchema, 'AdminUserResponseSchema') })
+  @ApiOkResponse({
+    type: createBaseResponseDto(
+      AdminUserResponseSchema,
+      'AdminUserResponseSchema',
+    ),
+  })
   @ZodSerializerDto(UserSchema)
   async adminDisable(@Param('id', ParseUUIDPipe) id: string) {
     return this.adminService.adminDisable(id);
@@ -111,7 +120,12 @@ export class AdminController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Suspend (soft-delete) a user (admin only)' })
   @ApiParam({ name: 'id', type: 'string', description: 'User ID (uuid)' })
-  @ApiOkResponse({ type: createBaseResponseDto(AdminUserResponseSchema, 'AdminUserResponseSchema') })
+  @ApiOkResponse({
+    type: createBaseResponseDto(
+      AdminUserResponseSchema,
+      'AdminUserResponseSchema',
+    ),
+  })
   @ZodSerializerDto(UserSchema)
   async adminSuspend(@Param('id', ParseUUIDPipe) id: string) {
     return this.adminService.adminSuspend(id);

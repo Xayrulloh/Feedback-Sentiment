@@ -1,4 +1,9 @@
-import { ForbiddenException, Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Inject,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 // biome-ignore lint/style/useImportType: Needed for DI
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
@@ -28,21 +33,20 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
 
   async validate(payload: JWTPayloadType) {
     const user = await this.db.query.usersSchema.findFirst({
-      where: eq(schema.usersSchema.id, payload.sub),    
+      where: eq(schema.usersSchema.id, payload.sub),
     });
 
     if (!user) {
       throw new UnauthorizedException('Please log in to continue');
     }
 
-    if (user.isDisabled ) {
+    if (user.isDisabled) {
       throw new ForbiddenException('Your account is disabled');
     }
 
     if (user.deletedAt) {
       throw new ForbiddenException('User account has been deleted');
     }
-    
 
     return user;
   }
