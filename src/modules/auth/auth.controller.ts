@@ -13,9 +13,12 @@ import { createBaseResponseDto } from 'src/utils/zod.schemas';
 // biome-ignore lint/style/useImportType: Needed for DI
 import { AuthService } from './auth.service';
 import {
+  AuthAdminResponseDto,
+  AuthAdminResponseSchema,
+  type AuthAdminResponseSchemaType,
   AuthCredentialsDto,
-  AuthResponseSchema,
-  type AuthResponseSchemaType,
+  AuthUserResponseSchema,
+  type AuthUserResponseSchemaType,
 } from './dto/auth.dto';
 
 @ApiTags('Auth')
@@ -27,7 +30,10 @@ export class AuthController {
   @HttpCode(HttpStatus.CREATED)
   @ApiBody({ type: AuthCredentialsDto })
   @ApiCreatedResponse({
-    type: createBaseResponseDto(AuthResponseSchema, 'AuthResponseSchema'),
+    type: createBaseResponseDto(
+      AuthUserResponseSchema,
+      'AuthUserResponseSchema',
+    ),
   })
   @ApiConflictResponse({
     description: 'Email already in use',
@@ -78,18 +84,21 @@ export class AuthController {
       },
     },
   })
-  @ZodSerializerDto(AuthResponseSchema)
-  async register(
+  @ZodSerializerDto(AuthUserResponseSchema)
+  async registerUser(
     @Body() body: AuthCredentialsDto,
-  ): Promise<AuthResponseSchemaType> {
-    return this.authService.register(body);
+  ): Promise<AuthUserResponseSchemaType> {
+    return this.authService.registerUser(body);
   }
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiBody({ type: AuthCredentialsDto })
   @ApiOkResponse({
-    type: createBaseResponseDto(AuthResponseSchema, 'AuthResponseSchema'),
+    type: createBaseResponseDto(
+      AuthUserResponseSchema,
+      'AuthUserResponseSchema',
+    ),
   })
   @ApiBadRequestResponse({
     description: 'Validation failed',
@@ -161,10 +170,32 @@ export class AuthController {
       },
     },
   })
-  @ZodSerializerDto(AuthResponseSchema)
-  async login(
+  @ZodSerializerDto(AuthUserResponseSchema)
+  async loginUser(
     @Body() body: AuthCredentialsDto,
-  ): Promise<AuthResponseSchemaType> {
-    return this.authService.login(body);
+  ): Promise<AuthUserResponseSchemaType> {
+    return this.authService.loginUser(body);
+  }
+
+  @Post('register/admin')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiBody({ type: AuthCredentialsDto })
+  @ApiCreatedResponse({ type: AuthAdminResponseDto })
+  @ZodSerializerDto(AuthAdminResponseSchema)
+  async registerAdmin(
+    @Body() body: AuthCredentialsDto,
+  ): Promise<AuthAdminResponseSchemaType> {
+    return this.authService.registerAdmin(body);
+  }
+
+  @Post('login/admin')
+  @HttpCode(HttpStatus.OK)
+  @ApiBody({ type: AuthCredentialsDto })
+  @ApiOkResponse({ type: AuthAdminResponseDto })
+  @ZodSerializerDto(AuthAdminResponseSchema)
+  async loginAdmin(
+    @Body() body: AuthCredentialsDto,
+  ): Promise<AuthAdminResponseSchemaType> {
+    return this.authService.loginAdmin(body);
   }
 }

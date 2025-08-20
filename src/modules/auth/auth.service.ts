@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Inject,
   Injectable,
@@ -13,8 +14,9 @@ import { DrizzleAsyncProvider } from 'src/database/drizzle.provider';
 import * as schema from 'src/database/schema';
 import { UserRoleEnum, type UserSchemaType } from 'src/utils/zod.schemas';
 import type {
+  AuthAdminResponseSchemaType,
   AuthCredentialsDto,
-  AuthResponseSchemaType,
+  AuthUserResponseSchemaType,
 } from './dto/auth.dto';
 
 @Injectable()
@@ -25,7 +27,9 @@ export class AuthService {
     private db: NodePgDatabase<typeof schema>,
   ) {}
 
-  async register(input: AuthCredentialsDto): Promise<AuthResponseSchemaType> {
+  async registerUser(
+    input: AuthCredentialsDto,
+  ): Promise<AuthUserResponseSchemaType> {
     const existingUser = await this.getUser(input.email);
 
     if (existingUser) {
@@ -46,7 +50,9 @@ export class AuthService {
     return this.generateTokens(newUser);
   }
 
-  async login(input: AuthCredentialsDto): Promise<AuthResponseSchemaType> {
+  async loginUser(
+    input: AuthCredentialsDto,
+  ): Promise<AuthUserResponseSchemaType> {
     const user = await this.getUser(input.email);
 
     if (!user) {
@@ -58,26 +64,72 @@ export class AuthService {
     if (!isValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
+    return this.generateTokens(user);
+  }
+
+  async registerAdmin(
+    input: AuthCredentialsDto,
+  ): Promise<AuthAdminResponseSchemaType> {
+    const existingUser = await this.getUser(input.email);
+
+    if (existingUser) {
+      throw new BadRequestException('Email already in use');
+    }
+
+    const passwordHash = await bcrypt.hash(input.password, 10);
+
+    const [newAdmin] = await this.db
+      .insert(schema.usersSchema)
+      .values({
+        email: input.email,
+        passwordHash,
+        role: UserRoleEnum.ADMIN,
+      })
+      .returning();
+
+    return this.generateTokens(newAdmin);
+  }
+
+  async loginAdmin(
+    input: AuthCredentialsDto,
+  ): Promise<AuthAdminResponseSchemaType> {
+    const user = await this.getUser(input.email);
+
+    if (!user || user.role !== UserRoleEnum.ADMIN) {
+      throw new UnauthorizedException('Invalid admin credentials');
+    }
+
+    const isValid = await bcrypt.compare(input.password, user.passwordHash);
+
+    if (!isValid) {
+      throw new UnauthorizedException('Invalid admin credentials');
+    }
 
     return this.generateTokens(user);
   }
 
-  async generateTokens(
-    user: Pick<UserSchemaType, 'id' | 'email' | 'role'>,
-  ): Promise<AuthResponseSchemaType> {
-    const payload = {
+  private async generateTokens<
+    T extends AuthUserResponseSchemaType | AuthAdminResponseSchemaType,
+  >(user: Pick<UserSchemaType, 'id' | 'email' | 'role'>): Promise<T> {
+    const token = await this.jwtService.signAsync({
       sub: user.id,
       email: user.email,
       role: user.role,
-    };
+    });
 
-    const token = await this.jwtService.signAsync(payload);
+    if (user.role === UserRoleEnum.ADMIN) {
+      return {
+        token,
+        role: user.role,
+        redirectTo: '/admin',
+      } as T;
+    }
 
     return {
       token,
       role: user.role,
       redirectTo: '/dashboard',
-    };
+    } as T;
   }
 
   async getUser(email: string) {
