@@ -31,7 +31,7 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import type { Express, Response } from 'express';
-import { ZodSerializerDto } from 'nestjs-zod';
+import { ZodSerializerDto, ZodValidationPipe } from 'nestjs-zod';
 import type { AuthenticatedRequest } from 'src/shared/types/request-with-user';
 import { createBaseResponseDto } from 'src/utils/zod.schemas';
 import {
@@ -40,7 +40,7 @@ import {
   FeedbackGroupedArrayResponseSchema,
   FeedbackManualRequestDto,
   FeedbackQuerySchema,
-  type FeedbackQuerySchemaDto,
+  FeedbackQuerySchemaDto,
   type FeedbackResponseDto,
   FeedbackResponseSchema,
   FeedbackSummaryResponseDto,
@@ -286,34 +286,6 @@ export class FeedbackController {
     return this.feedbackService.feedbackSummary(req.user.id);
   }
 
-  // @ApiBearerAuth()
-  // @UseGuards(AuthGuard('jwt'))
-  // @Sse('sentiment-summary/stream')
-  // @ApiConsumes('text/event-stream')
-  // @ApiOperation({
-  //   summary: 'Stream sentiment summary updates',
-  //   description:
-  //     'Real-time sentiment analysis summary updates for the authenticated user',
-  // })
-  // @ApiOkResponse({ type: FeedbackSummaryEventDto })
-  // feedbackStreamSummary(
-  //   @Req() req: AuthenticatedRequest,
-  // ): Observable<FeedbackSummaryEventDto> {
-  //   return interval(5000).pipe(
-  //     startWith(0),
-  //     switchMap(() => this.feedbackService.feedbackSummary(req.user.id)),
-  //     map((summary) => ({
-  //       type: 'sentiment_update' as const,
-  //       data: summary.data,
-  //       updatedAt: summary.updatedAt || new Date().toISOString(),
-  //     })),
-  //     distinctUntilChanged(
-  //       (prev, curr) => JSON.stringify(prev.data) === JSON.stringify(curr.data),
-  //     ),
-  //     share(),
-  //   );
-  // }
-
   @Get('grouped')
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt'))
@@ -351,7 +323,7 @@ export class FeedbackController {
   })
   @ZodSerializerDto(FeedbackFilteredResponseSchema)
   async feedbackFiltered(
-    @Query(FeedbackQuerySchema)
+    @Query(new ZodValidationPipe(FeedbackQuerySchemaDto))
     query: FeedbackQuerySchemaDto,
     @Req() req: AuthenticatedRequest,
   ) {

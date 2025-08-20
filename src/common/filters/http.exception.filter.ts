@@ -19,7 +19,7 @@ interface HttpErrorResponse {
 @Catch(HttpException)
 export class HttpExceptionFilter implements ExceptionFilter {
   catch(exception: HttpException, host: ArgumentsHost): void {
-    Logger.error(exception, HttpExceptionFilter.name);
+    Logger.error(exception.message, HttpExceptionFilter.name);
 
     const [response, request] = [
       host.switchToHttp().getResponse<Response>(),

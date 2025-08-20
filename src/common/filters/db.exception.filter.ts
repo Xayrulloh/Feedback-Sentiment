@@ -14,7 +14,7 @@ import type {
 
 @Catch()
 export class DatabaseExceptionFilter implements ExceptionFilter {
-  catch(exception: unknown, host: ArgumentsHost): void {
+  catch(exception: DatabaseErrorSchemaType, host: ArgumentsHost): void {
     Logger.error(exception, DatabaseExceptionFilter.name);
 
     const [response, request] = [

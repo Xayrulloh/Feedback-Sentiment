@@ -11,7 +11,7 @@ import { ZodError } from 'zod';
 @Catch(ZodError)
 export class ZodExceptionFilter implements ExceptionFilter {
   catch(exception: ZodError, host: ArgumentsHost) {
-    Logger.error(exception, ZodExceptionFilter.name);
+    Logger.error(exception.message, ZodExceptionFilter.name);
 
     const [response, request] = [
       host.switchToHttp().getResponse<Response>(),
