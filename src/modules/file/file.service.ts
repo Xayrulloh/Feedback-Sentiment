@@ -1,15 +1,9 @@
-import {
-  ForbiddenException,
-  Inject,
-  Injectable,
-  InternalServerErrorException,
-  NotFoundException,
-} from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { and, eq, sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { DrizzleAsyncProvider } from 'src/database/drizzle.provider';
 import * as schema from 'src/database/schema';
-import { UserRoleEnum, type UserSchemaType } from 'src/utils/zod.schemas';
+import type { UserSchemaType } from 'src/utils/zod.schemas';
 import type { FileQueryDto, FileResponseDto } from './dto/file.dto';
 
 @Injectable()
@@ -58,7 +52,12 @@ export class FileService {
     const [file] = await this.db
       .select()
       .from(schema.filesSchema)
-      .where(and(eq(schema.filesSchema.id, fileId), eq(schema.filesSchema.userId, user.id)))
+      .where(
+        and(
+          eq(schema.filesSchema.id, fileId),
+          eq(schema.filesSchema.userId, user.id),
+        ),
+      )
       .limit(1);
 
     if (!file) {
