@@ -55,6 +55,16 @@ services:
     networks:
       - backend
 
+grafana:
+    image: grafana/grafana
+    container_name: feedback-sentiment-grafana
+    ports:
+      - "3001:3000"
+    networks:
+      - backend
+    depends_on:
+      - prometheus
+
 networks:
   backend:
     driver: bridge
