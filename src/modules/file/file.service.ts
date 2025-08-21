@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { and, eq, sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { DrizzleAsyncProvider } from 'src/database/drizzle.provider';
@@ -13,7 +13,7 @@ export class FileService {
     private readonly db: NodePgDatabase<typeof schema>,
   ) {}
 
-  async getUserFiles(
+  async getFile(
     query: FileQueryDto,
     user: UserSchemaType,
   ): Promise<FileResponseDto> {
@@ -46,5 +46,26 @@ export class FileService {
         pages: Math.ceil(total / limit),
       },
     };
+  }
+
+  async fileDelete(fileId: string, user: UserSchemaType) {
+    const [file] = await this.db
+      .select()
+      .from(schema.filesSchema)
+      .where(
+        and(
+          eq(schema.filesSchema.id, fileId),
+          eq(schema.filesSchema.userId, user.id),
+        ),
+      )
+      .limit(1);
+
+    if (!file) {
+      throw new NotFoundException('File not found');
+    }
+
+    await this.db
+      .delete(schema.filesSchema)
+      .where(eq(schema.filesSchema.id, fileId));
   }
 }

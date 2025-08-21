@@ -78,8 +78,22 @@ type FeedbackSchemaType = z.infer<typeof FeedbackSchema>;
 
 const FileSchema = z
   .object({
+    id: z.string().uuid().describe('File ID'),
     userId: z.string().uuid().describe('User who owns the files'),
-    name: z.string().min(1).describe('File name'),
+    name: z.string().min(1).describe('Original file name'),
+    mimeType: z
+      .string()
+      .min(1)
+      .describe('MIME type of the file, e.g. text/csv'),
+    size: z.number().positive().describe('File size in bytes'),
+    rowCount: z
+      .number()
+      .int()
+      .nonnegative()
+      .nullable()
+      .optional()
+      .describe('Number of rows within the file'),
+    extension: z.string().min(1).describe('File extension, e.g. csv'),
   })
   .merge(BaseSchema);
 
