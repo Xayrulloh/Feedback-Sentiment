@@ -19,7 +19,7 @@ export class FileService {
     private readonly db: NodePgDatabase<typeof schema>,
   ) {}
 
-  async getUserFiles(
+  async getFile(
     query: FileQueryDto,
     user: UserSchemaType,
   ): Promise<FileResponseDto> {
@@ -54,29 +54,19 @@ export class FileService {
     };
   }
 
-  async deleteUserFile(fileId: string, user: UserSchemaType) {
+  async fileDelete(fileId: string, user: UserSchemaType) {
     const [file] = await this.db
       .select()
       .from(schema.filesSchema)
-      .where(eq(schema.filesSchema.id, fileId))
+      .where(and(eq(schema.filesSchema.id, fileId), eq(schema.filesSchema.userId, user.id)))
       .limit(1);
 
     if (!file) {
       throw new NotFoundException('File not found');
     }
 
-    if (user.role === UserRoleEnum.USER && file.userId !== user.id) {
-      throw new ForbiddenException(
-        'You do not have permission to delete this file',
-      );
-    }
-
-    const result = await this.db
+    await this.db
       .delete(schema.filesSchema)
       .where(eq(schema.filesSchema.id, fileId));
-
-    if ((result.rowCount ?? 0) === 0) {
-      throw new InternalServerErrorException('Failed to delete file');
-    }
   }
 }

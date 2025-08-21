@@ -48,12 +48,10 @@ export const usersSchema = pgTable('users', {
 export const filesSchema = pgTable('files', {
   userId: uuid('user_id').notNull(),
   name: text('name').notNull(),
-
   mimeType: varchar('mime_type', { length: 255 }).notNull(),
   size: bigint('size', { mode: 'number' }).notNull(),
   rowCount: integer('row_count'),
   extension: varchar('extension', { length: 50 }).notNull(),
-
   ...baseSchema,
 });
 

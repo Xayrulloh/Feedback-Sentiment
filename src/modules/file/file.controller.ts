@@ -90,12 +90,12 @@ export class FileController {
   @ApiOperation({
     summary: 'Getting all files',
   })
-  async getUserFiles(
+  async getFile(
     @Query(new ZodValidationPipe(FileQueryDto))
     query: FileQueryDto,
     @Req() req: AuthenticatedRequest,
   ) {
-    return this.fileService.getUserFiles(query, req.user);
+    return this.fileService.getFile(query, req.user);
   }
 
   @Delete(':fileId')
@@ -124,10 +124,10 @@ export class FileController {
   @ApiOperation({
     summary: 'Delete a file and all its feedbacks',
   })
-  async deleteFile(
+  async fileDelete(
     @Param('fileId', ParseUUIDPipe) fileId: string,
     @Req() req: AuthenticatedRequest,
   ) {
-    return this.fileService.deleteUserFile(fileId, req.user);
+    return this.fileService.fileDelete(fileId, req.user);
   }
 }
