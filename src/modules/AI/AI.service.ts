@@ -14,7 +14,6 @@ import {
   PromptResponseSchema,
   type PromptResponseSchemaType,
 } from './dto/AI.dto';
-
 import { generateSentimentPrompt } from './prompts/sentiment.prompt';
 
 @Injectable()

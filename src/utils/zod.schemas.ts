@@ -28,6 +28,10 @@ const UserSchema = z
     role: z
       .enum([UserRoleEnum.USER, UserRoleEnum.ADMIN])
       .describe("Role might be either 'USER' or 'ADMIN'"),
+    isDisabled: z
+      .boolean()
+      .default(false)
+      .describe('Whether the user is disabled (cannot perform actions)'),
   })
   .merge(BaseSchema);
 
@@ -72,6 +76,15 @@ const FeedbackSchema = z
 
 type FeedbackSchemaType = z.infer<typeof FeedbackSchema>;
 
+const FileSchema = z
+  .object({
+    userId: z.string().uuid().describe('User who owns the files'),
+    name: z.string().min(1).describe('File name'),
+  })
+  .merge(BaseSchema);
+
+type FileSchemaType = z.infer<typeof FileSchema>;
+
 const BaseSuccessResponseSchema = <T extends z.ZodTypeAny>(dataSchema?: T) =>
   z.object({
     success: z.boolean(),
@@ -87,7 +100,7 @@ type BaseSuccessResponseSchemaType<T = z.ZodTypeAny> = z.infer<
 
 function createBaseResponseDto(schema: z.ZodTypeAny, name: string) {
   const responseSchema = BaseSuccessResponseSchema(schema);
-  const className = `ApiResponse${name}Dto`;
+  const className = `${name}Dto`;
 
   const namedClass = {
     [className]: class extends createZodDto(responseSchema) {},
@@ -130,6 +143,8 @@ const DatabaseErrorSchema = z.object({
 type DatabaseErrorSchemaType = z.infer<typeof DatabaseErrorSchema>;
 
 export {
+  type FileSchemaType,
+  FileSchema,
   UserSchema,
   type UserSchemaType,
   UserRoleEnum,

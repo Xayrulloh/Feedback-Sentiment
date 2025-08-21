@@ -10,6 +10,7 @@ import * as z from 'zod';
 const FeedbackManualRequestSchema = z.object({
   feedbacks: z
     .array(z.string().min(10, `Feedback must be at least 10 characters long`))
+    .max(100, 'Maximum of 100 feedback items allowed')
     .nonempty('At least one feedback is required')
     .describe('Array of feedback entries, each meeting the minimum length'),
 });
