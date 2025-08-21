@@ -53,7 +53,17 @@ export class AuthService {
   async loginUser(
     input: AuthCredentialsDto,
   ): Promise<AuthUserResponseSchemaType> {
-    const user = await this.validateUserLogin(input);
+    const user = await this.getUser(input.email);
+
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const isValid = await bcrypt.compare(input.password, user.passwordHash);
+
+    if (!isValid) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
     return this.generateTokens(user);
   }
 
@@ -83,7 +93,18 @@ export class AuthService {
   async loginAdmin(
     input: AuthCredentialsDto,
   ): Promise<AuthAdminResponseSchemaType> {
-    const user = await this.validateUserLogin(input, UserRoleEnum.ADMIN);
+    const user = await this.getUser(input.email);
+
+    if (!user || user.role !== UserRoleEnum.ADMIN) {
+      throw new UnauthorizedException('Invalid admin credentials');
+    }
+
+    const isValid = await bcrypt.compare(input.password, user.passwordHash);
+
+    if (!isValid) {
+      throw new UnauthorizedException('Invalid admin credentials');
+    }
+
     return this.generateTokens(user);
   }
 
@@ -113,38 +134,7 @@ export class AuthService {
 
   async getUser(email: string) {
     return this.db.query.usersSchema.findFirst({
-      where: eq(schema.usersSchema.email, email),
+      where: eq(schema.usersSchema.email, email)
     });
-  }
-
-  private async validateUserLogin(
-    input: AuthCredentialsDto,
-    requiredRole?: UserRoleEnum,
-  ): Promise<UserSchemaType> {
-    const user = await this.getUser(input.email);
-
-    if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
-
-    if (requiredRole && user.role !== requiredRole) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
-
-    if (user.isDisabled) {
-      throw new UnauthorizedException('User account is disabled');
-    }
-
-    if (user.deletedAt) {
-      throw new UnauthorizedException('User account is suspended');
-    }
-
-    const isValid = await bcrypt.compare(input.password, user.passwordHash);
-
-    if (!isValid) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
-
-    return user;
   }
 }

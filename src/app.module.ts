@@ -1,11 +1,18 @@
-import { Module } from '@nestjs/common';
+import {
+  type MiddlewareConsumer,
+  Module,
+  type NestModule,
+  RequestMethod,
+} from '@nestjs/common';
 import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import { ZodValidationPipe } from 'nestjs-zod';
 import { HttpExceptionFilter } from './common/filters/http.exception.filter';
 import { ZodExceptionFilter } from './common/filters/zod.exception.filter';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { ZodSerializerInterceptorCustom } from './common/interceptors/zod.response-checker.interceptor';
+import { AdminMiddleware } from './common/middlewares/admin.middleware';
 import { EnvModule } from './config/env/env.module';
+import { DrizzleModule } from './database/drizzle.module';
 import { AiModule } from './modules/AI/AI.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -20,6 +27,7 @@ import { FileModule } from './modules/file/file.module';
     FeedbackModule,
     AdminModule,
     FileModule,
+    DrizzleModule,
   ],
   controllers: [],
   providers: [
@@ -28,6 +36,17 @@ import { FileModule } from './modules/file/file.module';
     { provide: APP_FILTER, useClass: HttpExceptionFilter },
     { provide: APP_FILTER, useClass: ZodExceptionFilter },
     { provide: APP_INTERCEPTOR, useClass: ZodSerializerInterceptorCustom },
+    AdminMiddleware,
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(AdminMiddleware)
+      .forRoutes({
+        path: '*',
+        method: RequestMethod.ALL,
+      });
+      
+  }
+}

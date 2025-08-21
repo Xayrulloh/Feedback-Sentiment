@@ -1,5 +1,4 @@
 import {
-  ForbiddenException,
   Inject,
   Injectable,
   UnauthorizedException,
@@ -38,14 +37,6 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
 
     if (!user) {
       throw new UnauthorizedException('Please log in to continue');
-    }
-
-    if (user.isDisabled) {
-      throw new ForbiddenException('User account is disabled');
-    }
-
-    if (user.deletedAt) {
-      throw new ForbiddenException('User account is suspended');
     }
 
     return user;
