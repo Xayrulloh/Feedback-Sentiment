@@ -20,7 +20,9 @@ export class AdminMiddleware implements NestMiddleware {
   ) {}
 
   async use(req: AuthenticatedRequest, _res: Response, next: NextFunction) {
-    let user: { id: string; isDisabled: boolean; deletedAt: Date | null } | undefined;
+    let user:
+      | { id: string; isDisabled: boolean; deletedAt: Date | null }
+      | undefined;
 
     if (req.user?.id) {
       user = await this.db.query.usersSchema.findFirst({
@@ -31,8 +33,7 @@ export class AdminMiddleware implements NestMiddleware {
           deletedAt: true,
         },
       });
-    }
-    else if (req.body?.email) {
+    } else if (req.body?.email) {
       user = await this.db.query.usersSchema.findFirst({
         where: eq(schema.usersSchema.email, req.body.email),
         columns: {
@@ -41,8 +42,7 @@ export class AdminMiddleware implements NestMiddleware {
           deletedAt: true,
         },
       });
-    }
-    else {
+    } else {
       return next();
     }
 

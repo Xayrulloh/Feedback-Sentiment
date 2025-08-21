@@ -41,12 +41,9 @@ import { FileModule } from './modules/file/file.module';
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(AdminMiddleware)
-      .forRoutes({
-        path: '*',
-        method: RequestMethod.ALL,
-      });
-      
+    consumer.apply(AdminMiddleware).forRoutes({
+      path: '*',
+      method: RequestMethod.ALL,
+    });
   }
 }

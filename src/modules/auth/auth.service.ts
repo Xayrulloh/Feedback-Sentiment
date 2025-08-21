@@ -134,7 +134,7 @@ export class AuthService {
 
   async getUser(email: string) {
     return this.db.query.usersSchema.findFirst({
-      where: eq(schema.usersSchema.email, email)
+      where: eq(schema.usersSchema.email, email),
     });
   }
 }

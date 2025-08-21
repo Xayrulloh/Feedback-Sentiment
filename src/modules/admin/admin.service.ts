@@ -26,7 +26,7 @@ export class AdminService {
       .set({ isDisabled: !user.isDisabled })
       .where(eq(schema.usersSchema.id, userId))
       .returning();
-    console.log('User full details after disable/enable:', disabledUser);
+
     return disabledUser;
   }
 
@@ -47,7 +47,7 @@ export class AdminService {
       })
       .where(eq(schema.usersSchema.id, userId))
       .returning();
-    console.log('User full details after suspension:', suspendedUser);
+
     return suspendedUser;
   }
 }
