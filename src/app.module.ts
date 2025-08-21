@@ -5,6 +5,7 @@ import {
   RequestMethod,
 } from '@nestjs/common';
 import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
+import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 import { ZodValidationPipe } from 'nestjs-zod';
 import { HttpExceptionFilter } from './common/filters/http.exception.filter';
 import { ZodExceptionFilter } from './common/filters/zod.exception.filter';
@@ -28,7 +29,9 @@ import { FileModule } from './modules/file/file.module';
     AdminModule,
     FileModule,
     DrizzleModule,
+    PrometheusModule.register(),
   ],
+
   controllers: [],
   providers: [
     { provide: APP_PIPE, useClass: ZodValidationPipe },
