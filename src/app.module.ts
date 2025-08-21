@@ -10,9 +10,10 @@ import { AiModule } from './modules/AI/AI.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { FeedbackModule } from './modules/feedback/feedback.module';
 import { FileModule } from './modules/file/file.module';
+import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 
 @Module({
-  imports: [EnvModule, AuthModule, AiModule, FeedbackModule, FileModule],
+  imports: [EnvModule, AuthModule, AiModule, FeedbackModule, FileModule, PrometheusModule.register(),],
 
   controllers: [],
   providers: [
