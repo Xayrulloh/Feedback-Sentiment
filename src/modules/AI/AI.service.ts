@@ -14,6 +14,7 @@ import {
   PromptResponseSchema,
   type PromptResponseSchemaType,
 } from './dto/AI.dto';
+
 import { generateSentimentPrompt } from './prompts/sentiment.prompt';
 
 @Injectable()
@@ -53,6 +54,7 @@ export class AIService {
 
     const validatedResponse = MistralResponseSchema.parse(data);
     const content = validatedResponse.choices[0].message.content;
+    console.log('🚀 ~ sendPrompt ~ content:', content);
 
     return JSON.parse(content);
   }
