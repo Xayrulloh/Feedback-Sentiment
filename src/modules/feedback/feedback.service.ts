@@ -25,6 +25,7 @@ import {
 } from './dto/feedback.dto';
 // biome-ignore lint/style/useImportType: Needed for DI
 import { FileGeneratorService } from './file-generator.service';
+import path from 'path';
 
 @Injectable()
 export class FeedbackService {
@@ -89,12 +90,16 @@ export class FeedbackService {
     });
 
     const validationResult = FeedbackManualRequestSchema.parse({ feedbacks });
-
+    const extension = path.extname(file.originalname).replace(".", "") || "csv";
     const [newFile] = await this.db
       .insert(schema.filesSchema)
       .values({
         userId: user.id,
         name: file.originalname,
+        mimeType: file.mimetype,
+        size: file.size,
+        rowCount: data.length,
+        extension,
       })
       .returning({ id: schema.filesSchema.id });
 
