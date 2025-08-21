@@ -20,44 +20,25 @@ export class AdminMiddleware implements NestMiddleware {
   ) {}
 
   async use(req: AuthenticatedRequest, _res: Response, next: NextFunction) {
-    let user:
-      | { id: string; isDisabled: boolean; deletedAt: Date | null }
-      | undefined;
+    const user = await this.db.query.usersSchema.findFirst({
+      where: eq(schema.usersSchema.email, req.body?.email || req.user?.email)
+    })
 
-    if (req.user?.id) {
-      user = await this.db.query.usersSchema.findFirst({
-        where: eq(schema.usersSchema.id, req.user.id),
-        columns: {
-          id: true,
-          isDisabled: true,
-          deletedAt: true,
-        },
-      });
-    } else if (req.body?.email) {
-      user = await this.db.query.usersSchema.findFirst({
-        where: eq(schema.usersSchema.email, req.body.email),
-        columns: {
-          id: true,
-          isDisabled: true,
-          deletedAt: true,
-        },
-      });
-    } else {
-      return next();
-    }
+    console.log(user)
 
     if (!user) {
-      return next();
+      return next()
     }
-
+  
     if (user.isDisabled) {
       throw new UnauthorizedException('User account is disabled');
     }
-
+  
     if (user.deletedAt) {
       throw new ForbiddenException('User account is suspended');
     }
-
+  
     next();
   }
+  
 }
