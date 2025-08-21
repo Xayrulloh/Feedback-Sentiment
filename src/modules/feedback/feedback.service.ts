@@ -1,3 +1,4 @@
+import path from 'node:path';
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { and, count, desc, eq, sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
@@ -99,7 +100,7 @@ export class FeedbackService {
 
     if (!hasFeedbackColumn) {
       const availableColumns = Object.keys(firstRow);
-      
+
       throw new BadRequestException(
         `Missing required column. Expected "feedback" or "feedbacks", found: ${availableColumns.join(', ')}`,
       );
@@ -116,12 +117,16 @@ export class FeedbackService {
     }
 
     const validationResult = FeedbackManualRequestSchema.parse({ feedbacks });
-
+    const extension = path.extname(file.originalname).replace('.', '') || 'csv';
     const [newFile] = await this.db
       .insert(schema.filesSchema)
       .values({
         userId: user.id,
         name: file.originalname,
+        mimeType: file.mimetype,
+        size: file.size,
+        rowCount: feedbacks.length,
+        extension,
       })
       .returning({ id: schema.filesSchema.id });
 
