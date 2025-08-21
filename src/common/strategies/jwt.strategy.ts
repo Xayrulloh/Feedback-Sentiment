@@ -41,11 +41,11 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     }
 
     if (user.isDisabled) {
-      throw new ForbiddenException('Your account is disabled');
+      throw new ForbiddenException('User account is disabled');
     }
 
     if (user.deletedAt) {
-      throw new ForbiddenException('User account has been deleted');
+      throw new ForbiddenException('User account is suspended');
     }
 
     return user;
