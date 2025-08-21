@@ -28,6 +28,10 @@ const UserSchema = z
     role: z
       .enum([UserRoleEnum.USER, UserRoleEnum.ADMIN])
       .describe("Role might be either 'USER' or 'ADMIN'"),
+    isDisabled: z
+      .boolean()
+      .default(false)
+      .describe('Whether the user is disabled (cannot perform actions)'),
   })
   .merge(BaseSchema);
 
@@ -96,7 +100,7 @@ type BaseSuccessResponseSchemaType<T = z.ZodTypeAny> = z.infer<
 
 function createBaseResponseDto(schema: z.ZodTypeAny, name: string) {
   const responseSchema = BaseSuccessResponseSchema(schema);
-  const className = `ApiResponse${name}Dto`;
+  const className = `${name}Dto`;
 
   const namedClass = {
     [className]: class extends createZodDto(responseSchema) {},

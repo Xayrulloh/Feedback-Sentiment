@@ -8,7 +8,7 @@ import {
 // biome-ignore lint/style/useImportType: Needed for DI
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { and, eq, isNull } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { DrizzleAsyncProvider } from 'src/database/drizzle.provider';
 import * as schema from 'src/database/schema';
@@ -134,10 +134,7 @@ export class AuthService {
 
   async getUser(email: string) {
     return this.db.query.usersSchema.findFirst({
-      where: and(
-        eq(schema.usersSchema.email, email),
-        isNull(schema.usersSchema.deletedAt),
-      ),
+      where: eq(schema.usersSchema.email, email),
     });
   }
 }

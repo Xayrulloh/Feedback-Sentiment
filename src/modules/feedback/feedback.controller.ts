@@ -87,26 +87,13 @@ import { FeedbackService } from './feedback.service';
   },
 })
 @ApiUnauthorizedResponse({
-  description: 'Unauthorized - JWT missing or invalid',
+  description: 'Unauthorized',
   schema: {
     type: 'object',
     properties: {
       success: { type: 'boolean', example: false },
       statusCode: { type: 'number', example: 401 },
-      message: { type: 'string', example: 'Invalid or expired token' },
-      errors: {
-        type: 'array',
-        items: {
-          type: 'object',
-          properties: {
-            message: { type: 'string', example: 'Token is invalid or expired' },
-            code: { type: 'string', example: 'INVALID_TOKEN' },
-          },
-        },
-        example: [
-          { message: 'Token is invalid or expired', code: 'INVALID_TOKEN' },
-        ],
-      },
+      message: { type: 'string', example: 'Forbidden resource' },
       timestamp: { type: 'string', example: new Date().toISOString() },
     },
   },

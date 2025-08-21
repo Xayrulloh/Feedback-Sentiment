@@ -1,5 +1,6 @@
 import { relations } from 'drizzle-orm';
 import {
+  boolean,
   integer,
   pgEnum,
   pgTable,
@@ -38,6 +39,7 @@ export const usersSchema = pgTable('users', {
   email: text('email').notNull().unique(),
   passwordHash: text('password_hash').notNull(),
   role: DrizzleUserRoleEnum('role').notNull(),
+  isDisabled: boolean('is_disabled').notNull().default(false),
   ...baseSchema,
 });
 

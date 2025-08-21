@@ -20,7 +20,7 @@ export class ResponseInterceptor<T> implements NestInterceptor<T, unknown> {
     if (request.path === '/api/metrics') {
       return next.handle();
     }
-    
+
     return next.handle().pipe(
       map((data: T) => ({
         success: true,
