@@ -1,10 +1,12 @@
-import { Controller, Get, Query, Req, UseGuards } from '@nestjs/common';
+import { Controller, Delete, Get, Param, ParseUUIDPipe, Query, Req, UseGuards } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiForbiddenResponse,
   ApiInternalServerErrorResponse,
+  ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiParam,
   ApiQuery,
   ApiTags,
   ApiUnauthorizedResponse,
@@ -34,25 +36,7 @@ import { FileService } from './file.service';
     properties: {
       success: { type: 'boolean', example: false },
       statusCode: { type: 'number', example: 403 },
-      message: { type: 'string', example: 'User account is disabled' },
-      errors: {
-        type: 'array',
-        items: {
-          type: 'object',
-          properties: {
-            field: { type: 'string', example: 'user' },
-            message: { type: 'string', example: 'User is suspended' },
-            code: { type: 'string', example: 'USER_SUSPENDED' },
-          },
-        },
-        example: [
-          {
-            field: 'user',
-            message: 'User is suspended',
-            code: 'USER_SUSPENDED',
-          },
-        ],
-      },
+      message: { type: 'string', example: 'User account is disabled or suspended' },
       timestamp: { type: 'string', example: new Date().toISOString() },
     },
   },
@@ -65,19 +49,6 @@ import { FileService } from './file.service';
       success: { type: 'boolean', example: false },
       statusCode: { type: 'number', example: 401 },
       message: { type: 'string', example: 'Invalid or expired token' },
-      errors: {
-        type: 'array',
-        items: {
-          type: 'object',
-          properties: {
-            message: { type: 'string', example: 'Token is invalid or expired' },
-            code: { type: 'string', example: 'INVALID_TOKEN' },
-          },
-        },
-        example: [
-          { message: 'Token is invalid or expired', code: 'INVALID_TOKEN' },
-        ],
-      },
       timestamp: { type: 'string', example: new Date().toISOString() },
     },
   },
@@ -88,12 +59,6 @@ import { FileService } from './file.service';
       success: false,
       statusCode: 500,
       message: 'Internal server error',
-      errors: [
-        {
-          code: 'INTERNAL_ERROR',
-          message: 'An unexpected error occurred. Please try again later.',
-        },
-      ],
       timestamp: new Date().toISOString(),
     },
   },
@@ -119,5 +84,38 @@ export class FileController {
     @Req() req: AuthenticatedRequest,
   ) {
     return this.fileService.getUserFiles(query, req.user);
+  }
+
+  @Delete(':fileId')
+  @ApiBearerAuth()
+  @ApiParam({ name: 'fileId', type: 'string', description: 'File ID (uuid)' })
+  @ApiOkResponse({
+    schema: {
+      example: {
+        success: true,
+        statusCode: 200,
+        message: 'File and related feedbacks deleted successfully',
+        path: '/api/files/{fileId}'
+      },
+    },
+  })
+  @ApiNotFoundResponse({
+    schema: {
+      example: {
+        success: false,
+        statusCode: 404,
+        message: 'File not found',
+        path: '/api/files/{fileId}'
+      },
+    },
+  })
+  @ApiOperation({
+    summary: 'Delete a file and all its feedbacks',
+  })
+  async deleteFile(
+    @Param('fileId', ParseUUIDPipe) fileId: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.fileService.deleteUserFile(fileId, req.user);
   }
 }

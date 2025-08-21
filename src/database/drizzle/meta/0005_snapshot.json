@@ -1,6 +1,6 @@
 {
-  "id": "973b34dc-f718-4d20-90b5-5bf31b14374a",
-  "prevId": "25e7f0f3-a8d8-4572-b4eb-3879aeb73580",
+  "id": "178a2589-d8d7-4ed4-9f82-06dccbd29940",
+  "prevId": "973b34dc-f718-4d20-90b5-5bf31b14374a",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -74,7 +74,21 @@
         }
       },
       "indexes": {},
-      "foreignKeys": {},
+      "foreignKeys": {
+        "feedbacks_file_id_files_id_fk": {
+          "name": "feedbacks_file_id_files_id_fk",
+          "tableFrom": "feedbacks",
+          "tableTo": "files",
+          "columnsFrom": [
+            "file_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
@@ -222,7 +236,9 @@
         "users_email_unique": {
           "name": "users_email_unique",
           "nullsNotDistinct": false,
-          "columns": ["email"]
+          "columns": [
+            "email"
+          ]
         }
       },
       "policies": {},
@@ -234,12 +250,20 @@
     "public.sentiment": {
       "name": "sentiment",
       "schema": "public",
-      "values": ["negative", "neutral", "positive", "unknown"]
+      "values": [
+        "negative",
+        "neutral",
+        "positive",
+        "unknown"
+      ]
     },
     "public.user_role": {
       "name": "user_role",
       "schema": "public",
-      "values": ["USER", "ADMIN"]
+      "values": [
+        "USER",
+        "ADMIN"
+      ]
     }
   },
   "schemas": {},
