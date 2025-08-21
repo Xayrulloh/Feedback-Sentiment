@@ -79,12 +79,8 @@
           "name": "feedbacks_file_id_files_id_fk",
           "tableFrom": "feedbacks",
           "tableTo": "files",
-          "columnsFrom": [
-            "file_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["file_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -236,9 +232,7 @@
         "users_email_unique": {
           "name": "users_email_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "email"
-          ]
+          "columns": ["email"]
         }
       },
       "policies": {},
@@ -250,20 +244,12 @@
     "public.sentiment": {
       "name": "sentiment",
       "schema": "public",
-      "values": [
-        "negative",
-        "neutral",
-        "positive",
-        "unknown"
-      ]
+      "values": ["negative", "neutral", "positive", "unknown"]
     },
     "public.user_role": {
       "name": "user_role",
       "schema": "public",
-      "values": [
-        "USER",
-        "ADMIN"
-      ]
+      "values": ["USER", "ADMIN"]
     }
   },
   "schemas": {},

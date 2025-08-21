@@ -1,4 +1,10 @@
-import { ForbiddenException, Inject, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { and, eq, sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { DrizzleAsyncProvider } from 'src/database/drizzle.provider';
@@ -54,13 +60,15 @@ export class FileService {
       .from(schema.filesSchema)
       .where(eq(schema.filesSchema.id, fileId))
       .limit(1);
-  
+
     if (!file) {
       throw new NotFoundException('File not found');
     }
-  
+
     if (user.role === UserRoleEnum.USER && file.userId !== user.id) {
-      throw new ForbiddenException('You do not have permission to delete this file');
+      throw new ForbiddenException(
+        'You do not have permission to delete this file',
+      );
     }
 
     const result = await this.db
@@ -70,7 +78,5 @@ export class FileService {
     if ((result.rowCount ?? 0) === 0) {
       throw new InternalServerErrorException('Failed to delete file');
     }
-    
   }
-  
 }

@@ -59,7 +59,9 @@ export const filesSchema = pgTable('files', {
 
 export const feedbacksSchema = pgTable('feedbacks', {
   userId: uuid('user_id').notNull(),
-  fileId: uuid('file_id').references(() => filesSchema.id, { onDelete: 'cascade' }),
+  fileId: uuid('file_id').references(() => filesSchema.id, {
+    onDelete: 'cascade',
+  }),
   content: text('content').notNull(),
   sentiment: DrizzleFeedbackSentimentEnum('sentiment').notNull(),
   confidence: integer('confidence').notNull(),

@@ -1,4 +1,13 @@
-import { Controller, Delete, Get, Param, ParseUUIDPipe, Query, Req, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiForbiddenResponse,
@@ -36,7 +45,10 @@ import { FileService } from './file.service';
     properties: {
       success: { type: 'boolean', example: false },
       statusCode: { type: 'number', example: 403 },
-      message: { type: 'string', example: 'User account is disabled or suspended' },
+      message: {
+        type: 'string',
+        example: 'User account is disabled or suspended',
+      },
       timestamp: { type: 'string', example: new Date().toISOString() },
     },
   },
@@ -95,7 +107,7 @@ export class FileController {
         success: true,
         statusCode: 200,
         message: 'File and related feedbacks deleted successfully',
-        path: '/api/files/{fileId}'
+        path: '/api/files/{fileId}',
       },
     },
   })
@@ -105,7 +117,7 @@ export class FileController {
         success: false,
         statusCode: 404,
         message: 'File not found',
-        path: '/api/files/{fileId}'
+        path: '/api/files/{fileId}',
       },
     },
   })
