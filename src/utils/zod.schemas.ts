@@ -90,13 +90,13 @@ const FileSchema = z
       .number()
       .int()
       .nonnegative()
-      .max(100)
+      .nullable()
       .optional()
       .describe('Number of rows within the file'),
     extension: z.string().min(1).describe('File extension, e.g. csv'),
   })
   .merge(BaseSchema);
-  
+
 type FileSchemaType = z.infer<typeof FileSchema>;
 
 const BaseSuccessResponseSchema = <T extends z.ZodTypeAny>(dataSchema?: T) =>

@@ -1,3 +1,4 @@
+import path from 'node:path';
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { and, count, desc, eq, sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
@@ -25,7 +26,6 @@ import {
 } from './dto/feedback.dto';
 // biome-ignore lint/style/useImportType: Needed for DI
 import { FileGeneratorService } from './file-generator.service';
-import path from 'path';
 
 @Injectable()
 export class FeedbackService {
@@ -100,7 +100,7 @@ export class FeedbackService {
 
     if (!hasFeedbackColumn) {
       const availableColumns = Object.keys(firstRow);
-      
+
       throw new BadRequestException(
         `Missing required column. Expected "feedback" or "feedbacks", found: ${availableColumns.join(', ')}`,
       );
@@ -117,7 +117,7 @@ export class FeedbackService {
     }
 
     const validationResult = FeedbackManualRequestSchema.parse({ feedbacks });
-    const extension = path.extname(file.originalname).replace(".", "") || "csv";
+    const extension = path.extname(file.originalname).replace('.', '') || 'csv';
     const [newFile] = await this.db
       .insert(schema.filesSchema)
       .values({
@@ -125,7 +125,7 @@ export class FeedbackService {
         name: file.originalname,
         mimeType: file.mimetype,
         size: file.size,
-        rowCount: data.length,
+        rowCount: feedbacks.length,
         extension,
       })
       .returning({ id: schema.filesSchema.id });
