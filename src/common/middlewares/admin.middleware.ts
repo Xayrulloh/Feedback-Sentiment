@@ -21,24 +21,21 @@ export class AdminMiddleware implements NestMiddleware {
 
   async use(req: AuthenticatedRequest, _res: Response, next: NextFunction) {
     const user = await this.db.query.usersSchema.findFirst({
-      where: eq(schema.usersSchema.email, req.body?.email || req.user?.email)
-    })
-
-    console.log(user)
+      where: eq(schema.usersSchema.email, req.body?.email || req.user?.email),
+    });
 
     if (!user) {
-      return next()
+      return next();
     }
-  
+
     if (user.isDisabled) {
       throw new UnauthorizedException('User account is disabled');
     }
-  
+
     if (user.deletedAt) {
       throw new ForbiddenException('User account is suspended');
     }
-  
+
     next();
   }
-  
 }
