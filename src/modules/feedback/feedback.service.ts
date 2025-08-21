@@ -69,25 +69,52 @@ export class FeedbackService {
     user: UserSchemaType,
   ): Promise<FeedbackResponseDto> {
     const csvContent = file.buffer.toString('utf8');
-    const parseResult = Papa.parse(csvContent, {
+
+    const parseResult = Papa.parse<Record<string, string>>(csvContent, {
       header: true,
       skipEmptyLines: true,
       transformHeader: (header: string) => header.trim().toLowerCase(),
       dynamicTyping: false,
-      delimitersToGuess: [',', '\t', '|', ';'],
+      delimitersToGuess: [',', '\t', '|', ';', Papa.RECORD_SEP, Papa.UNIT_SEP],
     });
 
-    if (parseResult.errors.length > 0) {
+    const criticalErrors = parseResult.errors.filter(
+      (error) =>
+        !error.message.includes('Unable to auto-detect delimiting character'),
+    );
+
+    if (criticalErrors.length > 0) {
       throw new BadRequestException(
-        `CSV parsing error: ${parseResult.errors[0].message}`,
+        `CSV parsing error: ${criticalErrors[0].message}`,
       );
     }
 
-    const data = parseResult.data as Record<string, string>[];
+    if (parseResult.data.length === 0) {
+      throw new BadRequestException(
+        'The uploaded file must contain at least one row of data.',
+      );
+    }
 
-    const feedbacks = data.map((row) => {
-      return row.feedback || row.feedbacks;
-    });
+    const firstRow = parseResult.data[0];
+    const hasFeedbackColumn = 'feedback' in firstRow || 'feedbacks' in firstRow;
+
+    if (!hasFeedbackColumn) {
+      const availableColumns = Object.keys(firstRow);
+      
+      throw new BadRequestException(
+        `Missing required column. Expected "feedback" or "feedbacks", found: ${availableColumns.join(', ')}`,
+      );
+    }
+
+    const feedbacks = parseResult.data
+      .map((row) => row.feedback || row.feedbacks)
+      .filter((feedback): feedback is string => Boolean(feedback?.trim()));
+
+    if (feedbacks.length === 0) {
+      throw new BadRequestException(
+        'No valid feedback found. All feedback values are empty.',
+      );
+    }
 
     const validationResult = FeedbackManualRequestSchema.parse({ feedbacks });
     const extension = path.extname(file.originalname).replace(".", "") || "csv";
@@ -135,7 +162,7 @@ export class FeedbackService {
       .offset((page - 1) * limit);
 
     return {
-      data: feedbacks,
+      feedbacks: feedbacks,
       pagination: {
         limit,
         page,

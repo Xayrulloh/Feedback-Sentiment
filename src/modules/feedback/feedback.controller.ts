@@ -104,12 +104,6 @@ import { FeedbackService } from './feedback.service';
       success: false,
       statusCode: 500,
       message: 'Internal server error',
-      errors: [
-        {
-          code: 'INTERNAL_ERROR',
-          message: 'An unexpected error occurred. Please try again later.',
-        },
-      ],
       timestamp: new Date().toISOString(),
     },
   },

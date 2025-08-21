@@ -10,6 +10,7 @@ import type {
   BaseErrorResponseSchemaType,
   ErrorDetailsSchemaType,
 } from 'src/utils/zod.schemas';
+import type { ZodIssue } from 'zod';
 
 interface HttpErrorResponse {
   message?: string;
@@ -39,10 +40,10 @@ export class HttpExceptionFilter implements ExceptionFilter {
       message = typed.message ?? exception.message;
 
       if (typed.errors) {
-        errors = typed.errors.map((issue) => ({
-          field: issue.field ?? 'root',
+        errors = typed.errors.map((issue: ZodIssue) => ({
+          field: issue.path.length > 0 ? issue.path.join('.') : 'root',
           message: issue.message,
-          code: issue.code?.toUpperCase(),
+          code: issue.code.toUpperCase(),
         }));
       }
     } else {
