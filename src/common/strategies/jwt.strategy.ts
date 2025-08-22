@@ -2,7 +2,7 @@ import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 // biome-ignore lint/style/useImportType: Needed for DI
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
-import { eq } from 'drizzle-orm';
+import { and, eq, isNull } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import type { EnvType } from 'src/config/env/env-validation';
@@ -28,7 +28,10 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
 
   async validate(payload: JWTPayloadType) {
     const user = await this.db.query.usersSchema.findFirst({
-      where: eq(schema.usersSchema.id, payload.sub),
+      where: and(
+        eq(schema.usersSchema.id, payload.sub),
+        isNull(schema.usersSchema.deletedAt),
+      ),
     });
 
     if (!user) {

@@ -1,14 +1,11 @@
 import { relations } from 'drizzle-orm';
 import {
-  bigint,
-  boolean,
   integer,
   pgEnum,
   pgTable,
   text,
   timestamp,
   uuid,
-  varchar,
 } from 'drizzle-orm/pg-core';
 import { FeedbackSentimentEnum, UserRoleEnum } from 'src/utils/zod.schemas';
 
@@ -41,25 +38,18 @@ export const usersSchema = pgTable('users', {
   email: text('email').notNull().unique(),
   passwordHash: text('password_hash').notNull(),
   role: DrizzleUserRoleEnum('role').notNull(),
-  isDisabled: boolean('is_disabled').notNull().default(false),
   ...baseSchema,
 });
 
 export const filesSchema = pgTable('files', {
   userId: uuid('user_id').notNull(),
   name: text('name').notNull(),
-  mimeType: varchar('mime_type', { length: 255 }).notNull(),
-  size: bigint('size', { mode: 'number' }).notNull(),
-  rowCount: integer('row_count'),
-  extension: varchar('extension', { length: 50 }).notNull(),
   ...baseSchema,
 });
 
 export const feedbacksSchema = pgTable('feedbacks', {
   userId: uuid('user_id').notNull(),
-  fileId: uuid('file_id').references(() => filesSchema.id, {
-    onDelete: 'cascade',
-  }),
+  fileId: uuid('file_id'),
   content: text('content').notNull(),
   sentiment: DrizzleFeedbackSentimentEnum('sentiment').notNull(),
   confidence: integer('confidence').notNull(),

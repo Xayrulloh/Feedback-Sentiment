@@ -14,6 +14,7 @@ import {
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiBadRequestResponse,
@@ -31,11 +32,8 @@ import {
 } from '@nestjs/swagger';
 import type { Express, Response } from 'express';
 import { ZodSerializerDto, ZodValidationPipe } from 'nestjs-zod';
-import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
-import { RolesGuard } from 'src/common/guards/roles.guard';
 import type { AuthenticatedRequest } from 'src/shared/types/request-with-user';
-import { createBaseResponseDto, UserRoleEnum } from 'src/utils/zod.schemas';
-import { Roles } from '../auth/decorators/roles.decorator';
+import { createBaseResponseDto } from 'src/utils/zod.schemas';
 import {
   FeedbackFilteredResponseSchema,
   type FeedbackGroupedArrayResponseDto,
@@ -54,8 +52,6 @@ import { FeedbackService } from './feedback.service';
 
 @ApiTags('Feedback')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRoleEnum.ADMIN, UserRoleEnum.USER)
 @ApiForbiddenResponse({
   description: 'Forbidden - user is disabled or suspended',
   schema: {
@@ -93,7 +89,8 @@ import { FeedbackService } from './feedback.service';
     properties: {
       success: { type: 'boolean', example: false },
       statusCode: { type: 'number', example: 401 },
-      message: { type: 'string', example: 'Forbidden resource' },
+      message: { type: 'string', example: 'Unauthorized' },
+      path: { type: 'string', example: '/auth/login' },
       timestamp: { type: 'string', example: new Date().toISOString() },
     },
   },
@@ -114,6 +111,7 @@ export class FeedbackController {
 
   @Post('manual')
   @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
   @HttpCode(HttpStatus.CREATED)
   @ApiBody({ type: FeedbackManualRequestDto })
   @ApiCreatedResponse({
@@ -159,6 +157,7 @@ export class FeedbackController {
 
   @Post('upload')
   @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
   @HttpCode(HttpStatus.CREATED)
   @ApiConsumes('multipart/form-data')
   @ZodSerializerDto(FeedbackResponseSchema)
@@ -252,6 +251,7 @@ export class FeedbackController {
   }
 
   @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
   @Get('sentiment-summary')
   @ApiOperation({ summary: 'Get sentiment summary for user' })
   @ApiOkResponse({
@@ -269,6 +269,7 @@ export class FeedbackController {
 
   @Get('grouped')
   @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
   @ApiOperation({
     summary: 'Get feedbacks grouped by sentiment',
   })
@@ -287,6 +288,7 @@ export class FeedbackController {
 
   @Get()
   @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
   @ApiQuery({ name: 'sentiment', required: false, enum: SentimentEnum.options })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -310,6 +312,7 @@ export class FeedbackController {
   }
 
   @ApiBearerAuth()
+  @UseGuards(AuthGuard('jwt'))
   @ApiOperation({ summary: 'Download either pdf or csv report file' })
   @ApiOkResponse({
     description: 'Download report file',
