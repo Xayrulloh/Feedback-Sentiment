@@ -13,6 +13,8 @@ import type {
 } from 'src/utils/zod.schemas';
 // biome-ignore lint/style/useImportType: Needed for DI
 import { AIService } from '../AI/AI.service';
+// biome-ignore lint/style/useImportType: Needed for DI
+import { MonitoringService } from '../monitoring/monitoring.service';
 import {
   type FeedbackFilteredResponseSchemaType,
   type FeedbackGroupedArrayResponseType,
@@ -32,6 +34,7 @@ export class FeedbackService {
   constructor(
     private readonly aiService: AIService,
     private readonly fileGeneratorService: FileGeneratorService,
+    private readonly monitoringService: MonitoringService,
     @Inject(DrizzleAsyncProvider)
     private readonly db: NodePgDatabase<typeof schema>,
   ) {}
@@ -129,6 +132,8 @@ export class FeedbackService {
         extension,
       })
       .returning({ id: schema.filesSchema.id });
+
+    this.monitoringService.incrementUploads();
 
     return this.feedbackManual(validationResult, user, newFile.id);
   }
