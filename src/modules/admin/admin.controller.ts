@@ -146,7 +146,6 @@ export class AdminController {
       uploads: await this.prometheusService.getUploadsPerDay(),
       apiUsage: await this.prometheusService.getApiUsage(),
       errorRates: await this.prometheusService.getErrorRates(),
-      // activeUsers: await this.prometheusService.getActiveUsers(),
     };
   }
 }

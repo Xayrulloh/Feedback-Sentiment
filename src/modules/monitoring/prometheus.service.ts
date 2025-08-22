@@ -11,6 +11,7 @@ export class PrometheusService {
       const res = await axios.get(`${this.baseUrl}/query`, {
         params: { query },
       });
+
       return res.data.data.result;
     } catch (error) {
       this.logger.error(`Prometheus query failed: ${query}`, error.stack);
@@ -20,9 +21,11 @@ export class PrometheusService {
 
   async getUploadsPerDay(): Promise<number> {
     const result = await this.query('sum(increase(uploads_total[1d]))');
+
     if (!result.length) {
       return 0;
     }
+
     return Math.round(Number(result[0].value[1]));
   }
 
@@ -30,6 +33,7 @@ export class PrometheusService {
     const result = await this.query(
       'sum(increase(api_requests_total[1d])) by (method, endpoint)',
     );
+
     return result.map((r) => ({
       method: r.metric.method,
       endpoint: r.metric.endpoint,
@@ -39,18 +43,14 @@ export class PrometheusService {
 
   async getErrorRates() {
     const result = await this.query(
-      'sum(increase(api_errors_total[1d])) by (method, endpoint)',
+      'sum(increase(api_errors_total[1d])) by (method, endpoint, error_message)',
     );
+
     return result.map((r) => ({
       method: r.metric.method,
       endpoint: r.metric.endpoint,
+      errorMessage: r.metric.error_message,
       count: Math.round(Number(r.value[1])) + 1,
     }));
   }
-
-  // async getActiveUsers(): Promise<number> {
-  //   const result = await this.query('active_users');
-  //   if (!result.length) return 0;
-  //   return Math.round(Number(result[0].value[1]));
-  // }
 }

@@ -26,10 +26,16 @@ export class HttpExceptionFilter implements ExceptionFilter {
   catch(exception: HttpException, host: ArgumentsHost): void {
     Logger.error(exception.message, HttpExceptionFilter.name);
 
-    const response = host.switchToHttp().getResponse<Response>();
-    const request = host.switchToHttp().getRequest<Request>();
+    const [response, request] = [
+      host.switchToHttp().getResponse<Response>(),
+      host.switchToHttp().getRequest<Request>(),
+    ];
 
-    this.monitoringService.incrementError(request.method, request.path);
+    this.monitoringService.incrementError(
+      request.method,
+      request.path,
+      exception.message,
+    );
 
     const status = exception.getStatus();
     const rawResponse = exception.getResponse();
