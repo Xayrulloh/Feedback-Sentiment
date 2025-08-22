@@ -19,6 +19,7 @@ import { AdminModule } from './modules/admin/admin.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { FeedbackModule } from './modules/feedback/feedback.module';
 import { FileModule } from './modules/file/file.module';
+import { WebsocketModule } from './modules/websocket/websocket.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { FileModule } from './modules/file/file.module';
     FileModule,
     DrizzleModule,
     PrometheusModule.register(),
+    WebsocketModule,
   ],
 
   controllers: [],
