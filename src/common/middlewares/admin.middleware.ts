@@ -19,8 +19,8 @@ import { v4 as uuidv4 } from 'uuid';
 @Injectable()
 export class AdminMiddleware implements NestMiddleware {
   private requestTimestamps = new Map<string, number[]>();
-  private readonly TIME_WINDOW = 60 * 1000; 
-  private readonly MAX_REQUESTS = 5; 
+  private readonly TIME_WINDOW = 60 * 1000;
+  private readonly MAX_REQUESTS = 5;
 
   constructor(
     @Inject(DrizzleAsyncProvider)
@@ -34,7 +34,7 @@ export class AdminMiddleware implements NestMiddleware {
     });
 
     const suspiciousActivities = this.detectSuspiciousActivity(req, res);
-    
+
     if (suspiciousActivities.length > 0) {
       suspiciousActivities.forEach((activity) => {
         const event = SuspiciousActivityEventSchema.parse({
@@ -68,10 +68,7 @@ export class AdminMiddleware implements NestMiddleware {
     next();
   }
 
-  private detectSuspiciousActivity(
-    req: AuthenticatedRequest,
-    res: Response
-  ) {
+  private detectSuspiciousActivity(req: AuthenticatedRequest, res: Response) {
     const activities: { type: string; details: string }[] = [];
     const user = req.user;
 
@@ -108,16 +105,18 @@ export class AdminMiddleware implements NestMiddleware {
 
   private isRapidRequest(req: AuthenticatedRequest): boolean {
     const identifier = req.ip || req.user?.id || 'unknown';
-    if (identifier === 'unknown') return false; 
+    if (identifier === 'unknown') return false;
 
     const now = Date.now();
     const timestamps = this.requestTimestamps.get(identifier) || [];
-    const recentTimestamps = timestamps.filter(t => now - t < this.TIME_WINDOW);
-    
+    const recentTimestamps = timestamps.filter(
+      (t) => now - t < this.TIME_WINDOW,
+    );
+
     recentTimestamps.push(now);
-    
+
     this.requestTimestamps.set(identifier, recentTimestamps);
-    
+
     return recentTimestamps.length > this.MAX_REQUESTS;
   }
 }
