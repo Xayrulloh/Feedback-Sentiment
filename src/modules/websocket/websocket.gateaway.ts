@@ -31,7 +31,7 @@ export class SocketGateway
     const user = client.data.user;
     this.activeUsers.add(user.id);
 
-    if (user.role === 'admin') {
+    if (user.role === 'ADMIN') {
       client.join('admin');
     }
 

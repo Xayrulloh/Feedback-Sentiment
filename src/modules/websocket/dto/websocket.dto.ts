@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 const ActivityTypeEnum = z.enum([
   'FAILED_LOGIN',
-  'MULTIPLE_LOGINS',
+  'RAPID_REQUEST',
   'UNUSUAL_ACTIVITY',
 ]);
 type ActivityType = z.infer<typeof ActivityTypeEnum>;
