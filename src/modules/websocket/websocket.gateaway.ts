@@ -49,7 +49,6 @@ export class SocketGateway
       event: 'activeUsers',
       data: this.activeUsers.size,
     });
-    
   }
 
   notifyAll(payload: WebSocketEventSchemaType) {

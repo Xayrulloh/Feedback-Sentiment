@@ -15,11 +15,16 @@ const SuspiciousActivityEventSchema = z.object({
   details: z.string().optional(),
   timestamp: z.date(),
 });
-type SuspiciousActivityEventSchemaType = z.infer<typeof SuspiciousActivityEventSchema>;
+type SuspiciousActivityEventSchemaType = z.infer<
+  typeof SuspiciousActivityEventSchema
+>;
 
 const WebSocketEventSchema = z.object({
   event: z.string(),
-  data: z.union([SuspiciousActivityEventSchema, z.number().int().nonnegative()]),
+  data: z.union([
+    SuspiciousActivityEventSchema,
+    z.number().int().nonnegative(),
+  ]),
 });
 type WebSocketEventSchemaType = z.infer<typeof WebSocketEventSchema>;
 

@@ -16,8 +16,24 @@ export class SocketMiddleware {
     private readonly configService: ConfigService,
   ) {}
 
-  async use(socket: Socket, next: () => void) {
-    const token = socket.handshake.headers.authorization?.split(' ')[1]; // TODO: change to handshake.auth 
+  async use(socket: Socket, next: (err?: Error) => void) {
+    const user = await this.authenticate(socket).catch((error) => {
+      const message =
+        error instanceof UnauthorizedException
+          ? error.message
+          : 'Authentication failed';
+      next(new Error(message));
+      return null;
+    });
+
+    if (!user) return;
+
+    socket.data.user = user;
+    next();
+  }
+
+  private async authenticate(socket: Socket) {
+    const token = socket.handshake.headers.authorization?.split(' ')[1];
     if (!token) throw new UnauthorizedException('No token provided');
 
     const secret = this.configService.getOrThrow<string>('JWT_SECRET');
@@ -27,12 +43,8 @@ export class SocketMiddleware {
       where: eq(schema.usersSchema.id, decoded.sub),
     });
 
-    if (!user) {
-      throw new UnauthorizedException('User not found');
-    }
+    if (!user) throw new UnauthorizedException('User not found');
 
-    socket.data.user = user;
-
-    next();
+    return user;
   }
 }
