@@ -12,6 +12,7 @@ import { ZodExceptionFilter } from './common/filters/zod.exception.filter';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { ZodSerializerInterceptorCustom } from './common/interceptors/zod.response-checker.interceptor';
 import { AdminMiddleware } from './common/middlewares/admin.middleware';
+import { MetricsMiddleware } from './common/middlewares/metrics.middleware';
 import { EnvModule } from './config/env/env.module';
 import { DrizzleModule } from './database/drizzle.module';
 import { AiModule } from './modules/AI/AI.module';
@@ -20,6 +21,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { FeedbackModule } from './modules/feedback/feedback.module';
 import { FileModule } from './modules/file/file.module';
 import { WebsocketModule } from './modules/websocket/websocket.module';
+import { MonitoringModule } from './modules/monitoring/monitoring.module';
 
 @Module({
   imports: [
@@ -32,6 +34,7 @@ import { WebsocketModule } from './modules/websocket/websocket.module';
     DrizzleModule,
     PrometheusModule.register(),
     WebsocketModule,
+    MonitoringModule,
   ],
 
   controllers: [],
@@ -46,6 +49,14 @@ import { WebsocketModule } from './modules/websocket/websocket.module';
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(MetricsMiddleware)
+      .exclude(
+        { path: 'metrics', method: RequestMethod.ALL },
+        { path: 'admin/monitoring', method: RequestMethod.ALL },
+      )
+      .forRoutes({ path: '*', method: RequestMethod.ALL });
+
     consumer.apply(AdminMiddleware).forRoutes({
       path: '*',
       method: RequestMethod.ALL,

@@ -1,5 +1,6 @@
 import {
   Controller,
+  Get,
   HttpCode,
   HttpStatus,
   Param,
@@ -24,6 +25,8 @@ import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { createBaseResponseDto, UserRoleEnum } from 'src/utils/zod.schemas';
 import { Roles } from '../auth/decorators/roles.decorator';
+// biome-ignore lint/style/useImportType: Needed for DI
+import { PrometheusService } from '../monitoring/prometheus.service';
 // biome-ignore lint/style/useImportType: Needed for DI
 import { AdminService } from './admin.service';
 import {
@@ -98,7 +101,10 @@ import {
   },
 })
 export class AdminController {
-  constructor(private readonly adminService: AdminService) {}
+  constructor(
+    private readonly adminService: AdminService,
+    private readonly prometheusService: PrometheusService,
+  ) {}
 
   @Post('disable/:userId')
   @HttpCode(HttpStatus.OK)
@@ -132,5 +138,14 @@ export class AdminController {
     @Param('userId', ParseUUIDPipe) userId: string,
   ): Promise<AdminDisableSuspendResponseSchemaType> {
     return this.adminService.adminSuspend(userId);
+  }
+
+  @Get('monitoring')
+  async getAllMetrics() {
+    return {
+      uploads: await this.prometheusService.getUploadsPerDay(),
+      apiUsage: await this.prometheusService.getApiUsage(),
+      errorRates: await this.prometheusService.getErrorRates(),
+    };
   }
 }
