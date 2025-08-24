@@ -156,8 +156,44 @@ const DatabaseErrorSchema = z.object({
 
 type DatabaseErrorSchemaType = z.infer<typeof DatabaseErrorSchema>;
 
+const HttpMethodEnum = z.enum(['GET', 'POST', 'PUT', 'PATCH', 'DELETE']);
+type HttpMethodType = z.infer<typeof HttpMethodEnum>;
+
+const RateLimitRuleSchema = z.object({
+  endpoint: z.string().min(1).describe('API endpoint, e.g., /api/feedback/upload or /api/feedback/*'),
+  method: HttpMethodEnum.describe('HTTP method, default = ALL'),
+  limit: z.number().int().min(1).describe('Max requests allowed per window'),
+  windowSeconds: z.number().int().min(1).describe('Window duration in seconds'),
+});
+
+type RateLimitRuleType = z.infer<typeof RateLimitRuleSchema>;
+
+ const deleteRateLimitQuerySchema = z.object({
+  endpoint: z.string().min(1),
+  method: HttpMethodEnum,
+});
+
+type deleteRateLimitSchemaType = z.infer<typeof deleteRateLimitQuerySchema>;
+
+const StoredRuleSchema = z.object({
+  endpoint: z.string(),
+  method: z.string(),
+  limit: z.string(),
+  windowSeconds: z.string(),
+});
+
+type StoredRuleType = z.infer<typeof StoredRuleSchema>;
+
 export {
+  StoredRuleSchema,
+  type StoredRuleType,
+  HttpMethodEnum,
+  type HttpMethodType,
+  deleteRateLimitQuerySchema,
+  type deleteRateLimitSchemaType,
   type FileSchemaType,
+  RateLimitRuleSchema,
+  type RateLimitRuleType,
   FileSchema,
   UserSchema,
   type UserSchemaType,

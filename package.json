@@ -42,6 +42,7 @@
     "express-basic-auth": "^1.2.1",
     "ioredis": "^5.7.0",
     "json2csv": "6.0.0-alpha.2",
+    "jsonwebtoken": "^9.0.2",
     "multer": "2.0.2",
     "nestjs-zod": "^4.3.1",
     "papaparse": "^5.5.3",

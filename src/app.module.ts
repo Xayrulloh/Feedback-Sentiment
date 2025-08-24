@@ -1,14 +1,11 @@
-import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis';
 import {
   type MiddlewareConsumer,
   Module,
   type NestModule,
   RequestMethod,
 } from '@nestjs/common';
-import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
-import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
-import { Redis } from 'ioredis';
 import { ZodValidationPipe } from 'nestjs-zod';
 import { HttpExceptionFilter } from './common/filters/http.exception.filter';
 import { ZodExceptionFilter } from './common/filters/zod.exception.filter';
@@ -24,6 +21,8 @@ import { AuthModule } from './modules/auth/auth.module';
 import { FeedbackModule } from './modules/feedback/feedback.module';
 import { FileModule } from './modules/file/file.module';
 import { MonitoringModule } from './modules/monitoring/monitoring.module';
+import { RateLimitModule } from './modules/rate-limit/rate-limit.module';
+import { RateLimitMiddleware } from './common/middlewares/rate-limit.middleware';
 @Module({
   imports: [
     EnvModule,
@@ -35,20 +34,7 @@ import { MonitoringModule } from './modules/monitoring/monitoring.module';
     DrizzleModule,
     PrometheusModule.register(),
     MonitoringModule,
-    ThrottlerModule.forRoot({
-      throttlers: [
-        {
-          ttl: 20000, // 20 seconds
-          limit: 2, // 2 requests per 20 seconds
-        },
-      ],
-      storage: new ThrottlerStorageRedisService(
-        new Redis({
-          host: 'redis',
-          port: 6379,
-        }),
-      ),
-    }),
+    RateLimitModule,
   ],
 
   controllers: [],
@@ -58,12 +44,19 @@ import { MonitoringModule } from './modules/monitoring/monitoring.module';
     { provide: APP_FILTER, useClass: HttpExceptionFilter },
     { provide: APP_FILTER, useClass: ZodExceptionFilter },
     { provide: APP_INTERCEPTOR, useClass: ZodSerializerInterceptorCustom },
-    { provide: APP_GUARD, useClass: ThrottlerGuard },
     AdminMiddleware,
   ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(RateLimitMiddleware) // <— add here
+      .exclude(
+        { path: 'metrics', method: RequestMethod.ALL },
+        { path: 'admin/monitoring', method: RequestMethod.ALL },
+      )
+      .forRoutes({ path: '*', method: RequestMethod.ALL });
+      
     consumer
       .apply(MetricsMiddleware)
       .exclude(
