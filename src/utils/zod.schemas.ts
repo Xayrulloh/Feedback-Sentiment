@@ -160,7 +160,10 @@ const HttpMethodEnum = z.enum(['GET', 'POST', 'PUT', 'PATCH', 'DELETE']);
 type HttpMethodType = z.infer<typeof HttpMethodEnum>;
 
 const RateLimitRuleSchema = z.object({
-  endpoint: z.string().min(1).describe('API endpoint, e.g., /api/feedback/upload or /api/feedback/*'),
+  endpoint: z
+    .string()
+    .min(1)
+    .describe('API endpoint, e.g., /api/feedback/upload or /api/feedback/*'),
   method: HttpMethodEnum.describe('HTTP method, default = ALL'),
   limit: z.number().int().min(1).describe('Max requests allowed per window'),
   windowSeconds: z.number().int().min(1).describe('Window duration in seconds'),
@@ -168,7 +171,7 @@ const RateLimitRuleSchema = z.object({
 
 type RateLimitRuleType = z.infer<typeof RateLimitRuleSchema>;
 
- const deleteRateLimitQuerySchema = z.object({
+const deleteRateLimitQuerySchema = z.object({
   endpoint: z.string().min(1),
   method: HttpMethodEnum,
 });

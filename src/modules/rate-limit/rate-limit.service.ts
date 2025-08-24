@@ -1,8 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
-import Redis from 'ioredis';
 import type { Request } from 'express';
-import { HttpMethodType, RateLimitRuleType, StoredRuleSchema, StoredRuleType } from 'src/utils/zod.schemas';
-import type { JWTPayloadType } from 'src/modules/auth/dto/auth.dto';
+import Redis from 'ioredis';
+import {
+  type HttpMethodType,
+  type RateLimitRuleType,
+  StoredRuleSchema,
+  type StoredRuleType,
+} from 'src/utils/zod.schemas';
 
 @Injectable()
 export class RateLimitService {
@@ -19,7 +23,8 @@ export class RateLimitService {
   }
 
   private ruleKey(endpoint: string, method?: string) {
-    const ep = endpoint === '/' ? '/' : endpoint.split('?')[0].replace(/\/+$/, '');
+    const ep =
+      endpoint === '/' ? '/' : endpoint.split('?')[0].replace(/\/+$/, '');
     return `rl:rule:${(method ?? 'ALL').toUpperCase()}:${ep}`;
   }
   private cntKey(method: string, endpoint: string, subject: string) {
@@ -46,35 +51,38 @@ export class RateLimitService {
     await this.redis.srem(this.RULES_IDX, key);
   }
 
-async listRules(): Promise<RateLimitRuleType[]> {
-  const keys = await this.redis.smembers(this.RULES_IDX);
-  if (!keys.length) return [];
+  async listRules(): Promise<RateLimitRuleType[]> {
+    const keys = await this.redis.smembers(this.RULES_IDX);
+    if (!keys.length) return [];
 
-  const multi = this.redis.multi();
-  keys.forEach(k => multi.hgetall(k));
-  const res = await multi.exec();
+    const multi = this.redis.multi();
+    keys.forEach((k) => multi.hgetall(k));
+    const res = await multi.exec();
 
-  const rows = (res ?? [])
-    .map(([, v]) => {
-      const parsed = StoredRuleSchema.safeParse(v);
-      return parsed.success ? parsed.data : null;
-    })
-    .filter(Boolean) as StoredRuleType[];
+    const rows = (res ?? [])
+      .map(([, v]) => {
+        const parsed = StoredRuleSchema.safeParse(v);
+        return parsed.success ? parsed.data : null;
+      })
+      .filter(Boolean) as StoredRuleType[];
 
-  return rows.map(r => ({
-    endpoint: r.endpoint,
-    method: r.method as HttpMethodType,
-    limit: Number(r.limit),
-    windowSeconds: Number(r.windowSeconds),
-  }));
-}
+    return rows.map((r) => ({
+      endpoint: r.endpoint,
+      method: r.method as HttpMethodType,
+      limit: Number(r.limit),
+      windowSeconds: Number(r.windowSeconds),
+    }));
+  }
 
-  async findRule(method: string, path: string): Promise<RateLimitRuleType | null> {
+  async findRule(
+    method: string,
+    path: string,
+  ): Promise<RateLimitRuleType | null> {
     const all = await this.listRules();
     const normalized = path.split('?')[0].replace(/\/+$/, '') || '/';
     const m = method.toUpperCase();
 
-    const matches = all.filter(r => {
+    const matches = all.filter((r) => {
       const rMethod = (r.method ?? 'ALL').toUpperCase();
       const ep = r.endpoint === '/' ? '/' : r.endpoint.replace(/\/+$/, '');
       const isPrefix = ep.endsWith('/*');
@@ -89,7 +97,7 @@ async listRules(): Promise<RateLimitRuleType[]> {
 
     if (!matches.length) return null;
 
-    matches.sort((a, b) => (b.endpoint.length - a.endpoint.length));
+    matches.sort((a, b) => b.endpoint.length - a.endpoint.length);
 
     return matches[0];
   }
@@ -109,20 +117,22 @@ async listRules(): Promise<RateLimitRuleType[]> {
     const remaining = Math.max(0, rule.limit - used);
 
     if (used > rule.limit * 5) {
-      this.logger.warn(`Suspicious rate: subject=${subject} ${methodTag} ${ep} used=${used}`);
-    //  emit WebSocket event if you have a gateway
+      this.logger.warn(
+        `Suspicious rate: subject=${subject} ${methodTag} ${ep} used=${used}`,
+      );
+      //  emit WebSocket event if you have a gateway
     }
 
     return { allowed, used, remaining };
   }
 
   // this is for middleware
-  subjectFromReq(req: Request) {
-    const anyReq = req as any;
-    return anyReq.user?.id ?? req.ip ?? 'unknown';
-  }
+  // subjectFromReq(req: Request) {
+  //   const anyReq = req as any;
+  //   return anyReq.user?.id ?? req.ip ?? 'unknown';
+  // }
   normalizePath(req: Request) {
-    const u = (req as any).originalUrl || req.url || '';
-    return (u.split('?')[0].replace(/\/+$/, '') || '/');
+    const u = req.originalUrl || req.url;
+    return u.split('?')[0].replace(/\/+$/, '') || '/';
   }
 }
