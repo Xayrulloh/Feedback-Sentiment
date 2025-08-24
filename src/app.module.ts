@@ -13,6 +13,7 @@ import { ResponseInterceptor } from './common/interceptors/response.interceptor'
 import { ZodSerializerInterceptorCustom } from './common/interceptors/zod.response-checker.interceptor';
 import { AdminMiddleware } from './common/middlewares/admin.middleware';
 import { MetricsMiddleware } from './common/middlewares/metrics.middleware';
+import { RateLimitMiddleware } from './common/middlewares/rate-limit.middleware';
 import { EnvModule } from './config/env/env.module';
 import { DrizzleModule } from './database/drizzle.module';
 import { AiModule } from './modules/AI/AI.module';
@@ -21,6 +22,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { FeedbackModule } from './modules/feedback/feedback.module';
 import { FileModule } from './modules/file/file.module';
 import { MonitoringModule } from './modules/monitoring/monitoring.module';
+import { RateLimitModule } from './modules/rate-limit/rate-limit.module';
 @Module({
   imports: [
     EnvModule,
@@ -32,6 +34,7 @@ import { MonitoringModule } from './modules/monitoring/monitoring.module';
     DrizzleModule,
     PrometheusModule.register(),
     MonitoringModule,
+    RateLimitModule,
   ],
 
   controllers: [],
@@ -42,10 +45,19 @@ import { MonitoringModule } from './modules/monitoring/monitoring.module';
     { provide: APP_FILTER, useClass: ZodExceptionFilter },
     { provide: APP_INTERCEPTOR, useClass: ZodSerializerInterceptorCustom },
     AdminMiddleware,
+    RateLimitMiddleware,
   ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(RateLimitMiddleware) // <— add here
+      .exclude(
+        { path: 'metrics', method: RequestMethod.ALL },
+        { path: 'admin/monitoring', method: RequestMethod.ALL },
+      )
+      .forRoutes({ path: '*', method: RequestMethod.ALL });
+
     consumer
       .apply(MetricsMiddleware)
       .exclude(
