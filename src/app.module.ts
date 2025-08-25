@@ -23,6 +23,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { FeedbackModule } from './modules/feedback/feedback.module';
 import { FileModule } from './modules/file/file.module';
 import { MonitoringModule } from './modules/monitoring/monitoring.module';
+import { RedisModule } from './modules/redis/redis.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { MonitoringModule } from './modules/monitoring/monitoring.module';
     DrizzleModule,
     PrometheusModule.register(),
     MonitoringModule,
+    RedisModule,
   ],
 
   controllers: [],

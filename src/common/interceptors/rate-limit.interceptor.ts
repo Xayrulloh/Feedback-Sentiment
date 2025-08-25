@@ -1,19 +1,21 @@
 import {
   type CallHandler,
   type ExecutionContext,
-  HttpException,
-  HttpStatus,
   Injectable,
   type NestInterceptor,
 } from '@nestjs/common';
 import type { Observable } from 'rxjs';
 // biome-ignore lint/style/useImportType: Needed for DI
 import { AdminService } from 'src/modules/admin/admin.service';
-import { AuthenticatedRequest } from 'src/shared/types/request-with-user';
+import type { RedisService } from 'src/modules/redis/redis.service';
+import type { AuthenticatedRequest } from 'src/shared/types/request-with-user';
 
 @Injectable()
 export class RateLimitInterceptor implements NestInterceptor {
-  constructor(private readonly adminService: AdminService) {}
+  constructor(
+    private readonly adminService: AdminService,
+    private readonly redisService: RedisService,
+  ) {}
 
   async intercept(
     context: ExecutionContext,
@@ -26,29 +28,45 @@ export class RateLimitInterceptor implements NestInterceptor {
     ];
     const user = request.user;
 
-    // const { allowed, remaining, limit } =
-    //   await this.adminService.enforce(subject);
-    // // Ensure headers are valid
-    // const safeLimit =
-    //   limit != null && Number.isFinite(limit) ? String(limit) : 'unlimited';
-    // const safeRemaining =
-    //   remaining != null && Number.isFinite(remaining)
-    //     ? String(remaining)
-    //     : 'unlimited';
-    // response.setHeader('X-RateLimit-Limit', safeLimit);
-    // response.setHeader('X-RateLimit-Remaining', safeRemaining);
-    // if (!allowed) {
-    //   throw new HttpException(
-    //     {
-    //       success: false,
-    //       statusCode: 429,
-    //       message: 'Too Many Requests',
-    //       timestamp: new Date().toISOString(),
-    //       path: request.originalUrl || request.url,
-    //     },
-    //     HttpStatus.TOO_MANY_REQUESTS,
-    //   );
-    // }
-    // return next.handle();
+    const [
+      userApiRateLimit,
+      userUploadRateLimit,
+      userDownloadRateLimit,
+      userLoginRateLimit,
+      rateLimitApi, // {duration: ms, limit: number}
+      rateLimitUpload,
+      rateLimitDownload,
+      rateLimitLogin,
+    ] = await Promise.all([
+      this.redisService.get(`user:${user.id}:api`),
+      this.redisService.get(`user:${user.id}:upload`),
+      this.redisService.get(`user:${user.id}:download`),
+      this.redisService.get(`user:${user.id}:login`),
+      this.redisService.get('rateLimit:api'),
+      this.redisService.get('rateLimit:upload'),
+      this.redisService.get('rateLimit:download'),
+      this.redisService.get('rateLimit:login'),
+    ]);
+
+    // check what user is trying to do
+    if (request.path === '/api/upload') {
+      if (!userUploadRateLimit) {
+        await this.redisService.setWithExpiry(
+          `user:${user.id}:upload`,
+          1,
+          rateLimitUpload.duration,
+        );
+      }
+    }
+
+    // redis (store it like: {user:{userId}:{target} duration as TTL)
+
+    // 429
+
+    // QN:
+    // take user limits from redis
+    // take db limits from redis
+    // compare them
+    // if they are the same or higher, return 429 and suspicious emit to websocket
   }
 }

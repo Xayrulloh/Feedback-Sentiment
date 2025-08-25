@@ -85,7 +85,7 @@ export const feedbacksSchema = pgTable('feedbacks', {
 });
 
 export const rateLimitsSchema = pgTable('rate_limits', {
-  target: DrizzleRateLimitTargetEnum('target').notNull(),
+  target: DrizzleRateLimitTargetEnum('target').unique().notNull(),
   duration: DrizzleRateLimitDurationEnum('duration').notNull(),
   limit: integer('limit').notNull(),
   ...baseSchema,

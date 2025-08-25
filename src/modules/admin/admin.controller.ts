@@ -26,7 +26,11 @@ import {
 import { ZodSerializerDto } from 'nestjs-zod';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
-import { createBaseResponseDto, UserRoleEnum } from 'src/utils/zod.schemas';
+import {
+  createBaseResponseDto,
+  RateLimitSchema,
+  UserRoleEnum,
+} from 'src/utils/zod.schemas';
 import { Roles } from '../auth/decorators/roles.decorator';
 // biome-ignore lint/style/useImportType: Needed for DI
 import { PrometheusService } from '../monitoring/prometheus.service';
@@ -34,9 +38,10 @@ import { PrometheusService } from '../monitoring/prometheus.service';
 import { AdminService } from './admin.service';
 import {
   AdminDisableSuspendResponseSchema,
+  RateLimitGetSchema,
+  type RateLimitGetSchemaType,
+  RateLimitUpsertDto,
   type AdminDisableSuspendResponseSchemaType,
-  RateLimitRulesResponseSchema,
-  UpsertRateLimitDto,
 } from './dto/admin.dto';
 
 @ApiTags('Admin')
@@ -146,7 +151,7 @@ export class AdminController {
   }
 
   @Get('monitoring')
-  async getAllMetrics() {
+  async adminMetrics() {
     return {
       uploads: await this.prometheusService.getUploadsPerDay(),
       apiUsage: await this.prometheusService.getApiUsage(),
@@ -154,18 +159,24 @@ export class AdminController {
     };
   }
 
-  @Patch('rules')
+  @Patch('rate-limit')
   @HttpCode(200)
   @ApiOkResponse({
-    type: createBaseResponseDto(
-      RateLimitRulesResponseSchema,
-      'RateLimitRulesResponseSchema',
-    ),
+    type: createBaseResponseDto(RateLimitSchema, 'RateLimitSchema'),
   })
-  @ApiBody({ type: UpsertRateLimitDto })
-  @ZodSerializerDto(RateLimitRulesResponseSchema)
-  async upsertRule(@Body() dto: UpsertRateLimitDto) {
-    const updatedRule = await this.adminService.setGlobalRule(dto);
-    return { success: true, message: 'Rule upserted', rule: updatedRule };
+  @ApiBody({ type: RateLimitUpsertDto })
+  @ZodSerializerDto(RateLimitSchema)
+  async adminUpsertRateLimit(@Body() body: RateLimitUpsertDto) {
+    return this.adminService.adminUpsertRateLimit(body);
+  }
+
+  @Get('rate-limit')
+  @HttpCode(200)
+  @ApiOkResponse({
+    type: createBaseResponseDto(RateLimitGetSchema, 'RateLimitGetSchema'),
+  })
+  @ZodSerializerDto(RateLimitGetSchema)
+  async adminGetRateLimits(): Promise<RateLimitGetSchemaType> {
+    return this.adminService.adminGetRateLimits();
   }
 }
