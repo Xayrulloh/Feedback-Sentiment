@@ -3,7 +3,11 @@ import { eq } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { DrizzleAsyncProvider } from 'src/database/drizzle.provider';
 import * as schema from 'src/database/schema';
-import { RateLimitDurationEnum } from 'src/utils/zod.schemas';
+import {
+  RateLimitDurationEnum,
+  type RateLimitSchemaType,
+  type UserSchemaType,
+} from 'src/utils/zod.schemas';
 // biome-ignore lint/style/useImportType: Needed for DI
 import { RedisService } from '../redis/redis.service';
 import type {
@@ -19,8 +23,7 @@ export class AdminService {
     private readonly db: NodePgDatabase<typeof schema>,
   ) {}
 
-  async adminDisable(userId: string) {
-    // FIXME: implement response type for all controllers and services
+  async adminDisable(userId: string): Promise<UserSchemaType> {
     const [user] = await this.db
       .select()
       .from(schema.usersSchema)
@@ -39,7 +42,7 @@ export class AdminService {
     return disabledUser;
   }
 
-  async adminSuspend(userId: string) {
+  async adminSuspend(userId: string): Promise<UserSchemaType> {
     const [user] = await this.db
       .select()
       .from(schema.usersSchema)
@@ -60,7 +63,9 @@ export class AdminService {
     return suspendedUser;
   }
 
-  async adminUpsertRateLimit(body: RateLimitUpsertDto) {
+  async adminUpsertRateLimit(
+    body: RateLimitUpsertDto,
+  ): Promise<RateLimitSchemaType> {
     const [upsertedRateLimit] = await this.db
       .insert(schema.rateLimitsSchema)
       .values(body)

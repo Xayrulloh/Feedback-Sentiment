@@ -29,6 +29,7 @@ import { RolesGuard } from 'src/common/guards/roles.guard';
 import {
   createBaseResponseDto,
   RateLimitSchema,
+  type RateLimitSchemaType,
   UserRoleEnum,
 } from 'src/utils/zod.schemas';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -39,6 +40,8 @@ import { AdminService } from './admin.service';
 import {
   AdminDisableSuspendResponseSchema,
   type AdminDisableSuspendResponseSchemaType,
+  MetricsSchema,
+  type MetricsSchemaType,
   RateLimitGetSchema,
   type RateLimitGetSchemaType,
   RateLimitUpsertDto,
@@ -83,33 +86,6 @@ import {
     },
   },
 })
-@ApiNotFoundResponse({
-  description: 'User not found',
-  schema: {
-    type: 'object',
-    properties: {
-      success: { type: 'boolean', example: false },
-      statusCode: { type: 'number', example: 404 },
-      message: { type: 'string', example: 'User not found' },
-      timestamp: { type: 'string', example: new Date().toISOString() },
-    },
-  },
-})
-@ApiBadRequestResponse({
-  description: 'Validation failed (uuid is expected)',
-  schema: {
-    type: 'object',
-    properties: {
-      success: { type: 'boolean', example: false },
-      statusCode: { type: 'number', example: 400 },
-      message: {
-        type: 'string',
-        example: 'Validation failed (uuid is expected)',
-      },
-      timestamp: { type: 'string', example: new Date().toISOString() },
-    },
-  },
-})
 export class AdminController {
   constructor(
     private readonly adminService: AdminService,
@@ -118,13 +94,43 @@ export class AdminController {
 
   @Post('disable/:userId')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Toggle disable/enable a user (admin only)' })
+  @ApiOperation({ summary: 'Toggle disable/enable a user' })
   @ApiParam({ name: 'userId', type: 'string', description: 'User ID (uuid)' })
   @ApiOkResponse({
     type: createBaseResponseDto(
       AdminDisableSuspendResponseSchema,
       'AdminDisableSuspendResponseSchema',
     ),
+  })
+  @ApiBadRequestResponse({
+    description: 'Validation failed (uuid is expected)',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: false },
+        statusCode: { type: 'number', example: 400 },
+        message: {
+          type: 'string',
+          example: 'Validation failed (uuid is expected)',
+        },
+        timestamp: {
+          type: 'string',
+          example: '2025-08-26T22:15:00.000Z',
+        },
+      },
+    },
+  })
+  @ApiNotFoundResponse({
+    description: 'User not found',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: false },
+        statusCode: { type: 'number', example: 404 },
+        message: { type: 'string', example: 'User not found' },
+        timestamp: { type: 'string', example: new Date().toISOString() },
+      },
+    },
   })
   @ZodSerializerDto(AdminDisableSuspendResponseSchema)
   async adminDisable(
@@ -135,13 +141,43 @@ export class AdminController {
 
   @Post('suspend/:userId')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Suspend (soft-delete) a user (admin only)' })
+  @ApiOperation({ summary: 'Suspend (soft-delete) a user' })
   @ApiParam({ name: 'userId', type: 'string', description: 'User ID (uuid)' })
   @ApiOkResponse({
     type: createBaseResponseDto(
       AdminDisableSuspendResponseSchema,
       'AdminDisableSuspendResponseSchema',
     ),
+  })
+  @ApiBadRequestResponse({
+    description: 'Validation failed (uuid is expected)',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: false },
+        statusCode: { type: 'number', example: 400 },
+        message: {
+          type: 'string',
+          example: 'Validation failed (uuid is expected)',
+        },
+        timestamp: {
+          type: 'string',
+          example: '2025-08-26T22:15:00.000Z',
+        },
+      },
+    },
+  })
+  @ApiNotFoundResponse({
+    description: 'User not found',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: false },
+        statusCode: { type: 'number', example: 404 },
+        message: { type: 'string', example: 'User not found' },
+        timestamp: { type: 'string', example: new Date().toISOString() },
+      },
+    },
   })
   @ZodSerializerDto(AdminDisableSuspendResponseSchema)
   async adminSuspend(
@@ -151,7 +187,11 @@ export class AdminController {
   }
 
   @Get('monitoring')
-  async adminMetrics() {
+  @ApiOkResponse({
+    type: createBaseResponseDto(MetricsSchema, 'MetricsSchema'),
+  })
+  @ApiOperation({ summary: 'Get app metrics' })
+  async adminMetrics(): Promise<MetricsSchemaType> {
     return {
       uploads: await this.prometheusService.getUploadsPerDay(),
       apiUsage: await this.prometheusService.getApiUsage(),
@@ -164,9 +204,39 @@ export class AdminController {
   @ApiOkResponse({
     type: createBaseResponseDto(RateLimitSchema, 'RateLimitSchema'),
   })
+  @ApiOperation({ summary: 'Set rate limit rule' })
+  @ApiBadRequestResponse({
+    description: 'Validation failed',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: false },
+        statusCode: { type: 'number', example: 400 },
+        message: { type: 'string', example: 'Validation failed' },
+        errors: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              field: { type: 'string', example: 'limit' },
+              message: { type: 'string', example: 'Required field is missing' },
+              code: { type: 'string', example: 'REQUIRED' },
+            },
+          },
+        },
+        timestamp: {
+          type: 'string',
+          example: '2025-08-25T21:59:30.357Z',
+        },
+        path: { type: 'string', example: '/api/admin/rate-limit' },
+      },
+    },
+  })
   @ApiBody({ type: RateLimitUpsertDto })
   @ZodSerializerDto(RateLimitSchema)
-  async adminUpsertRateLimit(@Body() body: RateLimitUpsertDto) {
+  async adminUpsertRateLimit(
+    @Body() body: RateLimitUpsertDto,
+  ): Promise<RateLimitSchemaType> {
     return this.adminService.adminUpsertRateLimit(body);
   }
 
@@ -175,6 +245,7 @@ export class AdminController {
   @ApiOkResponse({
     type: createBaseResponseDto(RateLimitGetSchema, 'RateLimitGetSchema'),
   })
+  @ApiOperation({ summary: 'Get rate limit rules' })
   @ZodSerializerDto(RateLimitGetSchema)
   async adminGetRateLimits(): Promise<RateLimitGetSchemaType> {
     return this.adminService.adminGetRateLimits();

@@ -7,14 +7,20 @@ import {
   type NestInterceptor,
 } from '@nestjs/common';
 import type { Observable } from 'rxjs';
+import type { SuspiciousActivityEventSchemaType } from 'src/modules/admin/dto/admin.dto';
 // biome-ignore lint/style/useImportType: Needed for DI
 import { RedisService } from 'src/modules/redis/redis.service';
+// biome-ignore lint/style/useImportType: Needed for DI
+import { SocketGateway } from 'src/modules/websocket/websocket.gateaway';
 import type { AuthenticatedRequest } from 'src/shared/types/request-with-user';
 import { RateLimitTargetEnum } from 'src/utils/zod.schemas';
 
 @Injectable()
 export class RateLimitInterceptor implements NestInterceptor {
-  constructor(private readonly redisService: RedisService) {}
+  constructor(
+    private readonly redisService: RedisService,
+    private readonly gateaway: SocketGateway,
+  ) {}
 
   async intercept(
     context: ExecutionContext,
@@ -61,7 +67,19 @@ export class RateLimitInterceptor implements NestInterceptor {
     response.setHeader('X-RateLimit-Reset', resetTimestamp);
 
     if (userCount >= rateLimit.limit) {
-      // TODO: emit suspicious to websocket here
+      const activity: SuspiciousActivityEventSchemaType = {
+        userId: user?.id,
+        email: user?.email,
+        activityType: `TOO_MANY_${action}`,
+        details: `TOO_MANY_${action} requests for limit: ${rateLimit}`,
+        timestamp: new Date(),
+      };
+
+      this.gateaway.notifyAdmin({
+        event: 'suspiciousActivity',
+        data: activity,
+      });
+
       throw new HttpException(
         `Rate limit exceeded for ${action}`,
         HttpStatus.TOO_MANY_REQUESTS,
