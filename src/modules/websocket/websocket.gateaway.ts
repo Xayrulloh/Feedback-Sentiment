@@ -19,17 +19,16 @@ export class SocketGateway
   @WebSocketServer()
   server: Server;
 
-  private activeUsers = new Set<string>();
-
   constructor(private readonly websocketMiddleware: SocketMiddleware) {}
 
   afterInit(server: Server) {
-    server.use((socket, next) => this.websocketMiddleware.use(socket, next));
+    server.use((socket, next: (err?: Error) => void) =>
+      this.websocketMiddleware.use(socket, next),
+    );
   }
 
   handleConnection(client: Socket) {
     const user = client.data.user;
-    this.activeUsers.add(user.id);
 
     if (user.role === 'ADMIN') {
       client.join('admin');
@@ -37,17 +36,14 @@ export class SocketGateway
 
     this.notifyAll({
       event: 'activeUsers',
-      data: this.activeUsers.size,
+      data: this.server.sockets.sockets.size,
     });
   }
 
-  handleDisconnect(client: Socket) {
-    const user = client.data.user;
-    this.activeUsers.delete(user.id);
-
+  handleDisconnect() {
     this.notifyAll({
       event: 'activeUsers',
-      data: this.activeUsers.size,
+      data: this.server.sockets.sockets.size,
     });
   }
 
