@@ -9,20 +9,21 @@ import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 import { ZodValidationPipe } from 'nestjs-zod';
 import { HttpExceptionFilter } from './common/filters/http.exception.filter';
 import { ZodExceptionFilter } from './common/filters/zod.exception.filter';
+import { RateLimitInterceptor } from './common/interceptors/rate-limit.interceptor';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { ZodSerializerInterceptorCustom } from './common/interceptors/zod.response-checker.interceptor';
 import { AdminMiddleware } from './common/middlewares/admin.middleware';
 import { MetricsMiddleware } from './common/middlewares/metrics.middleware';
-import { RateLimitMiddleware } from './common/middlewares/rate-limit.middleware';
 import { EnvModule } from './config/env/env.module';
 import { DrizzleModule } from './database/drizzle.module';
 import { AiModule } from './modules/AI/AI.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { AdminService } from './modules/admin/admin.service';
 import { AuthModule } from './modules/auth/auth.module';
 import { FeedbackModule } from './modules/feedback/feedback.module';
 import { FileModule } from './modules/file/file.module';
 import { MonitoringModule } from './modules/monitoring/monitoring.module';
-import { RateLimitModule } from './modules/rate-limit/rate-limit.module';
+
 @Module({
   imports: [
     EnvModule,
@@ -34,30 +35,22 @@ import { RateLimitModule } from './modules/rate-limit/rate-limit.module';
     DrizzleModule,
     PrometheusModule.register(),
     MonitoringModule,
-    RateLimitModule,
   ],
 
   controllers: [],
   providers: [
+    AdminService,
     { provide: APP_PIPE, useClass: ZodValidationPipe },
     { provide: APP_INTERCEPTOR, useClass: ResponseInterceptor },
     { provide: APP_FILTER, useClass: HttpExceptionFilter },
     { provide: APP_FILTER, useClass: ZodExceptionFilter },
     { provide: APP_INTERCEPTOR, useClass: ZodSerializerInterceptorCustom },
+    { provide: APP_INTERCEPTOR, useClass: RateLimitInterceptor },
     AdminMiddleware,
-    RateLimitMiddleware,
   ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(RateLimitMiddleware) // <— add here
-      .exclude(
-        { path: 'metrics', method: RequestMethod.ALL },
-        { path: 'admin/monitoring', method: RequestMethod.ALL },
-      )
-      .forRoutes({ path: '*', method: RequestMethod.ALL });
-
     consumer
       .apply(MetricsMiddleware)
       .exclude(

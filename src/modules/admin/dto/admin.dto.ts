@@ -1,5 +1,5 @@
 import { createZodDto } from 'nestjs-zod';
-import { UserSchema } from 'src/utils/zod.schemas';
+import { RateLimitRuleSchema, UserSchema } from 'src/utils/zod.schemas';
 import type z from 'zod';
 
 const AdminDisableSuspendResponseSchema = UserSchema.describe(
@@ -14,7 +14,21 @@ type AdminDisableSuspendResponseSchemaType = z.infer<
   typeof AdminDisableSuspendResponseSchema
 >;
 
+class UpsertRateLimitDto extends createZodDto(RateLimitRuleSchema) {}
+
+const RateLimitRulesResponseSchema = RateLimitRuleSchema;
+
+type RateLimitRulesResponseType = z.infer<typeof RateLimitRulesResponseSchema>;
+
+class RateLimitRulesResponseDto extends createZodDto(
+  RateLimitRulesResponseSchema,
+) {}
+
 export {
+  RateLimitRulesResponseSchema,
+  UpsertRateLimitDto,
+  type RateLimitRulesResponseType,
+  RateLimitRulesResponseDto,
   AdminDisableSuspendResponseSchema,
   AdminDisableSuspendResponseDto,
   type AdminDisableSuspendResponseSchemaType,
