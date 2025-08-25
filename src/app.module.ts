@@ -18,7 +18,6 @@ import { EnvModule } from './config/env/env.module';
 import { DrizzleModule } from './database/drizzle.module';
 import { AiModule } from './modules/AI/AI.module';
 import { AdminModule } from './modules/admin/admin.module';
-import { AdminService } from './modules/admin/admin.service';
 import { AuthModule } from './modules/auth/auth.module';
 import { FeedbackModule } from './modules/feedback/feedback.module';
 import { FileModule } from './modules/file/file.module';

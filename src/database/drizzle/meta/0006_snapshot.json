@@ -79,12 +79,8 @@
           "name": "feedbacks_file_id_files_id_fk",
           "tableFrom": "feedbacks",
           "tableTo": "files",
-          "columnsFrom": [
-            "file_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["file_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -296,9 +292,7 @@
         "users_email_unique": {
           "name": "users_email_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "email"
-          ]
+          "columns": ["email"]
         }
       },
       "policies": {},
@@ -310,38 +304,22 @@
     "public.sentiment": {
       "name": "sentiment",
       "schema": "public",
-      "values": [
-        "negative",
-        "neutral",
-        "positive",
-        "unknown"
-      ]
+      "values": ["negative", "neutral", "positive", "unknown"]
     },
     "public.rate_limit_duration": {
       "name": "rate_limit_duration",
       "schema": "public",
-      "values": [
-        "hour",
-        "day"
-      ]
+      "values": ["hour", "day"]
     },
     "public.rate_limit_target": {
       "name": "rate_limit_target",
       "schema": "public",
-      "values": [
-        "API",
-        "UPLOAD",
-        "DOWNLOAD",
-        "LOGIN"
-      ]
+      "values": ["API", "UPLOAD", "DOWNLOAD", "LOGIN"]
     },
     "public.user_role": {
       "name": "user_role",
       "schema": "public",
-      "values": [
-        "USER",
-        "ADMIN"
-      ]
+      "values": ["USER", "ADMIN"]
     }
   },
   "schemas": {},

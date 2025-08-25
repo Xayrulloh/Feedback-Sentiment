@@ -38,10 +38,10 @@ import { PrometheusService } from '../monitoring/prometheus.service';
 import { AdminService } from './admin.service';
 import {
   AdminDisableSuspendResponseSchema,
+  type AdminDisableSuspendResponseSchemaType,
   RateLimitGetSchema,
   type RateLimitGetSchemaType,
   RateLimitUpsertDto,
-  type AdminDisableSuspendResponseSchemaType,
 } from './dto/admin.dto';
 
 @ApiTags('Admin')

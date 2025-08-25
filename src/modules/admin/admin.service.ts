@@ -3,13 +3,13 @@ import { eq } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { DrizzleAsyncProvider } from 'src/database/drizzle.provider';
 import * as schema from 'src/database/schema';
+import { RateLimitDurationEnum } from 'src/utils/zod.schemas';
+// biome-ignore lint/style/useImportType: Needed for DI
+import { RedisService } from '../redis/redis.service';
 import type {
   RateLimitGetSchemaType,
   RateLimitUpsertDto,
 } from './dto/admin.dto';
-// biome-ignore lint/style/useImportType: Needed for DI
-import { RedisService } from '../redis/redis.service';
-import { RateLimitDurationEnum } from 'src/utils/zod.schemas';
 
 @Injectable()
 export class AdminService {
@@ -70,21 +70,23 @@ export class AdminService {
       })
       .returning();
 
-const durationInSeconds =
-    upsertedRateLimit.duration === RateLimitDurationEnum.HOUR ? 60 : 86400;
+    const durationInSeconds =
+      upsertedRateLimit.duration === RateLimitDurationEnum.HOUR ? 60 : 86400;
 
- await this.redisService.set(
+    await this.redisService.set(
       `rateLimit:${upsertedRateLimit.target}`,
       JSON.stringify({
-      limit: upsertedRateLimit.limit,
-      duration: durationInSeconds,
-  })
-);
+        limit: upsertedRateLimit.limit,
+        duration: durationInSeconds,
+      }),
+    );
 
-  const userKeys = await this.redisService.keys(`user:*:${upsertedRateLimit.target}`);
-  for (const key of userKeys) {
-    await this.redisService.delete(key);
-  }
+    const userKeys = await this.redisService.keys(
+      `user:*:${upsertedRateLimit.target}`,
+    );
+    for (const key of userKeys) {
+      await this.redisService.delete(key);
+    }
 
     return upsertedRateLimit;
   }

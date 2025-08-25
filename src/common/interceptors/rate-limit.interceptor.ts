@@ -1,11 +1,10 @@
 import {
-  CallHandler,
-  ExecutionContext,
-  Injectable,
-  NestInterceptor,
+  type CallHandler,
+  type ExecutionContext,
   HttpException,
   HttpStatus,
-  Logger,
+  Injectable,
+  type NestInterceptor,
 } from '@nestjs/common';
 import type { Observable } from 'rxjs';
 // biome-ignore lint/style/useImportType: Needed for DI
@@ -15,9 +14,7 @@ import { RateLimitTargetEnum } from 'src/utils/zod.schemas';
 
 @Injectable()
 export class RateLimitInterceptor implements NestInterceptor {
-  constructor(
-    private readonly redisService: RedisService,
-  ) {}
+  constructor(private readonly redisService: RedisService) {}
 
   async intercept(
     context: ExecutionContext,
@@ -34,15 +31,15 @@ export class RateLimitInterceptor implements NestInterceptor {
 
     const userId = user?.id ?? request.ip;
 
-   let action: RateLimitTargetEnum = RateLimitTargetEnum.API;
+    let action: RateLimitTargetEnum = RateLimitTargetEnum.API;
 
-if (request.path.startsWith('/api/feedback/upload')) {
-  action = RateLimitTargetEnum.UPLOAD;
-} else if (request.path.startsWith('/api/feedback/report')) {
-  action = RateLimitTargetEnum.DOWNLOAD;
-} else if (request.path.startsWith('/api/auth/login')) {
-  action = RateLimitTargetEnum.LOGIN;
-}
+    if (request.path.startsWith('/api/feedback/upload')) {
+      action = RateLimitTargetEnum.UPLOAD;
+    } else if (request.path.startsWith('/api/feedback/report')) {
+      action = RateLimitTargetEnum.DOWNLOAD;
+    } else if (request.path.startsWith('/api/auth/login')) {
+      action = RateLimitTargetEnum.LOGIN;
+    }
 
     const [userCountRaw, rateLimitRaw] = await Promise.all([
       this.redisService.get(`user:${userId}:${action}`),
@@ -50,9 +47,7 @@ if (request.path.startsWith('/api/feedback/upload')) {
     ]);
 
     const userCount = userCountRaw ? parseInt(userCountRaw, 10) : 0;
-    const rateLimit = rateLimitRaw
-      ? JSON.parse(rateLimitRaw)
-      : null;
+    const rateLimit = rateLimitRaw ? JSON.parse(rateLimitRaw) : null;
 
     if (!rateLimit) {
       return next.handle();
