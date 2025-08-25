@@ -10,7 +10,12 @@ import {
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core';
-import { FeedbackSentimentEnum, UserRoleEnum } from 'src/utils/zod.schemas';
+import {
+  FeedbackSentimentEnum,
+  RateLimitDurationEnum,
+  RateLimitTargetEnum,
+  UserRoleEnum,
+} from 'src/utils/zod.schemas';
 
 // enums
 export const DrizzleUserRoleEnum = pgEnum('user_role', [
@@ -23,6 +28,18 @@ export const DrizzleFeedbackSentimentEnum = pgEnum('sentiment', [
   FeedbackSentimentEnum.NEUTRAL,
   FeedbackSentimentEnum.POSITIVE,
   FeedbackSentimentEnum.UNKNOWN,
+]);
+
+export const DrizzleRateLimitTargetEnum = pgEnum('rate_limit_target', [
+  RateLimitTargetEnum.API,
+  RateLimitTargetEnum.UPLOAD,
+  RateLimitTargetEnum.DOWNLOAD,
+  RateLimitTargetEnum.LOGIN,
+]);
+
+export const DrizzleRateLimitDurationEnum = pgEnum('rate_limit_duration', [
+  RateLimitDurationEnum.HOUR,
+  RateLimitDurationEnum.DAY,
 ]);
 
 // schemas
@@ -64,6 +81,13 @@ export const feedbacksSchema = pgTable('feedbacks', {
   sentiment: DrizzleFeedbackSentimentEnum('sentiment').notNull(),
   confidence: integer('confidence').notNull(),
   summary: text('summary').notNull(),
+  ...baseSchema,
+});
+
+export const rateLimitsSchema = pgTable('rate_limits', {
+  target: DrizzleRateLimitTargetEnum('target').notNull(),
+  duration: DrizzleRateLimitDurationEnum('duration').notNull(),
+  limit: integer('limit').notNull(),
   ...baseSchema,
 });
 

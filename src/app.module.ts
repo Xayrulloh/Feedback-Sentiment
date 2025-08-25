@@ -41,11 +41,11 @@ import { MonitoringModule } from './modules/monitoring/monitoring.module';
   providers: [
     AdminService,
     { provide: APP_PIPE, useClass: ZodValidationPipe },
+    { provide: APP_INTERCEPTOR, useClass: RateLimitInterceptor },
     { provide: APP_INTERCEPTOR, useClass: ResponseInterceptor },
     { provide: APP_FILTER, useClass: HttpExceptionFilter },
     { provide: APP_FILTER, useClass: ZodExceptionFilter },
     { provide: APP_INTERCEPTOR, useClass: ZodSerializerInterceptorCustom },
-    { provide: APP_INTERCEPTOR, useClass: RateLimitInterceptor },
     AdminMiddleware,
   ],
 })

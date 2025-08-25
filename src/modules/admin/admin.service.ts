@@ -12,11 +12,6 @@ import Redis from 'ioredis';
 import { DrizzleAsyncProvider } from 'src/database/drizzle.provider';
 import * as schema from 'src/database/schema';
 
-export interface GlobalRateLimitConfig {
-  limit: number;
-  windowSeconds: number;
-}
-
 @Injectable()
 export class AdminService {
   private readonly redis: Redis;

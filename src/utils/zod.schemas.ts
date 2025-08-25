@@ -76,6 +76,7 @@ const FeedbackSchema = z
 
 type FeedbackSchemaType = z.infer<typeof FeedbackSchema>;
 
+// file
 const FileSchema = z
   .object({
     id: z.string().uuid().describe('File ID'),
@@ -99,6 +100,7 @@ const FileSchema = z
 
 type FileSchemaType = z.infer<typeof FileSchema>;
 
+// interceptors and filters
 const BaseSuccessResponseSchema = <T extends z.ZodTypeAny>(dataSchema?: T) =>
   z.object({
     success: z.boolean(),
@@ -156,31 +158,34 @@ const DatabaseErrorSchema = z.object({
 
 type DatabaseErrorSchemaType = z.infer<typeof DatabaseErrorSchema>;
 
-const HttpMethodEnum = z.enum(['GET', 'POST', 'PUT', 'PATCH', 'DELETE']);
-type HttpMethodType = z.infer<typeof HttpMethodEnum>;
+// Rate Limit
+const enum RateLimitTargetEnum {
+  API = 'API',
+  UPLOAD = 'UPLOAD',
+  DOWNLOAD = 'DOWNLOAD',
+  LOGIN = 'LOGIN',
+}
 
-const RateLimitRuleSchema = z.object({
-  limit: z.number().int().min(1).describe('Max requests allowed per window'),
-  windowSeconds: z.number().int().min(1).describe('Window duration in seconds'),
+const enum RateLimitDurationEnum {
+  HOUR = 'hour',
+  DAY = 'day',
+}
+
+const RateLimitSchema = z.object({
+  target: z.enum([
+    RateLimitTargetEnum.API,
+    RateLimitTargetEnum.UPLOAD,
+    RateLimitTargetEnum.DOWNLOAD,
+    RateLimitTargetEnum.LOGIN,
+  ]),
+  duration: z.enum([RateLimitDurationEnum.HOUR, RateLimitDurationEnum.DAY]),
+  limit: z.number().int().min(1),
 });
 
-type RateLimitRuleType = z.infer<typeof RateLimitRuleSchema>;
-
-const StoredRuleSchema = z.object({
-  limit: z.string(),
-  windowSeconds: z.string(),
-});
-
-type StoredRuleType = z.infer<typeof StoredRuleSchema>;
+type RateLimitSchemaType = z.infer<typeof RateLimitSchema>;
 
 export {
-  StoredRuleSchema,
-  type StoredRuleType,
-  HttpMethodEnum,
-  type HttpMethodType,
   type FileSchemaType,
-  RateLimitRuleSchema,
-  type RateLimitRuleType,
   FileSchema,
   UserSchema,
   type UserSchemaType,
@@ -200,4 +205,8 @@ export {
   DatabaseErrorSchema,
   type DatabaseErrorSchemaType,
   type ErrorDetailsSchemaType,
+  RateLimitSchema,
+  RateLimitTargetEnum,
+  RateLimitDurationEnum,
+  type RateLimitSchemaType,
 };
