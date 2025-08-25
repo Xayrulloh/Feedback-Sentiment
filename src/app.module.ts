@@ -21,6 +21,8 @@ import { AuthModule } from './modules/auth/auth.module';
 import { FeedbackModule } from './modules/feedback/feedback.module';
 import { FileModule } from './modules/file/file.module';
 import { MonitoringModule } from './modules/monitoring/monitoring.module';
+import { WebsocketModule } from './modules/websocket/websocket.module';
+
 @Module({
   imports: [
     EnvModule,
@@ -31,6 +33,7 @@ import { MonitoringModule } from './modules/monitoring/monitoring.module';
     FileModule,
     DrizzleModule,
     PrometheusModule.register(),
+    WebsocketModule,
     MonitoringModule,
   ],
 
