@@ -23,6 +23,7 @@ import { FeedbackModule } from './modules/feedback/feedback.module';
 import { FileModule } from './modules/file/file.module';
 import { MonitoringModule } from './modules/monitoring/monitoring.module';
 import { RedisModule } from './modules/redis/redis.module';
+import { WebsocketModule } from './modules/websocket/websocket.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { RedisModule } from './modules/redis/redis.module';
     FileModule,
     DrizzleModule,
     PrometheusModule.register(),
+    WebsocketModule,
     MonitoringModule,
     RedisModule,
   ],
