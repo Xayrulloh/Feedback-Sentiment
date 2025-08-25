@@ -7,10 +7,14 @@ import type {
   RateLimitGetSchemaType,
   RateLimitUpsertDto,
 } from './dto/admin.dto';
+// biome-ignore lint/style/useImportType: Needed for DI
+import { RedisService } from '../redis/redis.service';
+import { RateLimitDurationEnum } from 'src/utils/zod.schemas';
 
 @Injectable()
 export class AdminService {
   constructor(
+    private readonly redisService: RedisService,
     @Inject(DrizzleAsyncProvider)
     private readonly db: NodePgDatabase<typeof schema>,
   ) {}
@@ -66,8 +70,21 @@ export class AdminService {
       })
       .returning();
 
-    // TODO: clear user cache
-    // TODO: update rate limits cache (interceptor was taking)
+const durationInSeconds =
+    upsertedRateLimit.duration === RateLimitDurationEnum.HOUR ? 60 : 86400;
+
+ await this.redisService.set(
+      `rateLimit:${upsertedRateLimit.target}`,
+      JSON.stringify({
+      limit: upsertedRateLimit.limit,
+      duration: durationInSeconds,
+  })
+);
+
+  const userKeys = await this.redisService.keys(`user:*:${upsertedRateLimit.target}`);
+  for (const key of userKeys) {
+    await this.redisService.delete(key);
+  }
 
     return upsertedRateLimit;
   }

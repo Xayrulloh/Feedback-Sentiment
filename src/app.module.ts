@@ -41,7 +41,6 @@ import { RedisModule } from './modules/redis/redis.module';
 
   controllers: [],
   providers: [
-    AdminService,
     { provide: APP_PIPE, useClass: ZodValidationPipe },
     { provide: APP_INTERCEPTOR, useClass: RateLimitInterceptor },
     { provide: APP_INTERCEPTOR, useClass: ResponseInterceptor },

@@ -3,6 +3,7 @@ import type { Redis } from 'ioredis';
 
 @Injectable()
 export class RedisService implements OnModuleDestroy {
+
   constructor(@Inject('REDIS_CLIENT') private readonly redisClient: Redis) {}
 
   onModuleDestroy(): void {
@@ -10,7 +11,8 @@ export class RedisService implements OnModuleDestroy {
   }
 
   async get(key: string): Promise<string | null> {
-    return this.redisClient.get(key);
+    const value = await this.redisClient.get(key);
+    return value;
   }
 
   async set(key: string, value: string): Promise<void> {
@@ -21,15 +23,17 @@ export class RedisService implements OnModuleDestroy {
     await this.redisClient.del(key);
   }
 
-  async setWithExpiry(
-    key: string,
-    value: string,
-    expiry: number,
-  ): Promise<void> {
+  async setWithExpiry(key: string, value: string, expiry: number): Promise<void> {
     await this.redisClient.set(key, value, 'EX', expiry);
   }
 
   async keys(pattern: string): Promise<string[]> {
-    return await this.redisClient.keys(pattern);
+    const keys = await this.redisClient.keys(pattern);
+    return keys;
+  }
+
+  async ttl(key: string): Promise<number> {
+    const ttl = await this.redisClient.ttl(key);
+    return ttl;
   }
 }

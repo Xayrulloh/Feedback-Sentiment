@@ -1,19 +1,21 @@
 import {
-  type CallHandler,
-  type ExecutionContext,
+  CallHandler,
+  ExecutionContext,
   Injectable,
-  type NestInterceptor,
+  NestInterceptor,
+  HttpException,
+  HttpStatus,
+  Logger,
 } from '@nestjs/common';
 import type { Observable } from 'rxjs';
 // biome-ignore lint/style/useImportType: Needed for DI
-import { AdminService } from 'src/modules/admin/admin.service';
-import type { RedisService } from 'src/modules/redis/redis.service';
+import { RedisService } from 'src/modules/redis/redis.service';
 import type { AuthenticatedRequest } from 'src/shared/types/request-with-user';
+import { RateLimitTargetEnum } from 'src/utils/zod.schemas';
 
 @Injectable()
 export class RateLimitInterceptor implements NestInterceptor {
   constructor(
-    private readonly adminService: AdminService,
     private readonly redisService: RedisService,
   ) {}
 
@@ -22,51 +24,68 @@ export class RateLimitInterceptor implements NestInterceptor {
     next: CallHandler,
   ): Promise<Observable<unknown>> {
     const ctx = context.switchToHttp();
-    const [request, response] = [
-      ctx.getRequest<AuthenticatedRequest>(),
-      ctx.getResponse<Response>(),
-    ];
+    const request = ctx.getRequest<AuthenticatedRequest>();
+    const response = ctx.getResponse();
     const user = request.user;
 
-    const [
-      userApiRateLimit,
-      userUploadRateLimit,
-      userDownloadRateLimit,
-      userLoginRateLimit,
-      rateLimitApi, // {duration: ms, limit: number}
-      rateLimitUpload,
-      rateLimitDownload,
-      rateLimitLogin,
-    ] = await Promise.all([
-      this.redisService.get(`user:${user.id}:api`),
-      this.redisService.get(`user:${user.id}:upload`),
-      this.redisService.get(`user:${user.id}:download`),
-      this.redisService.get(`user:${user.id}:login`),
-      this.redisService.get('rateLimit:api'),
-      this.redisService.get('rateLimit:upload'),
-      this.redisService.get('rateLimit:download'),
-      this.redisService.get('rateLimit:login'),
-    ]);
-
-    // check what user is trying to do
-    if (request.path === '/api/upload') {
-      if (!userUploadRateLimit) {
-        await this.redisService.setWithExpiry(
-          `user:${user.id}:upload`,
-          1,
-          rateLimitUpload.duration,
-        );
-      }
+    if (request.path.startsWith('/api/admin/rate-limit')) {
+      return next.handle();
     }
 
-    // redis (store it like: {user:{userId}:{target} duration as TTL)
+    const userId = user?.id ?? request.ip;
 
-    // 429
+   let action: RateLimitTargetEnum = RateLimitTargetEnum.API;
 
-    // QN:
-    // take user limits from redis
-    // take db limits from redis
-    // compare them
-    // if they are the same or higher, return 429 and suspicious emit to websocket
+if (request.path.startsWith('/api/feedback/upload')) {
+  action = RateLimitTargetEnum.UPLOAD;
+} else if (request.path.startsWith('/api/feedback/report')) {
+  action = RateLimitTargetEnum.DOWNLOAD;
+} else if (request.path.startsWith('/api/auth/login')) {
+  action = RateLimitTargetEnum.LOGIN;
+}
+
+    const [userCountRaw, rateLimitRaw] = await Promise.all([
+      this.redisService.get(`user:${userId}:${action}`),
+      this.redisService.get(`rateLimit:${action}`),
+    ]);
+
+    const userCount = userCountRaw ? parseInt(userCountRaw, 10) : 0;
+    const rateLimit = rateLimitRaw
+      ? JSON.parse(rateLimitRaw)
+      : null;
+
+    if (!rateLimit) {
+      return next.handle();
+    }
+
+    const remaining = Math.max(rateLimit.limit - userCount, 0);
+    const resetTimestamp = Math.floor(Date.now() / 1000) + rateLimit.duration;
+
+    response.setHeader('X-RateLimit-Limit', rateLimit.limit);
+    response.setHeader('X-RateLimit-Remaining', remaining);
+    response.setHeader('X-RateLimit-Reset', resetTimestamp);
+
+    if (userCount >= rateLimit.limit) {
+      // TODO: emit suspicious to websocket here
+      throw new HttpException(
+        `Rate limit exceeded for ${action}`,
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
+
+    if (userCount === 0) {
+      await this.redisService.setWithExpiry(
+        `user:${userId}:${action}`,
+        '1',
+        rateLimit.duration,
+      );
+    } else {
+      await this.redisService.set(
+        `user:${userId}:${action}`,
+        String(userCount + 1),
+      );
+    }
+
+    return next.handle();
   }
 }
