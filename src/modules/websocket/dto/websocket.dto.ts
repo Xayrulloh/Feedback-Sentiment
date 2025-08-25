@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+// FIXME: Move them to admin part
 const ActivityTypeEnum = z.enum([
   'FAILED_LOGIN',
   'RAPID_REQUEST',

@@ -25,6 +25,7 @@ export class SocketMiddleware {
   async use(socket: Socket, next: (err?: Error) => void): Promise<void> {
     try {
       const user = await this.authenticate(socket);
+
       socket.data.user = user;
 
       next();
