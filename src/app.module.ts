@@ -22,8 +22,8 @@ import { AuthModule } from './modules/auth/auth.module';
 import { FeedbackModule } from './modules/feedback/feedback.module';
 import { FileModule } from './modules/file/file.module';
 import { MonitoringModule } from './modules/monitoring/monitoring.module';
+import { UserModule } from './modules/user/user.module';
 import { WebsocketModule } from './modules/websocket/websocket.module';
-
 @Module({
   imports: [
     EnvModule,
@@ -36,6 +36,7 @@ import { WebsocketModule } from './modules/websocket/websocket.module';
     PrometheusModule.register(),
     WebsocketModule,
     MonitoringModule,
+    UserModule,
   ],
 
   controllers: [AppController],

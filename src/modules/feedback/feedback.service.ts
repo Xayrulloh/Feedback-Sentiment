@@ -237,6 +237,7 @@ export class FeedbackService {
     const { format, type } = query;
 
     let data: FeedbackSchemaType[] | FeedbackSummaryResponseDto;
+
     if (type === 'detailed') {
       data = await this.getAllFeedback(user);
     } else {
@@ -250,6 +251,7 @@ export class FeedbackService {
     );
 
     const fileName = `feedback-report-${type}-${Date.now()}.${format}`;
+
     res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
     res.setHeader(
       'Content-Type',

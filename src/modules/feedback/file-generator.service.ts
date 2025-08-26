@@ -44,7 +44,7 @@ export class FileGeneratorService {
       const summaryData = summaryArray.map((f) => ({
         Sentiment: f.sentiment,
         Count: f.count,
-        Percentage: `${f.percentage.toFixed(2)}%`,
+        Percentage: `${f.percentage.toFixed(1)}%`,
       }));
       csv = toCSV(summaryData, ['Sentiment', 'Count', 'Percentage']);
     }
@@ -89,7 +89,6 @@ export class FileGeneratorService {
     } else if (type === 'summary') {
       // Summary case
       const summaryArray = data as FeedbackSummaryResponseDto;
-      const total = summaryArray.reduce((sum, f) => sum + f.count, 0);
 
       // Headers
       drawText('Sentiment', 50, yPos, fontSizeHeader);
@@ -99,10 +98,9 @@ export class FileGeneratorService {
 
       // Rows
       summaryArray.forEach((f) => {
-        const percentage = total > 0 ? `${(f.count / total) * 100}%` : '0%';
         drawText(f.sentiment, 50, yPos);
         drawText(f.count.toString(), 200, yPos);
-        drawText(percentage, 300, yPos);
+        drawText(`${f.percentage.toFixed(1)}%`, 300, yPos);
         yPos -= 15;
       });
     }
