@@ -24,7 +24,7 @@ const UserSearchQuerySchema = z.object({
 
 class UserSearchQueryDto extends createZodDto(UserSearchQuerySchema) {}
 
-const UserSearchResponseSchema = UserResponseSchema.omit({ pagination: true });
+const UserSearchResponseSchema = UserSchema.array();
 type UserSearchResponseSchemaType = z.infer<typeof UserSearchResponseSchema>;
 
 export {

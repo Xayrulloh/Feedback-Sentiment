@@ -49,20 +49,14 @@ export class UserService {
     query: UserSearchQueryDto,
   ): Promise<UserSearchResponseSchemaType> {
     const { email } = query;
-
-    if (!email?.trim()) {
-      return { users: [] };
-    }
-
     const searchTerm = `%${email.trim()}%`;
+
     const users = await this.db
       .select()
       .from(schema.usersSchema)
       .where(sql`email ILIKE ${searchTerm}`)
       .limit(5);
 
-    return {
-      users,
-    };
+    return users;
   }
 }
