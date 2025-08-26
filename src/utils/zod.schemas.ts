@@ -191,6 +191,12 @@ const RateLimitEventSchema = z.object({
   userId: z.string().uuid().optional(),
   ip: z.string().ip().optional(),
   email: z.string().email().optional(),
+  action: z.enum([
+    RateLimitTargetEnum.API,
+    RateLimitTargetEnum.UPLOAD,
+    RateLimitTargetEnum.DOWNLOAD,
+    RateLimitTargetEnum.LOGIN,
+  ]),
   error: z.enum([
     RateLimitErrorEnum.TOO_MANY_LOGIN,
     RateLimitErrorEnum.TOO_MANY_UPLOAD,

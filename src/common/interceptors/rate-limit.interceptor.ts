@@ -3,10 +3,14 @@ import {
   type ExecutionContext,
   HttpException,
   HttpStatus,
+  Inject,
   Injectable,
   type NestInterceptor,
 } from '@nestjs/common';
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { Observable } from 'rxjs';
+import { DrizzleAsyncProvider } from 'src/database/drizzle.provider';
+import * as schema from 'src/database/schema';
 // biome-ignore lint/style/useImportType: Needed for DI
 import { RedisService } from 'src/modules/redis/redis.service';
 // biome-ignore lint/style/useImportType: Needed for DI
@@ -25,6 +29,8 @@ export class RateLimitInterceptor implements NestInterceptor {
   constructor(
     private readonly redisService: RedisService,
     private readonly gateaway: SocketGateway,
+    @Inject(DrizzleAsyncProvider)
+    private db: NodePgDatabase<typeof schema>,
   ) {}
 
   async intercept(
@@ -77,7 +83,9 @@ export class RateLimitInterceptor implements NestInterceptor {
     if (userCount >= rateLimit.limit) {
       const event: RateLimitEventSchemaType = {
         userId: user?.id,
+        ip: ip,
         email: user?.email,
+        action: action,
         error: `TOO_MANY_${action}` as RateLimitErrorEnum,
         details: `TOO_MANY_${action} requests for limit: ${rateLimit}`,
         timestamp: new Date(),
@@ -87,6 +95,8 @@ export class RateLimitInterceptor implements NestInterceptor {
         event: 'suspiciousActivity',
         data: event,
       });
+
+      await this.db.insert(schema.suspiciousActivitySchema).values(event);
 
       throw new HttpException(
         `Rate limit exceeded for ${action}`,

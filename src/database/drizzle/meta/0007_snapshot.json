@@ -1,6 +1,6 @@
 {
-  "id": "3f798273-d1dd-4e78-8236-44213bcdac9e",
-  "prevId": "178a2589-d8d7-4ed4-9f82-06dccbd29940",
+  "id": "490c1f0b-e9ec-4f6c-9744-d8ff18ee5f16",
+  "prevId": "3f798273-d1dd-4e78-8236-44213bcdac9e",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -226,6 +226,94 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.suspicious_activity": {
+      "name": "suspicious_activity",
+      "schema": "",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "email": {
+          "name": "email",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ip": {
+          "name": "ip",
+          "type": "varchar(45)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "action": {
+          "name": "action",
+          "type": "rate_limit_target",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "error": {
+          "name": "error",
+          "type": "rate_limit_error",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "details": {
+          "name": "details",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "suspicious_activity_user_id_users_id_fk": {
+          "name": "suspicious_activity_user_id_users_id_fk",
+          "tableFrom": "suspicious_activity",
+          "tableTo": "users",
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.users": {
       "name": "users",
       "schema": "",
@@ -304,6 +392,16 @@
       "name": "sentiment",
       "schema": "public",
       "values": ["negative", "neutral", "positive", "unknown"]
+    },
+    "public.rate_limit_error": {
+      "name": "rate_limit_error",
+      "schema": "public",
+      "values": [
+        "TOO_MANY_LOGIN",
+        "TOO_MANY_UPLOAD",
+        "TOO_MANY_DOWNLOAD",
+        "TOO_MANY_API"
+      ]
     },
     "public.rate_limit_target": {
       "name": "rate_limit_target",
