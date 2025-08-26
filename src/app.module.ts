@@ -7,6 +7,7 @@ import {
 import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 import { ZodValidationPipe } from 'nestjs-zod';
+import { AppController } from './app.controller';
 import { HttpExceptionFilter } from './common/filters/http.exception.filter';
 import { ZodExceptionFilter } from './common/filters/zod.exception.filter';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
@@ -37,7 +38,7 @@ import { WebsocketModule } from './modules/websocket/websocket.module';
     MonitoringModule,
   ],
 
-  controllers: [],
+  controllers: [AppController],
   providers: [
     { provide: APP_PIPE, useClass: ZodValidationPipe },
     { provide: APP_INTERCEPTOR, useClass: ResponseInterceptor },

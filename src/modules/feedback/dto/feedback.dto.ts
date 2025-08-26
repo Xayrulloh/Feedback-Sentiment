@@ -62,7 +62,13 @@ const SentimentEnum = z.enum([
 ]);
 
 const FeedbackQuerySchema = z.object({
-  sentiment: SentimentEnum.optional(),
+  sentiment: z
+    .union([SentimentEnum, z.array(SentimentEnum)])
+    .optional()
+    .transform((val) => {
+      if (!val) return undefined;
+      return Array.isArray(val) ? val : [val];
+    }),
   limit: z.coerce.number().int().min(1).max(100).default(20),
   page: z.coerce.number().int().min(1).default(1),
 });
