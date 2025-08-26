@@ -7,6 +7,7 @@ import {
 import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 import { ZodValidationPipe } from 'nestjs-zod';
+import { AppController } from './app.controller';
 import { HttpExceptionFilter } from './common/filters/http.exception.filter';
 import { ZodExceptionFilter } from './common/filters/zod.exception.filter';
 import { RateLimitInterceptor } from './common/interceptors/rate-limit.interceptor';
@@ -23,8 +24,8 @@ import { FeedbackModule } from './modules/feedback/feedback.module';
 import { FileModule } from './modules/file/file.module';
 import { MonitoringModule } from './modules/monitoring/monitoring.module';
 import { RedisModule } from './modules/redis/redis.module';
+import { UserModule } from './modules/user/user.module';
 import { WebsocketModule } from './modules/websocket/websocket.module';
-
 @Module({
   imports: [
     EnvModule,
@@ -38,9 +39,10 @@ import { WebsocketModule } from './modules/websocket/websocket.module';
     WebsocketModule,
     MonitoringModule,
     RedisModule,
+    UserModule,
   ],
 
-  controllers: [],
+  controllers: [AppController],
   providers: [
     { provide: APP_PIPE, useClass: ZodValidationPipe },
     { provide: APP_INTERCEPTOR, useClass: RateLimitInterceptor },

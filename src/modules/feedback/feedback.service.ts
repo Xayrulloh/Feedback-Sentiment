@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
-import { and, count, desc, eq, sql } from 'drizzle-orm';
+import { and, count, desc, eq, inArray, sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { Response } from 'express';
 import * as Papa from 'papaparse';
@@ -147,7 +147,9 @@ export class FeedbackService {
     const whereConditions = [eq(schema.feedbacksSchema.userId, user.id)];
 
     if (sentiment && sentiment.length > 0) {
-      whereConditions.push(eq(schema.feedbacksSchema.sentiment, sentiment));
+      whereConditions.push(
+        inArray(schema.feedbacksSchema.sentiment, sentiment),
+      );
     }
 
     const totalResult = await this.db
@@ -167,7 +169,7 @@ export class FeedbackService {
       .offset((page - 1) * limit);
 
     return {
-      feedbacks: feedbacks,
+      feedbacks,
       pagination: {
         limit,
         page,
@@ -235,6 +237,7 @@ export class FeedbackService {
     const { format, type } = query;
 
     let data: FeedbackSchemaType[] | FeedbackSummaryResponseDto;
+
     if (type === 'detailed') {
       data = await this.getAllFeedback(user);
     } else {
@@ -248,6 +251,7 @@ export class FeedbackService {
     );
 
     const fileName = `feedback-report-${type}-${Date.now()}.${format}`;
+
     res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
     res.setHeader(
       'Content-Type',
