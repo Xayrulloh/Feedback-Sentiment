@@ -10,7 +10,12 @@ import {
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core';
-import { FeedbackSentimentEnum, UserRoleEnum } from 'src/utils/zod.schemas';
+import {
+  FeedbackSentimentEnum,
+  RateLimitErrorEnum,
+  RateLimitTargetEnum,
+  UserRoleEnum,
+} from 'src/utils/zod.schemas';
 
 // enums
 export const DrizzleUserRoleEnum = pgEnum('user_role', [
@@ -23,6 +28,20 @@ export const DrizzleFeedbackSentimentEnum = pgEnum('sentiment', [
   FeedbackSentimentEnum.NEUTRAL,
   FeedbackSentimentEnum.POSITIVE,
   FeedbackSentimentEnum.UNKNOWN,
+]);
+
+export const DrizzleRateLimitTargetEnum = pgEnum('rate_limit_target', [
+  RateLimitTargetEnum.API,
+  RateLimitTargetEnum.UPLOAD,
+  RateLimitTargetEnum.DOWNLOAD,
+  RateLimitTargetEnum.LOGIN,
+]);
+
+export const DrizzleRateLimitErrorEnum = pgEnum('rate_limit_error', [
+  RateLimitErrorEnum.TOO_MANY_LOGIN,
+  RateLimitErrorEnum.TOO_MANY_UPLOAD,
+  RateLimitErrorEnum.TOO_MANY_DOWNLOAD,
+  RateLimitErrorEnum.TOO_MANY_API,
 ]);
 
 // schemas
@@ -64,6 +83,24 @@ export const feedbacksSchema = pgTable('feedbacks', {
   sentiment: DrizzleFeedbackSentimentEnum('sentiment').notNull(),
   confidence: integer('confidence').notNull(),
   summary: text('summary').notNull(),
+  ...baseSchema,
+});
+
+export const rateLimitsSchema = pgTable('rate_limits', {
+  target: DrizzleRateLimitTargetEnum('target').unique().notNull(),
+  limit: integer('limit').notNull(),
+  ...baseSchema,
+});
+
+export const suspiciousActivitySchema = pgTable('suspicious_activity', {
+  userId: uuid('user_id').references(() => usersSchema.id, {
+    onDelete: 'set null',
+  }),
+  email: varchar('email', { length: 255 }),
+  ip: varchar('ip', { length: 45 }),
+  action: DrizzleRateLimitTargetEnum('action').notNull(),
+  error: DrizzleRateLimitErrorEnum('error').notNull(),
+  details: text('details'),
   ...baseSchema,
 });
 

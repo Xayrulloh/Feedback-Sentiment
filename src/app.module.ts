@@ -10,6 +10,7 @@ import { ZodValidationPipe } from 'nestjs-zod';
 import { AppController } from './app.controller';
 import { HttpExceptionFilter } from './common/filters/http.exception.filter';
 import { ZodExceptionFilter } from './common/filters/zod.exception.filter';
+import { RateLimitInterceptor } from './common/interceptors/rate-limit.interceptor';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { ZodSerializerInterceptorCustom } from './common/interceptors/zod.response-checker.interceptor';
 import { AdminMiddleware } from './common/middlewares/admin.middleware';
@@ -22,6 +23,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { FeedbackModule } from './modules/feedback/feedback.module';
 import { FileModule } from './modules/file/file.module';
 import { MonitoringModule } from './modules/monitoring/monitoring.module';
+import { RedisModule } from './modules/redis/redis.module';
 import { UserModule } from './modules/user/user.module';
 import { WebsocketModule } from './modules/websocket/websocket.module';
 @Module({
@@ -36,12 +38,14 @@ import { WebsocketModule } from './modules/websocket/websocket.module';
     PrometheusModule.register(),
     WebsocketModule,
     MonitoringModule,
+    RedisModule,
     UserModule,
   ],
 
   controllers: [AppController],
   providers: [
     { provide: APP_PIPE, useClass: ZodValidationPipe },
+    { provide: APP_INTERCEPTOR, useClass: RateLimitInterceptor },
     { provide: APP_INTERCEPTOR, useClass: ResponseInterceptor },
     { provide: APP_FILTER, useClass: HttpExceptionFilter },
     { provide: APP_FILTER, useClass: ZodExceptionFilter },

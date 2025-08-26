@@ -9,6 +9,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import {
+  ApiBadRequestResponse,
   ApiBearerAuth,
   ApiForbiddenResponse,
   ApiInternalServerErrorResponse,
@@ -88,13 +89,13 @@ export class FileController {
   })
   @ZodSerializerDto(FileResponseDto)
   @ApiOperation({
-    summary: 'Getting all files',
+    summary: 'Get all user files',
   })
   async getFile(
     @Query(new ZodValidationPipe(FileQueryDto))
     query: FileQueryDto,
     @Req() req: AuthenticatedRequest,
-  ) {
+  ): Promise<FileResponseDto> {
     return this.fileService.getFile(query, req.user);
   }
 
@@ -118,6 +119,24 @@ export class FileController {
         statusCode: 404,
         message: 'File not found',
         path: '/api/files/{fileId}',
+      },
+    },
+  })
+  @ApiBadRequestResponse({
+    description: 'Validation failed (uuid is expected)',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: false },
+        statusCode: { type: 'number', example: 400 },
+        message: {
+          type: 'string',
+          example: 'Validation failed (uuid is expected)',
+        },
+        timestamp: {
+          type: 'string',
+          example: '2025-08-26T22:15:00.000Z',
+        },
       },
     },
   })
