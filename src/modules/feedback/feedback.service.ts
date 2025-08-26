@@ -228,48 +228,51 @@ export class FeedbackService {
   }
 
   async feedbackReportDownload(
-  query: ReportDownloadQueryDto,
-  user: UserSchemaType,
-  res: Response,
-) {
-  const { format, type } = query;
+    query: ReportDownloadQueryDto,
+    user: UserSchemaType,
+    res: Response,
+  ) {
+    const { format, type } = query;
 
-  let data: FeedbackSchemaType[] | FeedbackSummaryResponseDto;
+    let data: FeedbackSchemaType[] | FeedbackSummaryResponseDto;
 
-  if (type === 'detailed') {
-    data = await this.getAllFeedback(user);
-  } else {
-    data = await this.feedbackSummary(user.id);
+    if (type === 'detailed') {
+      data = await this.getAllFeedback(user);
+    } else {
+      data = await this.feedbackSummary(user.id);
+    }
+
+    const isEmpty =
+      type === 'detailed'
+        ? (data as FeedbackSchemaType[]).length === 0
+        : (data as FeedbackSummaryResponseDto).length === 0;
+
+    if (isEmpty) {
+      res.status(200).json({
+        success: true,
+        statusCode: 200,
+        message: 'You have not stored any feedback yet.',
+        data: [],
+        timestamp: new Date().toISOString(),
+      });
+
+      return;
+    }
+
+    const fileBuffer = await this.fileGeneratorService.generate(
+      format,
+      type,
+      data,
+    );
+
+    const fileName = `feedback-report-${type}-${Date.now()}.${format}`;
+
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    res.setHeader(
+      'Content-Type',
+      format === 'csv' ? 'text/csv' : 'application/pdf',
+    );
+
+    res.send(fileBuffer);
   }
-
-  const isEmpty =
-    type === 'detailed'
-      ? (data as FeedbackSchemaType[]).length === 0
-      : (data as FeedbackSummaryResponseDto).length === 0;
-
-  if (isEmpty) {
-    res.status(200).json({
-      success: true,
-      statusCode: 200,
-      message: 'You have not stored any feedback yet.',
-      data: [],
-      timestamp: new Date().toISOString(),
-    });
-
-    return;
-  }
-
-  const fileBuffer = await this.fileGeneratorService.generate(format, type, data);
-
-  const fileName = `feedback-report-${type}-${Date.now()}.${format}`;
-  
-  res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
-  res.setHeader(
-    'Content-Type',
-    format === 'csv' ? 'text/csv' : 'application/pdf',
-  );
-
-  res.send(fileBuffer);
-}
-
 }

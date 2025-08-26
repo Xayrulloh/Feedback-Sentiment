@@ -1,26 +1,7 @@
-import {
-  BadRequestException,
-  Body,
-  Controller,
-  Get,
-  HttpCode,
-  HttpStatus,
-  Post,
-  Query,
-  Req,
-  Res,
-  UnprocessableEntityException,
-  UploadedFile,
-  UseGuards,
-  UseInterceptors,
-} from '@nestjs/common';
+import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 
 import {
-  ApiBadRequestResponse,
   ApiBearerAuth,
-  ApiBody,
-  ApiConsumes,
-  ApiCreatedResponse,
   ApiForbiddenResponse,
   ApiInternalServerErrorResponse,
   ApiOkResponse,
@@ -29,17 +10,18 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-
-import type { Express, Response } from 'express';
 import { ZodSerializerDto, ZodValidationPipe } from 'nestjs-zod';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
-import type { AuthenticatedRequest } from 'src/shared/types/request-with-user';
 import { createBaseResponseDto, UserRoleEnum } from 'src/utils/zod.schemas';
 import { Roles } from '../auth/decorators/roles.decorator';
+import {
+  UserQueryDto,
+  UserResponseSchema,
+  UserSearchQueryDto,
+} from './dto/user.dto';
 // biome-ignore lint/style/useImportType: Needed for DI
 import { UserService } from './user.service';
-import { UserQueryDto, UserResponseDto, UserResponseSchema, UserSearchQueryDto } from './dto/user.dto';
 
 @ApiTags('Users')
 @ApiBearerAuth()
@@ -99,7 +81,7 @@ import { UserQueryDto, UserResponseDto, UserResponseSchema, UserSearchQueryDto }
 })
 @Controller('users')
 export class UserController {
-    constructor(private readonly userService: UserService) {}
+  constructor(private readonly userService: UserService) {}
 
   @ApiBearerAuth()
   @Get()
@@ -107,15 +89,12 @@ export class UserController {
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiOperation({ summary: 'Get all users' })
   @ApiOkResponse({
-    type: createBaseResponseDto(
-      UserResponseSchema,
-      'UserResponseSchema',
-    ),
+    type: createBaseResponseDto(UserResponseSchema, 'UserResponseSchema'),
   })
   @ZodSerializerDto(UserResponseSchema)
   async getAllUsers(
-  @Query(new ZodValidationPipe(UserQueryDto))
-  query: UserQueryDto,
+    @Query(new ZodValidationPipe(UserQueryDto))
+    query: UserQueryDto,
   ) {
     return this.userService.getAllUsers(query);
   }
@@ -127,15 +106,12 @@ export class UserController {
   @ApiQuery({ name: 'searchInput', required: true, type: String })
   @ApiOperation({ summary: 'Search users by email' })
   @ApiOkResponse({
-    type: createBaseResponseDto(
-      UserResponseSchema,
-      'UserResponseSchema',
-    ),
+    type: createBaseResponseDto(UserResponseSchema, 'UserResponseSchema'),
   })
   @ZodSerializerDto(UserResponseSchema)
   async searchUsers(
-  @Query(new ZodValidationPipe(UserSearchQueryDto))
-  query: UserSearchQueryDto,
+    @Query(new ZodValidationPipe(UserSearchQueryDto))
+    query: UserSearchQueryDto,
   ) {
     return this.userService.searchUsers(query);
   }
