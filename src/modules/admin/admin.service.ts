@@ -12,6 +12,7 @@ import { RedisService } from '../redis/redis.service';
 import type {
   RateLimitGetSchemaType,
   RateLimitUpsertDto,
+  SuspiciousActivityResponseSchemaType,
 } from './dto/admin.dto';
 
 @Injectable()
@@ -88,5 +89,9 @@ export class AdminService {
 
   async adminGetRateLimits(): Promise<RateLimitGetSchemaType> {
     return this.db.select().from(schema.rateLimitsSchema);
+  }
+
+  async adminGetSuspiciousActivities(): Promise<SuspiciousActivityResponseSchemaType> {
+    return this.db.select().from(schema.suspiciousActivitySchema);
   }
 }

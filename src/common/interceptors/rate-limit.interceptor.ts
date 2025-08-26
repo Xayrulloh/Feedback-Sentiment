@@ -87,7 +87,7 @@ export class RateLimitInterceptor implements NestInterceptor {
         email: user?.email,
         action: action,
         error: `TOO_MANY_${action}` as RateLimitErrorEnum,
-        details: `TOO_MANY_${action} requests for limit: ${rateLimit}`,
+        details: `TOO_MANY_${action} requests for limit: ${rateLimit.limit}`,
         timestamp: new Date(),
       };
 

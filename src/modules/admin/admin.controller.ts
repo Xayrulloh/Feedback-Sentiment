@@ -45,6 +45,8 @@ import {
   RateLimitGetSchema,
   type RateLimitGetSchemaType,
   RateLimitUpsertDto,
+  SuspiciousActivityResponseSchema,
+  type SuspiciousActivityResponseSchemaType,
 } from './dto/admin.dto';
 
 @ApiTags('Admin')
@@ -249,5 +251,19 @@ export class AdminController {
   @ZodSerializerDto(RateLimitGetSchema)
   async adminGetRateLimits(): Promise<RateLimitGetSchemaType> {
     return this.adminService.adminGetRateLimits();
+  }
+
+  @Get('suspicious-activities')
+  @HttpCode(200)
+  @ApiOkResponse({
+    type: createBaseResponseDto(
+      SuspiciousActivityResponseSchema,
+      'SuspiciousActivityResponseSchema',
+    ),
+  })
+  @ApiOperation({ summary: 'Get suspicious activities' })
+  @ZodSerializerDto(SuspiciousActivityResponseSchema)
+  async adminGetSuspiciousActivities(): Promise<SuspiciousActivityResponseSchemaType> {
+    return this.adminService.adminGetSuspiciousActivities();
   }
 }

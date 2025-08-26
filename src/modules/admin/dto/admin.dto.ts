@@ -1,5 +1,11 @@
 import { createZodDto } from 'nestjs-zod';
-import { RateLimitSchema, UserSchema } from 'src/utils/zod.schemas';
+import {
+  BaseSchema,
+  RateLimitErrorEnum,
+  RateLimitSchema,
+  RateLimitTargetEnum,
+  UserSchema,
+} from 'src/utils/zod.schemas';
 import z from 'zod';
 
 const AdminDisableSuspendResponseSchema = UserSchema.describe(
@@ -50,6 +56,38 @@ const MetricsSchema = z.object({
 
 type MetricsSchemaType = z.infer<typeof MetricsSchema>;
 
+// Suspicious Activities
+
+const SuspiciousActivityResponseSchema = z
+  .object({
+    userId: z.string().uuid().nullable(),
+    email: z.string().email().nullable(),
+    ip: z.string().max(45).nullable(),
+    action: z.enum([
+      RateLimitTargetEnum.API,
+      RateLimitTargetEnum.DOWNLOAD,
+      RateLimitTargetEnum.LOGIN,
+      RateLimitTargetEnum.UPLOAD,
+    ]),
+    error: z.enum([
+      RateLimitErrorEnum.TOO_MANY_API,
+      RateLimitErrorEnum.TOO_MANY_DOWNLOAD,
+      RateLimitErrorEnum.TOO_MANY_LOGIN,
+      RateLimitErrorEnum.TOO_MANY_UPLOAD,
+    ]),
+    details: z.string().nullable(),
+  })
+  .merge(BaseSchema)
+  .array()
+  .describe('List of suspicious activities');
+type SuspiciousActivityResponseSchemaType = z.infer<
+  typeof SuspiciousActivityResponseSchema
+>;
+
+class SuspiciousActivityResponseDto extends createZodDto(
+  SuspiciousActivityResponseSchema,
+) {}
+
 export {
   AdminDisableSuspendResponseSchema,
   AdminDisableSuspendResponseDto,
@@ -62,4 +100,7 @@ export {
   type RateLimitGetSchemaType,
   MetricsSchema,
   type MetricsSchemaType,
+  SuspiciousActivityResponseSchema,
+  type SuspiciousActivityResponseSchemaType,
+  SuspiciousActivityResponseDto,
 };
