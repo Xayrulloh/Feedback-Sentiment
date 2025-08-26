@@ -242,23 +242,6 @@ export class FeedbackService {
       data = await this.feedbackSummary(user.id);
     }
 
-    const isEmpty =
-      type === 'detailed'
-        ? (data as FeedbackSchemaType[]).length === 0
-        : (data as FeedbackSummaryResponseDto).length === 0;
-
-    if (isEmpty) {
-      res.status(200).json({
-        success: true,
-        statusCode: 200,
-        message: 'You have not stored any feedback yet.',
-        data: [],
-        timestamp: new Date().toISOString(),
-      });
-
-      return;
-    }
-
     const fileBuffer = await this.fileGeneratorService.generate(
       format,
       type,

@@ -47,14 +47,13 @@ export class UserService {
   async searchUsers(
     query: UserSearchQueryDto,
   ): Promise<UserResponseSchemaType> {
-    const { page = 1, limit = 5, searchInput } = query;
+    const { page = 1, limit = 5, email } = query;
 
-    if (!searchInput?.trim()) {
+    if (!email?.trim()) {
       return { users: [], pagination: { limit, page, total: 0, pages: 0 } };
     }
 
-    const searchTerm = `%${searchInput.trim()}%`;
-
+    const searchTerm = `%${email.trim()}%`;
     const totalResult = await this.db
       .select({ count: sql<number>`count(*)` })
       .from(schema.usersSchema)

@@ -20,7 +20,7 @@ class UserQueryDto extends createZodDto(UserQuerySchema) {}
 
 const UserSearchQuerySchema = z
   .object({
-    searchInput: z.string().min(1).describe('Email to search for'),
+    email: z.string().email().describe('Email to search for'),
   })
   .merge(UserQuerySchema);
 

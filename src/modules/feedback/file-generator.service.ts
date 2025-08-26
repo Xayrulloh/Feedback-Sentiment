@@ -89,7 +89,6 @@ export class FileGeneratorService {
     } else if (type === 'summary') {
       // Summary case
       const summaryArray = data as FeedbackSummaryResponseDto;
-      const _total = summaryArray.reduce((sum, f) => sum + f.count, 0);
 
       // Headers
       drawText('Sentiment', 50, yPos, fontSizeHeader);

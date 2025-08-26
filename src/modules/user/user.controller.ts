@@ -1,6 +1,7 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 
 import {
+  ApiBadRequestResponse,
   ApiBearerAuth,
   ApiForbiddenResponse,
   ApiInternalServerErrorResponse,
@@ -18,6 +19,7 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import {
   UserQueryDto,
   UserResponseSchema,
+  type UserResponseSchemaType,
   UserSearchQueryDto,
 } from './dto/user.dto';
 // biome-ignore lint/style/useImportType: Needed for DI
@@ -26,7 +28,7 @@ import { UserService } from './user.service';
 @ApiTags('Users')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRoleEnum.ADMIN, UserRoleEnum.USER)
+@Roles(UserRoleEnum.ADMIN)
 @ApiForbiddenResponse({
   description: 'Forbidden - user is disabled or suspended',
   schema: {
@@ -95,24 +97,46 @@ export class UserController {
   async getAllUsers(
     @Query(new ZodValidationPipe(UserQueryDto))
     query: UserQueryDto,
-  ) {
+  ): Promise<UserResponseSchemaType> {
     return this.userService.getAllUsers(query);
   }
 
   @ApiBearerAuth()
   @Get('search')
-  @ApiQuery({ name: 'page', required: false, type: Number })
-  @ApiQuery({ name: 'limit', required: false, type: Number })
-  @ApiQuery({ name: 'searchInput', required: true, type: String })
+  @ApiQuery({ name: 'email', required: true, type: String })
   @ApiOperation({ summary: 'Search users by email' })
   @ApiOkResponse({
     type: createBaseResponseDto(UserResponseSchema, 'UserResponseSchema'),
+  })
+  @ApiBadRequestResponse({
+    description: 'Validation failed',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: false },
+        statusCode: { type: 'number', example: 400 },
+        message: { type: 'string', example: 'Validation failed' },
+        errors: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              field: { type: 'string', example: 'email' },
+              message: { type: 'string', example: 'Invalid email format' },
+              code: { type: 'string', example: 'INVALID_EMAIL' },
+            },
+          },
+        },
+        path: { type: 'string', example: '/api/users/search' },
+        timestamp: { type: 'string', example: new Date().toISOString() },
+      },
+    },
   })
   @ZodSerializerDto(UserResponseSchema)
   async searchUsers(
     @Query(new ZodValidationPipe(UserSearchQueryDto))
     query: UserSearchQueryDto,
-  ) {
+  ): Promise<UserResponseSchemaType> {
     return this.userService.searchUsers(query);
   }
 }
