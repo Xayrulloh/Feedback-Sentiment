@@ -6,6 +6,8 @@ import {
   Logger,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
+// biome-ignore lint/style/useImportType: Needed for DI
+import { MonitoringService } from 'src/modules/monitoring/monitoring.service';
 import type {
   BaseErrorResponseSchemaType,
   ErrorDetailsSchemaType,
@@ -19,6 +21,8 @@ interface HttpErrorResponse {
 
 @Catch(HttpException)
 export class HttpExceptionFilter implements ExceptionFilter {
+  constructor(private readonly monitoringService: MonitoringService) {}
+
   catch(exception: HttpException, host: ArgumentsHost): void {
     Logger.error(exception.message, HttpExceptionFilter.name);
 
@@ -26,6 +30,12 @@ export class HttpExceptionFilter implements ExceptionFilter {
       host.switchToHttp().getResponse<Response>(),
       host.switchToHttp().getRequest<Request>(),
     ];
+
+    this.monitoringService.incrementError(
+      request.method,
+      request.path,
+      exception.message,
+    );
 
     const status = exception.getStatus();
     const rawResponse = exception.getResponse();

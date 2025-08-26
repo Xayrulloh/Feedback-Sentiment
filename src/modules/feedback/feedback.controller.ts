@@ -287,7 +287,12 @@ export class FeedbackController {
 
   @Get()
   @ApiBearerAuth()
-  @ApiQuery({ name: 'sentiment', required: false, enum: SentimentEnum.options })
+  @ApiQuery({
+    name: 'sentiment',
+    required: false,
+    enum: SentimentEnum.options,
+    description: 'You can choose many',
+  })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiOkResponse({
@@ -296,7 +301,6 @@ export class FeedbackController {
       'FeedbackResponseSchema',
     ),
   })
-  @ZodSerializerDto(FeedbackFilteredResponseSchema)
   @ApiOperation({
     summary: 'Filter feedback by sentiment',
   })

@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
-import { and, count, desc, eq, sql } from 'drizzle-orm';
+import { and, count, desc, eq, inArray, sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { Response } from 'express';
 import * as Papa from 'papaparse';
@@ -13,6 +13,8 @@ import type {
 } from 'src/utils/zod.schemas';
 // biome-ignore lint/style/useImportType: Needed for DI
 import { AIService } from '../AI/AI.service';
+// biome-ignore lint/style/useImportType: Needed for DI
+import { MonitoringService } from '../monitoring/monitoring.service';
 import {
   type FeedbackFilteredResponseSchemaType,
   type FeedbackGroupedArrayResponseType,
@@ -32,6 +34,7 @@ export class FeedbackService {
   constructor(
     private readonly aiService: AIService,
     private readonly fileGeneratorService: FileGeneratorService,
+    private readonly monitoringService: MonitoringService,
     @Inject(DrizzleAsyncProvider)
     private readonly db: NodePgDatabase<typeof schema>,
   ) {}
@@ -130,6 +133,8 @@ export class FeedbackService {
       })
       .returning({ id: schema.filesSchema.id });
 
+    this.monitoringService.incrementUploads();
+
     return this.feedbackManual(validationResult, user, newFile.id);
   }
 
@@ -142,7 +147,9 @@ export class FeedbackService {
     const whereConditions = [eq(schema.feedbacksSchema.userId, user.id)];
 
     if (sentiment && sentiment.length > 0) {
-      whereConditions.push(eq(schema.feedbacksSchema.sentiment, sentiment));
+      whereConditions.push(
+        inArray(schema.feedbacksSchema.sentiment, sentiment),
+      );
     }
 
     const totalResult = await this.db
@@ -162,7 +169,7 @@ export class FeedbackService {
       .offset((page - 1) * limit);
 
     return {
-      feedbacks: feedbacks,
+      feedbacks,
       pagination: {
         limit,
         page,
@@ -230,6 +237,7 @@ export class FeedbackService {
     const { format, type } = query;
 
     let data: FeedbackSchemaType[] | FeedbackSummaryResponseDto;
+
     if (type === 'detailed') {
       data = await this.getAllFeedback(user);
     } else {
@@ -243,6 +251,7 @@ export class FeedbackService {
     );
 
     const fileName = `feedback-report-${type}-${Date.now()}.${format}`;
+
     res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
     res.setHeader(
       'Content-Type',

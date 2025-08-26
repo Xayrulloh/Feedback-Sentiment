@@ -16,7 +16,7 @@ import type { AuthenticatedRequest } from 'src/shared/types/request-with-user';
 export class AdminMiddleware implements NestMiddleware {
   constructor(
     @Inject(DrizzleAsyncProvider)
-    private readonly db: NodePgDatabase<typeof schema>,
+    private db: NodePgDatabase<typeof schema>,
   ) {}
 
   async use(req: AuthenticatedRequest, _res: Response, next: NextFunction) {

@@ -36,12 +36,15 @@ jobs:
 
             export COMPOSE_DOCKER_CLI_BUILD=0
             {
-              docker-compose build
-              docker-compose up -d --remove-orphans
+              docker compose build
+              docker compose up -d --remove-orphans
             } 2>&1 | grep -v "Container" | grep -v "level=warning" || true
 
             echo "Waiting for services..."
             sleep 10
+
+            echo "Running Drizzle migrations..."
+            docker compose exec -T app pnpm run drizzle:push
 
             docker system prune -f
             echo "✨ Deployment successful"

@@ -76,6 +76,7 @@ const FeedbackSchema = z
 
 type FeedbackSchemaType = z.infer<typeof FeedbackSchema>;
 
+// file
 const FileSchema = z
   .object({
     id: z.string().uuid().describe('File ID'),
@@ -99,6 +100,7 @@ const FileSchema = z
 
 type FileSchemaType = z.infer<typeof FileSchema>;
 
+// interceptors and filters
 const BaseSuccessResponseSchema = <T extends z.ZodTypeAny>(dataSchema?: T) =>
   z.object({
     success: z.boolean(),
@@ -156,6 +158,57 @@ const DatabaseErrorSchema = z.object({
 
 type DatabaseErrorSchemaType = z.infer<typeof DatabaseErrorSchema>;
 
+// Rate Limit
+const enum RateLimitTargetEnum {
+  API = 'API',
+  UPLOAD = 'UPLOAD',
+  DOWNLOAD = 'DOWNLOAD',
+  LOGIN = 'LOGIN',
+}
+
+const RateLimitSchema = z.object({
+  target: z.enum([
+    RateLimitTargetEnum.API,
+    RateLimitTargetEnum.UPLOAD,
+    RateLimitTargetEnum.DOWNLOAD,
+    RateLimitTargetEnum.LOGIN,
+  ]),
+  limit: z.number().int().min(1),
+});
+
+type RateLimitSchemaType = z.infer<typeof RateLimitSchema>;
+
+// Rate Limit Event
+
+const enum RateLimitErrorEnum {
+  TOO_MANY_LOGIN = 'TOO_MANY_LOGIN',
+  TOO_MANY_UPLOAD = 'TOO_MANY_UPLOAD',
+  TOO_MANY_DOWNLOAD = 'TOO_MANY_DOWNLOAD',
+  TOO_MANY_API = 'TOO_MANY_API',
+}
+
+const RateLimitEventSchema = z.object({
+  userId: z.string().uuid().optional(),
+  ip: z.string().ip().optional(),
+  email: z.string().email().optional(),
+  action: z.enum([
+    RateLimitTargetEnum.API,
+    RateLimitTargetEnum.UPLOAD,
+    RateLimitTargetEnum.DOWNLOAD,
+    RateLimitTargetEnum.LOGIN,
+  ]),
+  error: z.enum([
+    RateLimitErrorEnum.TOO_MANY_LOGIN,
+    RateLimitErrorEnum.TOO_MANY_UPLOAD,
+    RateLimitErrorEnum.TOO_MANY_DOWNLOAD,
+    RateLimitErrorEnum.TOO_MANY_API,
+  ]),
+  details: z.string().optional(),
+  timestamp: z.date(),
+});
+
+type RateLimitEventSchemaType = z.infer<typeof RateLimitEventSchema>;
+
 export {
   type FileSchemaType,
   FileSchema,
@@ -177,4 +230,10 @@ export {
   DatabaseErrorSchema,
   type DatabaseErrorSchemaType,
   type ErrorDetailsSchemaType,
+  RateLimitSchema,
+  RateLimitTargetEnum,
+  type RateLimitSchemaType,
+  RateLimitEventSchema,
+  RateLimitErrorEnum,
+  type RateLimitEventSchemaType,
 };
