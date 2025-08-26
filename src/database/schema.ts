@@ -12,7 +12,6 @@ import {
 } from 'drizzle-orm/pg-core';
 import {
   FeedbackSentimentEnum,
-  RateLimitDurationEnum,
   RateLimitTargetEnum,
   UserRoleEnum,
 } from 'src/utils/zod.schemas';
@@ -35,11 +34,6 @@ export const DrizzleRateLimitTargetEnum = pgEnum('rate_limit_target', [
   RateLimitTargetEnum.UPLOAD,
   RateLimitTargetEnum.DOWNLOAD,
   RateLimitTargetEnum.LOGIN,
-]);
-
-export const DrizzleRateLimitDurationEnum = pgEnum('rate_limit_duration', [
-  RateLimitDurationEnum.HOUR,
-  RateLimitDurationEnum.DAY,
 ]);
 
 // schemas
@@ -86,7 +80,6 @@ export const feedbacksSchema = pgTable('feedbacks', {
 
 export const rateLimitsSchema = pgTable('rate_limits', {
   target: DrizzleRateLimitTargetEnum('target').unique().notNull(),
-  duration: DrizzleRateLimitDurationEnum('duration').notNull(),
   limit: integer('limit').notNull(),
   ...baseSchema,
 });

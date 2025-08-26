@@ -5,7 +5,7 @@ import type { EnvType } from 'src/config/env/env-validation';
 import { RedisService } from './redis.service';
 
 @Module({
-  imports: [ConfigModule], // 👈 important
+  imports: [ConfigModule],
   providers: [
     {
       provide: 'REDIS_CLIENT',

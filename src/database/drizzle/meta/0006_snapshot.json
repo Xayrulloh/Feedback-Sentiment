@@ -1,5 +1,5 @@
 {
-  "id": "c4469695-66e9-4c5a-a82b-5238cb8f75f2",
+  "id": "3f798273-d1dd-4e78-8236-44213bcdac9e",
   "prevId": "178a2589-d8d7-4ed4-9f82-06dccbd29940",
   "version": "7",
   "dialect": "postgresql",
@@ -79,8 +79,12 @@
           "name": "feedbacks_file_id_files_id_fk",
           "tableFrom": "feedbacks",
           "tableTo": "files",
-          "columnsFrom": ["file_id"],
-          "columnsTo": ["id"],
+          "columnsFrom": [
+            "file_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -178,13 +182,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "duration": {
-          "name": "duration",
-          "type": "rate_limit_duration",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true
-        },
         "limit": {
           "name": "limit",
           "type": "integer",
@@ -222,7 +219,15 @@
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "rate_limits_target_unique": {
+          "name": "rate_limits_target_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "target"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -292,7 +297,9 @@
         "users_email_unique": {
           "name": "users_email_unique",
           "nullsNotDistinct": false,
-          "columns": ["email"]
+          "columns": [
+            "email"
+          ]
         }
       },
       "policies": {},
@@ -304,22 +311,30 @@
     "public.sentiment": {
       "name": "sentiment",
       "schema": "public",
-      "values": ["negative", "neutral", "positive", "unknown"]
-    },
-    "public.rate_limit_duration": {
-      "name": "rate_limit_duration",
-      "schema": "public",
-      "values": ["hour", "day"]
+      "values": [
+        "negative",
+        "neutral",
+        "positive",
+        "unknown"
+      ]
     },
     "public.rate_limit_target": {
       "name": "rate_limit_target",
       "schema": "public",
-      "values": ["API", "UPLOAD", "DOWNLOAD", "LOGIN"]
+      "values": [
+        "API",
+        "UPLOAD",
+        "DOWNLOAD",
+        "LOGIN"
+      ]
     },
     "public.user_role": {
       "name": "user_role",
       "schema": "public",
-      "values": ["USER", "ADMIN"]
+      "values": [
+        "USER",
+        "ADMIN"
+      ]
     }
   },
   "schemas": {},

@@ -1,1 +1,0 @@
-ALTER TABLE "rate_limits" ADD CONSTRAINT "rate_limits_target_unique" UNIQUE("target");

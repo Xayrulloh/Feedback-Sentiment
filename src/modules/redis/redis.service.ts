@@ -37,6 +37,7 @@ export class RedisService implements OnModuleDestroy {
 
   async ttl(key: string): Promise<number> {
     const ttl = await this.redisClient.ttl(key);
+
     return ttl;
   }
 }

@@ -7,13 +7,18 @@ import {
   type NestInterceptor,
 } from '@nestjs/common';
 import type { Observable } from 'rxjs';
-import type { SuspiciousActivityEventSchemaType } from 'src/modules/admin/dto/admin.dto';
 // biome-ignore lint/style/useImportType: Needed for DI
 import { RedisService } from 'src/modules/redis/redis.service';
 // biome-ignore lint/style/useImportType: Needed for DI
 import { SocketGateway } from 'src/modules/websocket/websocket.gateaway';
 import type { AuthenticatedRequest } from 'src/shared/types/request-with-user';
-import { RateLimitTargetEnum } from 'src/utils/zod.schemas';
+import { HOUR_SECONDS } from 'src/utils/constants';
+import {
+  type RateLimitErrorEnum,
+  type RateLimitEventSchemaType,
+  RateLimitTargetEnum,
+  UserRoleEnum,
+} from 'src/utils/zod.schemas';
 
 @Injectable()
 export class RateLimitInterceptor implements NestInterceptor {
@@ -30,12 +35,11 @@ export class RateLimitInterceptor implements NestInterceptor {
     const request = ctx.getRequest<AuthenticatedRequest>();
     const response = ctx.getResponse();
     const user = request.user;
+    const ip = request.ip;
 
-    if (request.path.startsWith('/api/admin/rate-limit')) {
+    if (user?.role === UserRoleEnum.ADMIN) {
       return next.handle();
     }
-
-    const userId = user?.id ?? request.ip;
 
     let action: RateLimitTargetEnum = RateLimitTargetEnum.API;
 
@@ -47,8 +51,11 @@ export class RateLimitInterceptor implements NestInterceptor {
       action = RateLimitTargetEnum.LOGIN;
     }
 
+    const keyIdentifier = user ? `user:${user.id}` : `ip:${ip}`;
+    const redisKey = `${keyIdentifier}:${action}`;
+
     const [userCountRaw, rateLimitRaw] = await Promise.all([
-      this.redisService.get(`user:${userId}:${action}`),
+      this.redisService.get(redisKey),
       this.redisService.get(`rateLimit:${action}`),
     ]);
 
@@ -60,24 +67,25 @@ export class RateLimitInterceptor implements NestInterceptor {
     }
 
     const remaining = Math.max(rateLimit.limit - userCount, 0);
-    const resetTimestamp = Math.floor(Date.now() / 1000) + rateLimit.duration;
+    const resetTimestamp =
+      Math.floor(Date.now() / 1000) + rateLimit.limit * HOUR_SECONDS;
 
     response.setHeader('X-RateLimit-Limit', rateLimit.limit);
     response.setHeader('X-RateLimit-Remaining', remaining);
     response.setHeader('X-RateLimit-Reset', resetTimestamp);
 
     if (userCount >= rateLimit.limit) {
-      const activity: SuspiciousActivityEventSchemaType = {
+      const event: RateLimitEventSchemaType = {
         userId: user?.id,
         email: user?.email,
-        activityType: `TOO_MANY_${action}`,
+        error: `TOO_MANY_${action}` as RateLimitErrorEnum,
         details: `TOO_MANY_${action} requests for limit: ${rateLimit}`,
         timestamp: new Date(),
       };
 
       this.gateaway.notifyAdmin({
         event: 'suspiciousActivity',
-        data: activity,
+        data: event,
       });
 
       throw new HttpException(
@@ -88,13 +96,13 @@ export class RateLimitInterceptor implements NestInterceptor {
 
     if (userCount === 0) {
       await this.redisService.setWithExpiry(
-        `user:${userId}:${action}`,
+        `user:${user.id}:${action}`,
         '1',
-        rateLimit.duration,
+        rateLimit.limit * HOUR_SECONDS,
       );
     } else {
       await this.redisService.set(
-        `user:${userId}:${action}`,
+        `user:${user.id}:${action}`,
         String(userCount + 1),
       );
     }

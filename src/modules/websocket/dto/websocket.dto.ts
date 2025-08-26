@@ -1,12 +1,9 @@
-import { SuspiciousActivityEventSchema } from 'src/modules/admin/dto/admin.dto';
+import { RateLimitEventSchema } from 'src/utils/zod.schemas';
 import { z } from 'zod';
 
 const WebSocketEventSchema = z.object({
   event: z.string(),
-  data: z.union([
-    SuspiciousActivityEventSchema,
-    z.number().int().nonnegative(),
-  ]),
+  data: z.union([RateLimitEventSchema, z.number().int().nonnegative()]),
 });
 type WebSocketEventSchemaType = z.infer<typeof WebSocketEventSchema>;
 

@@ -3,10 +3,9 @@ import { eq } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { DrizzleAsyncProvider } from 'src/database/drizzle.provider';
 import * as schema from 'src/database/schema';
-import {
-  RateLimitDurationEnum,
-  type RateLimitSchemaType,
-  type UserSchemaType,
+import type {
+  RateLimitSchemaType,
+  UserSchemaType,
 } from 'src/utils/zod.schemas';
 // biome-ignore lint/style/useImportType: Needed for DI
 import { RedisService } from '../redis/redis.service';
@@ -75,23 +74,14 @@ export class AdminService {
       })
       .returning();
 
-    const durationInSeconds =
-      upsertedRateLimit.duration === RateLimitDurationEnum.HOUR ? 60 : 86400;
-
     await this.redisService.set(
-      `rateLimit:${upsertedRateLimit.target}`,
+      `rateLimit:${body.target}`,
       JSON.stringify({
-        limit: upsertedRateLimit.limit,
-        duration: durationInSeconds,
+        limit: body.limit,
       }),
     );
 
-    const userKeys = await this.redisService.keys(
-      `user:*:${upsertedRateLimit.target}`,
-    );
-    for (const key of userKeys) {
-      await this.redisService.delete(key);
-    }
+    await this.redisService.delete(`user:*:${body.target}`);
 
     return upsertedRateLimit;
   }

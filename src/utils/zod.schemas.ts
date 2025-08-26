@@ -166,11 +166,6 @@ const enum RateLimitTargetEnum {
   LOGIN = 'LOGIN',
 }
 
-const enum RateLimitDurationEnum {
-  HOUR = 'hour',
-  DAY = 'day',
-}
-
 const RateLimitSchema = z.object({
   target: z.enum([
     RateLimitTargetEnum.API,
@@ -178,11 +173,35 @@ const RateLimitSchema = z.object({
     RateLimitTargetEnum.DOWNLOAD,
     RateLimitTargetEnum.LOGIN,
   ]),
-  duration: z.enum([RateLimitDurationEnum.HOUR, RateLimitDurationEnum.DAY]),
   limit: z.number().int().min(1),
 });
 
 type RateLimitSchemaType = z.infer<typeof RateLimitSchema>;
+
+// Rate Limit Event
+
+const enum RateLimitErrorEnum {
+  TOO_MANY_LOGIN = 'TOO_MANY_LOGIN',
+  TOO_MANY_UPLOAD = 'TOO_MANY_UPLOAD',
+  TOO_MANY_DOWNLOAD = 'TOO_MANY_DOWNLOAD',
+  TOO_MANY_API = 'TOO_MANY_API',
+}
+
+const RateLimitEventSchema = z.object({
+  userId: z.string().uuid().optional(),
+  ip: z.string().ip().optional(),
+  email: z.string().email().optional(),
+  error: z.enum([
+    RateLimitErrorEnum.TOO_MANY_LOGIN,
+    RateLimitErrorEnum.TOO_MANY_UPLOAD,
+    RateLimitErrorEnum.TOO_MANY_DOWNLOAD,
+    RateLimitErrorEnum.TOO_MANY_API,
+  ]),
+  details: z.string().optional(),
+  timestamp: z.date(),
+});
+
+type RateLimitEventSchemaType = z.infer<typeof RateLimitEventSchema>;
 
 export {
   type FileSchemaType,
@@ -207,6 +226,8 @@ export {
   type ErrorDetailsSchemaType,
   RateLimitSchema,
   RateLimitTargetEnum,
-  RateLimitDurationEnum,
   type RateLimitSchemaType,
+  RateLimitEventSchema,
+  RateLimitErrorEnum,
+  type RateLimitEventSchemaType,
 };
