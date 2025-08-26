@@ -7,6 +7,7 @@ import type {
   UserQueryDto,
   UserResponseSchemaType,
   UserSearchQueryDto,
+  UserSearchResponseSchemaType,
 } from './dto/user.dto';
 
 @Injectable()
@@ -46,36 +47,22 @@ export class UserService {
 
   async searchUsers(
     query: UserSearchQueryDto,
-  ): Promise<UserResponseSchemaType> {
-    const { page = 1, limit = 5, email } = query;
+  ): Promise<UserSearchResponseSchemaType> {
+    const { email } = query;
 
     if (!email?.trim()) {
-      return { users: [], pagination: { limit, page, total: 0, pages: 0 } };
+      return { users: [] };
     }
 
     const searchTerm = `%${email.trim()}%`;
-    const totalResult = await this.db
-      .select({ count: sql<number>`count(*)` })
-      .from(schema.usersSchema)
-      .where(sql`email ILIKE ${searchTerm}`);
-
-    const total = totalResult[0]?.count ?? 0;
-
     const users = await this.db
       .select()
       .from(schema.usersSchema)
       .where(sql`email ILIKE ${searchTerm}`)
-      .limit(limit)
-      .offset((page - 1) * limit);
+      .limit(5);
 
     return {
       users,
-      pagination: {
-        limit,
-        page,
-        total: Number(total),
-        pages: Math.ceil(total / limit),
-      },
     };
   }
 }

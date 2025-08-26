@@ -21,6 +21,8 @@ import {
   UserResponseSchema,
   type UserResponseSchemaType,
   UserSearchQueryDto,
+  UserSearchResponseSchema,
+  type UserSearchResponseSchemaType,
 } from './dto/user.dto';
 // biome-ignore lint/style/useImportType: Needed for DI
 import { UserService } from './user.service';
@@ -104,9 +106,12 @@ export class UserController {
   @ApiBearerAuth()
   @Get('search')
   @ApiQuery({ name: 'email', required: true, type: String })
-  @ApiOperation({ summary: 'Search users by email' })
+  @ApiOperation({ summary: 'Search users by email (max 5)' })
   @ApiOkResponse({
-    type: createBaseResponseDto(UserResponseSchema, 'UserResponseSchema'),
+    type: createBaseResponseDto(
+      UserSearchResponseSchema,
+      'UserSearchResponseSchema',
+    ),
   })
   @ApiBadRequestResponse({
     description: 'Validation failed',
@@ -132,11 +137,11 @@ export class UserController {
       },
     },
   })
-  @ZodSerializerDto(UserResponseSchema)
+  @ZodSerializerDto(UserSearchResponseSchema)
   async searchUsers(
     @Query(new ZodValidationPipe(UserSearchQueryDto))
     query: UserSearchQueryDto,
-  ): Promise<UserResponseSchemaType> {
+  ): Promise<UserSearchResponseSchemaType> {
     return this.userService.searchUsers(query);
   }
 }

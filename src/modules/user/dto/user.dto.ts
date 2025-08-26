@@ -4,7 +4,7 @@ import * as z from 'zod';
 
 const UserResponseSchema = z.object({
   users: UserSchema.array(),
-  pagination: PaginationSchema,
+  pagination: PaginationSchema.optional(),
 });
 
 type UserResponseSchemaType = z.infer<typeof UserResponseSchema>;
@@ -18,13 +18,14 @@ const UserQuerySchema = z.object({
 
 class UserQueryDto extends createZodDto(UserQuerySchema) {}
 
-const UserSearchQuerySchema = z
-  .object({
-    email: z.string().email().describe('Email to search for'),
-  })
-  .merge(UserQuerySchema);
+const UserSearchQuerySchema = z.object({
+  email: z.string().email().describe('Email to search for'),
+});
 
 class UserSearchQueryDto extends createZodDto(UserSearchQuerySchema) {}
+
+const UserSearchResponseSchema = UserResponseSchema.omit({ pagination: true });
+type UserSearchResponseSchemaType = z.infer<typeof UserSearchResponseSchema>;
 
 export {
   UserResponseSchema,
@@ -34,4 +35,6 @@ export {
   UserQueryDto,
   UserSearchQuerySchema,
   UserSearchQueryDto,
+  UserSearchResponseSchema,
+  type UserSearchResponseSchemaType,
 };
