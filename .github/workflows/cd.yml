@@ -43,8 +43,7 @@ jobs:
             echo "Waiting for services..."
             sleep 10
 
-            echo "Running Drizzle migrations..."
-            docker compose exec -T app pnpm run drizzle:push
-
+            echo "Pruning unused containers and images"
             docker system prune -f
+
             echo "✨ Deployment successful"
