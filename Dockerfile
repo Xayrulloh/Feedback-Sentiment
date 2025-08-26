@@ -11,6 +11,5 @@ RUN npm install -g pnpm \
     && pnpm install --frozen-lockfile --prefer-offline --ignore-scripts
 
 COPY . .
-
 EXPOSE 3000
-CMD ["pnpm", "start"]
+CMD ["pnpm", "drizzle:push", "&&", "pnpm", "start"]
