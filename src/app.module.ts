@@ -24,6 +24,7 @@ import { FeedbackModule } from './modules/feedback/feedback.module';
 import { FileModule } from './modules/file/file.module';
 import { MonitoringModule } from './modules/monitoring/monitoring.module';
 import { RedisModule } from './modules/redis/redis.module';
+import { SampleModule } from './modules/sample/sample.module';
 import { UserModule } from './modules/user/user.module';
 import { WebsocketModule } from './modules/websocket/websocket.module';
 @Module({
@@ -40,6 +41,7 @@ import { WebsocketModule } from './modules/websocket/websocket.module';
     MonitoringModule,
     RedisModule,
     UserModule,
+    SampleModule,
   ],
 
   controllers: [AppController],
