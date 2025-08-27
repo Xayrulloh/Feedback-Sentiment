@@ -43,7 +43,7 @@ export class RateLimitInterceptor implements NestInterceptor {
     const user = request.user;
     const ip = request.ip;
 
-    if (user?.role === UserRoleEnum.ADMIN) {
+    if (user?.role === UserRoleEnum.ADMIN || request.method === 'GET') {
       return next.handle();
     }
 
@@ -106,15 +106,12 @@ export class RateLimitInterceptor implements NestInterceptor {
 
     if (userCount === 0) {
       await this.redisService.setWithExpiry(
-        `user:${user.id}:${action}`,
+        redisKey,
         '1',
         rateLimit.limit * HOUR_SECONDS,
       );
     } else {
-      await this.redisService.set(
-        `user:${user.id}:${action}`,
-        String(userCount + 1),
-      );
+      await this.redisService.set(redisKey, String(userCount + 1));
     }
 
     return next.handle();
