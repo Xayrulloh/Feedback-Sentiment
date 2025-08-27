@@ -62,7 +62,6 @@ services:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
     networks:
       - backend
-      - localprom
     ports:
       - "9090:9090"
 
@@ -70,7 +69,7 @@ services:
     image: prom/node-exporter
     container_name: node-exporter
     networks:
-      - localprom
+      - backend
 
   grafana:
       image: grafana/grafana
@@ -85,8 +84,6 @@ services:
 
 networks:
   backend:
-    driver: bridge
-  localprom:
     driver: bridge
 
 volumes:

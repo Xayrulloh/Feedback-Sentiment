@@ -81,10 +81,7 @@ export class AdminService {
         limit: body.limit,
       }),
     );
-
-    await this.redisService.deletePattern(`user:*:${body.target}`);
-    await this.redisService.deletePattern(`ip:*:${body.target}`);
-
+    
     return upsertedRateLimit;
   }
 
