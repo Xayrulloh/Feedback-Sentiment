@@ -5,6 +5,8 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Param,
+  ParseUUIDPipe,
   Post,
   Query,
   Req,
@@ -48,6 +50,7 @@ import {
   FeedbackSummaryResponseSchema,
   type ReportDownloadQueryDto,
   SentimentEnum,
+  SingleFeedbackResponseSchema,
 } from './dto/feedback.dto';
 // biome-ignore lint/style/useImportType: Needed for DI
 import { FeedbackService } from './feedback.service';
@@ -327,5 +330,23 @@ export class FeedbackController {
     @Res() res: Response,
   ) {
     return this.feedbackService.feedbackReportDownload(query, req.user, res);
+  }
+
+  @Get(':id')
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Fetching single feedback by its id' })
+  @ApiOkResponse({
+    description: 'Fetching single feedback by id',
+  })
+  @ApiOkResponse({
+    type: createBaseResponseDto(
+      SingleFeedbackResponseSchema,
+      'SingleFeedbackResponseSchema',
+    ),
+  })
+  @ZodSerializerDto(SingleFeedbackResponseSchema)
+  async getOneFeedback(@Param('id', ParseUUIDPipe) id: string) {
+    return this.feedbackService.getFeedbackById(id);
   }
 }
