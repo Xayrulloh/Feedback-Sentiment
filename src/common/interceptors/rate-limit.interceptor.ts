@@ -43,7 +43,7 @@ export class RateLimitInterceptor implements NestInterceptor {
     const user = request.user;
     const ip = request.ip;
 
-    if (user?.role === UserRoleEnum.ADMIN) {
+    if (user?.role === UserRoleEnum.ADMIN || request.method === 'GET') {
       return next.handle();
     }
 
