@@ -54,23 +54,28 @@ services:
     restart: unless-stopped
     networks:
       - backend
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   prometheus:
     image: prom/prometheus
-    container_name: prometheus
+    container_name: feedback-sentiment-prometheus
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
     networks:
       - backend
-      - localprom
     ports:
       - "9090:9090"
-
-  node-exporter:
-    image: prom/node-exporter
-    container_name: node-exporter
-    networks:
-      - localprom
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:9090/-/healthy || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   grafana:
       image: grafana/grafana
@@ -80,15 +85,24 @@ services:
       networks:
         - backend
       depends_on:
-        - prometheus
+        prometheus:
+          condition: service_healthy
+      healthcheck:
+        test: ["CMD-SHELL", "wget --spider -q http://localhost:3000/api/health || exit 1"]
+        interval: 10s
+        timeout: 5s
+        retries: 5
+        start_period: 30s
+      volumes:
+      - grafana_data:/var/lib/grafana
 
 
 networks:
   backend:
     driver: bridge
-  localprom:
-    driver: bridge
 
 volumes:
   postgres_data:
+    driver: local
+  grafana_data:
     driver: local
