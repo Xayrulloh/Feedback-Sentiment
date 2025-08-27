@@ -12,8 +12,8 @@ import { HttpExceptionFilter } from './common/filters/http.exception.filter';
 import { ZodExceptionFilter } from './common/filters/zod.exception.filter';
 import { RateLimitInterceptor } from './common/interceptors/rate-limit.interceptor';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
+import { UserStatusInterceptor } from './common/interceptors/user-status.interceptor';
 import { ZodSerializerInterceptorCustom } from './common/interceptors/zod.response-checker.interceptor';
-import { AdminMiddleware } from './common/middlewares/admin.middleware';
 import { MetricsMiddleware } from './common/middlewares/metrics.middleware';
 import { EnvModule } from './config/env/env.module';
 import { DrizzleModule } from './database/drizzle.module';
@@ -50,7 +50,7 @@ import { WebsocketModule } from './modules/websocket/websocket.module';
     { provide: APP_FILTER, useClass: HttpExceptionFilter },
     { provide: APP_FILTER, useClass: ZodExceptionFilter },
     { provide: APP_INTERCEPTOR, useClass: ZodSerializerInterceptorCustom },
-    AdminMiddleware,
+    { provide: APP_INTERCEPTOR, useClass: UserStatusInterceptor },
   ],
 })
 export class AppModule implements NestModule {
@@ -62,10 +62,5 @@ export class AppModule implements NestModule {
         { path: 'admin/monitoring', method: RequestMethod.ALL },
       )
       .forRoutes({ path: '*', method: RequestMethod.ALL });
-
-    consumer.apply(AdminMiddleware).forRoutes({
-      path: '*',
-      method: RequestMethod.ALL,
-    });
   }
 }
