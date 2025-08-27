@@ -173,7 +173,12 @@ const RateLimitSchema = z.object({
     RateLimitTargetEnum.DOWNLOAD,
     RateLimitTargetEnum.LOGIN,
   ]),
-  limit: z.number().int().min(1).max(1000).describe('Maximum number of requests allowed per hour'),
+  limit: z
+    .number()
+    .int()
+    .min(1)
+    .max(1000)
+    .describe('Maximum number of requests allowed per hour'),
 });
 
 type RateLimitSchemaType = z.infer<typeof RateLimitSchema>;

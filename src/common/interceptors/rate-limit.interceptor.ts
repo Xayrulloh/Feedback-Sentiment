@@ -111,10 +111,7 @@ export class RateLimitInterceptor implements NestInterceptor {
         rateLimit.limit * HOUR_SECONDS,
       );
     } else {
-      await this.redisService.set(
-        redisKey,
-        String(userCount + 1),
-      );
+      await this.redisService.set(redisKey, String(userCount + 1));
     }
 
     return next.handle();

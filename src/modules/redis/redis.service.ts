@@ -28,7 +28,6 @@ export class RedisService implements OnModuleDestroy {
       await this.redisClient.del(...keys);
     }
   }
-  
 
   async setWithExpiry(
     key: string,

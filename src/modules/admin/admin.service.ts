@@ -81,7 +81,7 @@ export class AdminService {
         limit: body.limit,
       }),
     );
-    
+
     return upsertedRateLimit;
   }
 
