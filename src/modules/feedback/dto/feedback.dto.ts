@@ -6,7 +6,7 @@ import {
 } from 'src/utils/zod.schemas';
 import * as z from 'zod';
 
-// Request schema
+// Request schemas
 const FeedbackManualRequestSchema = z.object({
   feedbacks: z
     .array(z.string().min(10, `Feedback must be at least 10 characters long`))
@@ -15,8 +15,17 @@ const FeedbackManualRequestSchema = z.object({
     .describe('Array of feedback entries, each meeting the minimum length'),
 });
 
+// feedback request params
+const FeedbackSingleParamSchema = z.object({
+  id: z.string().uuid(),
+});
+
+type FeedbackSingleParamSchemaType = z.infer<typeof FeedbackSingleParamSchema>;
+
 // Response schemas
 const FeedbackResponseSchema = FeedbackSchema.array();
+
+const FeedbackSingleResponseSchema = FeedbackSchema;
 
 const FeedbackSummaryResponseSchema = z
   .array(
@@ -48,7 +57,19 @@ type FeedbackSummaryResponseSchemaType = z.infer<
   typeof FeedbackSummaryResponseSchema
 >;
 
+type FeedbackSingleResponseSchemaType = z.infer<
+  typeof FeedbackSingleResponseSchema
+>;
+
 // DTOs
+
+class FeedbackSingleResponseDto extends createZodDto(
+  FeedbackSingleResponseSchema,
+) {}
+
+class FeedbackSingleParamsRequestDto extends createZodDto(
+  FeedbackSingleParamSchema,
+) {}
 class FeedbackManualRequestDto extends createZodDto(
   FeedbackManualRequestSchema,
 ) {}
@@ -128,6 +149,12 @@ class FeedbackSummaryResponseDto extends createZodDto(
 ) {}
 
 export {
+  FeedbackSingleResponseSchema,
+  FeedbackSingleParamSchema,
+  type FeedbackSingleParamSchemaType,
+  FeedbackSingleParamsRequestDto,
+  FeedbackSingleResponseDto,
+  type FeedbackSingleResponseSchemaType,
   ReportDownloadQuerySchema,
   ReportDownloadQueryDto,
   FeedbackManualRequestSchema,

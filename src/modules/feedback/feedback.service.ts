@@ -22,6 +22,7 @@ import {
   FeedbackManualRequestSchema,
   type FeedbackQuerySchemaDto,
   type FeedbackResponseDto,
+  type FeedbackSingleResponseDto,
   type FeedbackSummaryResponseDto,
   FeedbackSummaryResponseSchema,
   type ReportDownloadQueryDto,
@@ -258,5 +259,17 @@ export class FeedbackService {
     );
 
     res.send(fileBuffer);
+  }
+
+  async getFeedbackById(id: string): Promise<FeedbackSingleResponseDto> {
+    const feedback = await this.db.query.feedbacksSchema.findFirst({
+      where: eq(schema.feedbacksSchema.id, id),
+    });
+
+    if (!feedback) {
+      throw new BadRequestException(`Feedback with id ${id} not found`);
+    }
+
+    return feedback;
   }
 }

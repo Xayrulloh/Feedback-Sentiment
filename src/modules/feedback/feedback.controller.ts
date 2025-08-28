@@ -5,6 +5,8 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Param,
+  ParseUUIDPipe,
   Post,
   Query,
   Req,
@@ -44,6 +46,7 @@ import {
   FeedbackQuerySchemaDto,
   type FeedbackResponseDto,
   FeedbackResponseSchema,
+  FeedbackSingleResponseSchema,
   FeedbackSummaryResponseDto,
   FeedbackSummaryResponseSchema,
   type ReportDownloadQueryDto,
@@ -327,5 +330,23 @@ export class FeedbackController {
     @Res() res: Response,
   ) {
     return this.feedbackService.feedbackReportDownload(query, req.user, res);
+  }
+
+  @Get(':id')
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Fetching single feedback by its id' })
+  @ApiOkResponse({
+    description: 'Fetching single feedback by id',
+  })
+  @ApiOkResponse({
+    type: createBaseResponseDto(
+      FeedbackSingleResponseSchema,
+      'FeedbackSingleResponseSchema',
+    ),
+  })
+  @ZodSerializerDto(FeedbackSingleResponseSchema)
+  async getFeedbackById(@Param('id', ParseUUIDPipe) id: string) {
+    return this.feedbackService.getFeedbackById(id);
   }
 }
