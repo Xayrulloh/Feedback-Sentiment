@@ -20,7 +20,6 @@ export function setupSwagger(app: INestApplication): void {
       'Here you can see all the endpoints with request/response examples',
     )
     .addBearerAuth()
-    .addApiKey({ in: 'header', name: 'api-key', type: 'apiKey' }, 'api-key')
     .build();
 
   patchNestJsSwagger();

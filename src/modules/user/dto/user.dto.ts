@@ -19,7 +19,7 @@ const UserQuerySchema = z.object({
 class UserQueryDto extends createZodDto(UserQuerySchema) {}
 
 const UserSearchQuerySchema = z.object({
-  email: z.string().email().describe('Email to search for'),
+  email: z.string().trim().min(3).describe('Email to search for'),
 });
 
 class UserSearchQueryDto extends createZodDto(UserSearchQuerySchema) {}
