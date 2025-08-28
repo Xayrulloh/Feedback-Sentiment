@@ -46,7 +46,7 @@ import {
   FeedbackQuerySchemaDto,
   type FeedbackResponseDto,
   FeedbackResponseSchema,
-  FeedbackSingResponseSchema,
+  FeedbackSingleResponseSchema,
   FeedbackSummaryResponseDto,
   FeedbackSummaryResponseSchema,
   type ReportDownloadQueryDto,
@@ -341,11 +341,11 @@ export class FeedbackController {
   })
   @ApiOkResponse({
     type: createBaseResponseDto(
-      FeedbackSingResponseSchema,
-      'FeedbackSingResponseSchema',
+      FeedbackSingleResponseSchema,
+      'FeedbackSingleResponseSchema',
     ),
   })
-  @ZodSerializerDto(FeedbackSingResponseSchema)
+  @ZodSerializerDto(FeedbackSingleResponseSchema)
   async getFeedbackById(@Param('id', ParseUUIDPipe) id: string) {
     return this.feedbackService.getFeedbackById(id);
   }

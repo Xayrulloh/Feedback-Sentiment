@@ -16,16 +16,16 @@ const FeedbackManualRequestSchema = z.object({
 });
 
 // feedback request params
-const FeedbackSingParamSchema = z.object({
+const FeedbackSingleParamSchema = z.object({
   id: z.string().uuid(),
 });
 
-type FeedbackSingParamSchemaType = z.infer<typeof FeedbackSingParamSchema>;
+type FeedbackSingleParamSchemaType = z.infer<typeof FeedbackSingleParamSchema>;
 
 // Response schemas
 const FeedbackResponseSchema = FeedbackSchema.array();
 
-const FeedbackSingResponseSchema = FeedbackSchema;
+const FeedbackSingleResponseSchema = FeedbackSchema;
 
 const FeedbackSummaryResponseSchema = z
   .array(
@@ -57,18 +57,18 @@ type FeedbackSummaryResponseSchemaType = z.infer<
   typeof FeedbackSummaryResponseSchema
 >;
 
-type FeedbackSingResponseSchemaType = z.infer<
-  typeof FeedbackSingResponseSchema
+type FeedbackSingleResponseSchemaType = z.infer<
+  typeof FeedbackSingleResponseSchema
 >;
 
 // DTOs
 
-class FeedbackSingResponseDto extends createZodDto(
-  FeedbackSingResponseSchema,
+class FeedbackSingleResponseDto extends createZodDto(
+  FeedbackSingleResponseSchema,
 ) {}
 
-class FeedbackSingParamsRequestDto extends createZodDto(
-  FeedbackSingParamSchema,
+class FeedbackSingleParamsRequestDto extends createZodDto(
+  FeedbackSingleParamSchema,
 ) {}
 class FeedbackManualRequestDto extends createZodDto(
   FeedbackManualRequestSchema,
@@ -149,12 +149,12 @@ class FeedbackSummaryResponseDto extends createZodDto(
 ) {}
 
 export {
-  FeedbackSingResponseSchema,
-  FeedbackSingParamSchema,
-  type FeedbackSingParamSchemaType,
-  FeedbackSingParamsRequestDto,
-  FeedbackSingResponseDto,
-  type FeedbackSingResponseSchemaType,
+  FeedbackSingleResponseSchema,
+  FeedbackSingleParamSchema,
+  type FeedbackSingleParamSchemaType,
+  FeedbackSingleParamsRequestDto,
+  FeedbackSingleResponseDto,
+  type FeedbackSingleResponseSchemaType,
   ReportDownloadQuerySchema,
   ReportDownloadQueryDto,
   FeedbackManualRequestSchema,

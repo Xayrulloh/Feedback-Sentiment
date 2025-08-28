@@ -22,7 +22,7 @@ import {
   FeedbackManualRequestSchema,
   type FeedbackQuerySchemaDto,
   type FeedbackResponseDto,
-  type FeedbackSingResponseDto,
+  type FeedbackSingleResponseDto,
   type FeedbackSummaryResponseDto,
   FeedbackSummaryResponseSchema,
   type ReportDownloadQueryDto,
@@ -262,7 +262,7 @@ export class FeedbackService {
     res.send(fileBuffer);
   }
 
-  async getFeedbackById(id: string): Promise<FeedbackSingResponseDto> {
+  async getFeedbackById(id: string): Promise<FeedbackSingleResponseDto> {
     const feedback = await this.db.query.feedbacksSchema.findFirst({
       where: eq(schema.feedbacksSchema.id, id),
     });
