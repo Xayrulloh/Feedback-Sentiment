@@ -203,7 +203,6 @@ export class FeedbackService {
       .from(schema.feedbacksSchema)
       .where(eq(schema.feedbacksSchema.userId, userId))
       .groupBy(schema.feedbacksSchema.summary)
-      .having(sql`COUNT(*) > 1`)
       .orderBy(desc(count(schema.feedbacksSchema.id)))
       .limit(20);
   }
