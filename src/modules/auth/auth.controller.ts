@@ -16,7 +16,7 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { ZodSerializerDto } from 'nestjs-zod';
-import { UserStatusGuard } from 'src/common/guards/user-status.guards';
+import { UserStatusGuard } from 'src/common/guards/user-status.guard';
 import { createBaseResponseDto } from 'src/utils/zod.schemas';
 // biome-ignore lint/style/useImportType: Needed for DI
 import { AuthService } from './auth.service';
