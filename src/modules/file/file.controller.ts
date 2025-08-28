@@ -32,6 +32,7 @@ import {
   FileResponseDto,
   FileResponseSchema,
 } from './dto/file.dto';
+// FIXME: Research to fix this, instead of using every time we need better solution
 // biome-ignore lint/style/useImportType: Needed for DI
 import { FileService } from './file.service';
 
@@ -81,6 +82,7 @@ export class FileController {
   constructor(private readonly fileService: FileService) {}
 
   @Get()
+  // FIXME: no need api bearer auth since we already gave it in controller layer
   @ApiBearerAuth()
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -100,6 +102,7 @@ export class FileController {
   }
 
   @Delete(':fileId')
+  // FIXME: no need api bearer auth since we already gave it in controller layer
   @ApiBearerAuth()
   @ApiParam({ name: 'fileId', type: 'string', description: 'File ID (uuid)' })
   @ApiOkResponse({

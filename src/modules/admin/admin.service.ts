@@ -7,6 +7,7 @@ import type {
   RateLimitSchemaType,
   UserSchemaType,
 } from 'src/utils/zod.schemas';
+// FIXME: Research to fix this, instead of using every time we need better solution
 // biome-ignore lint/style/useImportType: Needed for DI
 import { RedisService } from '../redis/redis.service';
 import type {
@@ -15,6 +16,7 @@ import type {
   SuspiciousActivityResponseSchemaType,
 } from './dto/admin.dto';
 
+// Give proper Scopes to inject
 @Injectable()
 export class AdminService {
   constructor(
@@ -24,6 +26,7 @@ export class AdminService {
   ) {}
 
   async adminDisable(userId: string): Promise<UserSchemaType> {
+    // TODO: use query
     const [user] = await this.db
       .select()
       .from(schema.usersSchema)
@@ -43,6 +46,7 @@ export class AdminService {
   }
 
   async adminSuspend(userId: string): Promise<UserSchemaType> {
+    // TODO: use query
     const [user] = await this.db
       .select()
       .from(schema.usersSchema)
@@ -86,10 +90,12 @@ export class AdminService {
   }
 
   async adminGetRateLimits(): Promise<RateLimitGetSchemaType> {
+    // TODO: use query
     return this.db.select().from(schema.rateLimitsSchema);
   }
 
   async adminGetSuspiciousActivities(): Promise<SuspiciousActivityResponseSchemaType> {
+    // TODO: use query
     return this.db.select().from(schema.suspiciousActivitySchema);
   }
 }

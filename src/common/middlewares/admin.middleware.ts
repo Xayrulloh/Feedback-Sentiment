@@ -12,6 +12,7 @@ import { DrizzleAsyncProvider } from 'src/database/drizzle.provider';
 import * as schema from 'src/database/schema';
 import type { AuthenticatedRequest } from 'src/shared/types/request-with-user';
 
+// Give proper Scopes to inject
 @Injectable()
 export class AdminMiddleware implements NestMiddleware {
   constructor(
@@ -36,6 +37,7 @@ export class AdminMiddleware implements NestMiddleware {
       throw new ForbiddenException('User account is suspended');
     }
 
+    // FIXME: put return
     next();
   }
 }

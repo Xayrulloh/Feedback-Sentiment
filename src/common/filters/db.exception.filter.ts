@@ -12,11 +12,14 @@ import type {
   ErrorDetailsSchemaType,
 } from 'src/utils/zod.schemas';
 
-@Catch()
+@Catch() // TODO: make it work only on drizzle error instead of manually checking
+// TODO: let's call it as a DrizzleExceptionFilter (file name should be changed too)
 export class DatabaseExceptionFilter implements ExceptionFilter {
+  // TODO: make sure it's working
   catch(exception: DatabaseErrorSchemaType, host: ArgumentsHost): void {
     Logger.error(exception, DatabaseExceptionFilter.name);
 
+    // TODO: take request first then response
     const [response, request] = [
       host.switchToHttp().getResponse<Response>(),
       host.switchToHttp().getRequest<Request>(),
@@ -27,25 +30,26 @@ export class DatabaseExceptionFilter implements ExceptionFilter {
     let errors: ErrorDetailsSchemaType[] | null = null;
 
     if (this.isDatabaseError(exception)) {
+      // TODO: remove this if condition
       switch (exception.code) {
-        case '23505': // Unique violation
+        case '23505': // Unique violation // TODO: remove comment
           statusCode = HttpStatus.CONFLICT;
           message = 'Resource already exists';
           errors = [
             {
-              field: this.extractFieldFromDetail(exception.detail),
+              field: this.extractFieldFromDetail(exception.detail), // TODO: it's too complex, make it simple
               message,
               code: 'DB_ERROR',
             },
           ];
 
           break;
-        case '23503': // Foreign key violation
+        case '23503': // Foreign key violation // TODO: remove comment
           statusCode = HttpStatus.BAD_REQUEST;
           message = 'Referenced resource does not exist';
 
           break;
-        case '23502': // Not null violation
+        case '23502': // Not null violation // TODO: remove comment
           statusCode = HttpStatus.BAD_REQUEST;
           message = 'Required field missing';
           errors = [
@@ -63,6 +67,7 @@ export class DatabaseExceptionFilter implements ExceptionFilter {
       }
     }
 
+    // TODO: create a function inside helper which returns base error response variable
     const errorResponse: BaseErrorResponseSchemaType = {
       success: false,
       statusCode,
@@ -75,6 +80,7 @@ export class DatabaseExceptionFilter implements ExceptionFilter {
     response.status(statusCode).json(errorResponse);
   }
 
+  // TODO: remove this function
   private isDatabaseError(error: unknown): error is DatabaseErrorSchemaType {
     return (
       typeof error === 'object' &&
@@ -83,6 +89,7 @@ export class DatabaseExceptionFilter implements ExceptionFilter {
     );
   }
 
+  // TODO: remove this function
   private extractFieldFromDetail(detail?: string): string | undefined {
     if (!detail) {
       return undefined;

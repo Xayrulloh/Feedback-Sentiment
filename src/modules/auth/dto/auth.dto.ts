@@ -18,6 +18,7 @@ const AuthCredentialsSchema = UserSchema.pick({ email: true })
     'Credentials for user authentication, including email and password',
   );
 
+// TODO: describe
 const AuthUserResponseSchema = z.object({
   token: z.string().describe('JWT token'),
   role: z.literal('USER').describe('User role'),
@@ -31,6 +32,7 @@ class AuthUserResponseDto extends createZodDto(AuthUserResponseSchema) {}
 
 type AuthUserResponseSchemaType = z.infer<typeof AuthUserResponseSchema>;
 
+// TODO: describe
 export const AuthAdminResponseSchema = z.object({
   token: z.string().describe('JWT token'),
   role: z.literal('ADMIN').describe('Admin role'),

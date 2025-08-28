@@ -11,8 +11,10 @@ import type {
   FeedbackSentimentEnum,
   UserSchemaType,
 } from 'src/utils/zod.schemas';
+// FIXME: Research to fix this, instead of using every time we need better solution
 // biome-ignore lint/style/useImportType: Needed for DI
 import { AIService } from '../AI/AI.service';
+// FIXME: Research to fix this, instead of using every time we need better solution
 // biome-ignore lint/style/useImportType: Needed for DI
 import { MonitoringService } from '../monitoring/monitoring.service';
 import {
@@ -27,9 +29,11 @@ import {
   FeedbackSummaryResponseSchema,
   type ReportDownloadQueryDto,
 } from './dto/feedback.dto';
+// FIXME: Research to fix this, instead of using every time we need better solution
 // biome-ignore lint/style/useImportType: Needed for DI
 import { FileGeneratorService } from './file-generator.service';
 
+// Give proper Scopes to inject
 @Injectable()
 export class FeedbackService {
   constructor(
@@ -45,6 +49,7 @@ export class FeedbackService {
     user: UserSchemaType,
     fileId: string | null = null,
   ): Promise<FeedbackResponseDto> {
+    // FIXME: user safer promise
     const response: FeedbackResponseDto = await Promise.all(
       input.feedbacks.map(async (feedback) => {
         const aiResult = await this.aiService.analyzeOne(feedback);
@@ -120,6 +125,7 @@ export class FeedbackService {
       );
     }
 
+    // FIXME: user safeParse and check the result and throw meaningful error
     const validationResult = FeedbackManualRequestSchema.parse({ feedbacks });
     const extension = path.extname(file.originalname).replace('.', '') || 'csv';
     const [newFile] = await this.db
@@ -134,6 +140,7 @@ export class FeedbackService {
       })
       .returning({ id: schema.filesSchema.id });
 
+    // FIXME: you are breaking SOLID, haven't we added it to metrics middleware?
     this.monitoringService.incrementUploads();
 
     return this.feedbackManual(validationResult, user, newFile.id);
@@ -162,6 +169,7 @@ export class FeedbackService {
 
     const total = totalResult[0]?.count ?? 0;
 
+    // TODO: Use query
     const feedbacks = await this.db
       .select()
       .from(schema.feedbacksSchema)
@@ -219,10 +227,12 @@ export class FeedbackService {
       .where(eq(schema.feedbacksSchema.userId, userId))
       .groupBy(schema.feedbacksSchema.sentiment);
 
+    // FIXME: why are you parsing? Haven't we gave zod serializer?
     return FeedbackSummaryResponseSchema.parse(results);
   }
 
   async getAllFeedback(user: UserSchemaType): Promise<FeedbackSchemaType[]> {
+    // FIXME: Use query
     return this.db
       .select()
       .from(schema.feedbacksSchema)

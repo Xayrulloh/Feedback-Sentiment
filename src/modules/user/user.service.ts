@@ -10,6 +10,7 @@ import type {
   UserSearchResponseSchemaType,
 } from './dto/user.dto';
 
+// Give proper Scopes to inject
 @Injectable()
 export class UserService {
   constructor(
@@ -28,6 +29,8 @@ export class UserService {
 
     const total = totalResult[0]?.count ?? 0;
 
+    // TODO: just call it users
+    // FIXME: Use query
     const allUsers = await this.db
       .select()
       .from(schema.usersSchema)
@@ -51,6 +54,7 @@ export class UserService {
     const { email } = query;
     const searchTerm = `%${email.trim()}%`;
 
+    // TODO: use query
     const users = await this.db
       .select()
       .from(schema.usersSchema)

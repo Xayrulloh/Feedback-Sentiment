@@ -5,6 +5,7 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
+// FIXME: Research to fix this, instead of using every time we need better solution
 // biome-ignore lint/style/useImportType: Needed for DI
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
@@ -19,6 +20,7 @@ import type {
   AuthUserResponseSchemaType,
 } from './dto/auth.dto';
 
+// Give proper Scopes to inject
 @Injectable()
 export class AuthService {
   constructor(

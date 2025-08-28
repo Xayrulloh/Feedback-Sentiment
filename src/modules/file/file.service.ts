@@ -6,6 +6,7 @@ import * as schema from 'src/database/schema';
 import type { UserSchemaType } from 'src/utils/zod.schemas';
 import type { FileQueryDto, FileResponseDto } from './dto/file.dto';
 
+// Give proper Scopes to inject
 @Injectable()
 export class FileService {
   constructor(
@@ -30,6 +31,7 @@ export class FileService {
 
     const total = totalResult[0]?.count ?? 0;
 
+    // TODO: Use query
     const userFiles = await this.db
       .select()
       .from(schema.filesSchema)
@@ -49,6 +51,7 @@ export class FileService {
   }
 
   async fileDelete(fileId: string, user: UserSchemaType) {
+    // TODO: use query
     const [file] = await this.db
       .select()
       .from(schema.filesSchema)
