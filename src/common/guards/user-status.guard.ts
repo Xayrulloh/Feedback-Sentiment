@@ -36,11 +36,11 @@ export class UserStatusGuard implements CanActivate {
     }
 
     if (user.isDisabled) {
-      throw new ForbiddenException('User account is disabled');
+      throw new UnauthorizedException('User account is disabled');
     }
 
     if (user.deletedAt) {
-      throw new UnauthorizedException('User account is suspended');
+      throw new ForbiddenException('User account is suspended');
     }
 
     return true;
