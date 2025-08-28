@@ -35,6 +35,7 @@ import type { Express, Response } from 'express';
 import { ZodSerializerDto, ZodValidationPipe } from 'nestjs-zod';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
+import { UserStatusGuard } from 'src/common/guards/user-status.guard';
 import type { AuthenticatedRequest } from 'src/shared/types/request-with-user';
 import { createBaseResponseDto, UserRoleEnum } from 'src/utils/zod.schemas';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -57,7 +58,7 @@ import { FeedbackService } from './feedback.service';
 
 @ApiTags('Feedback')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, UserStatusGuard)
 @Roles(UserRoleEnum.ADMIN, UserRoleEnum.USER)
 @ApiForbiddenResponse({
   description: 'Forbidden - user is disabled or suspended',
