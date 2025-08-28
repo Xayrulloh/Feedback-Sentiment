@@ -25,7 +25,7 @@ import {
   type FeedbackSummaryResponseDto,
   FeedbackSummaryResponseSchema,
   type ReportDownloadQueryDto,
-  type SingleFeedbackResponseDto,
+  type FeedbackSingResponseDto,
 } from './dto/feedback.dto';
 // biome-ignore lint/style/useImportType: Needed for DI
 import { FileGeneratorService } from './file-generator.service';
@@ -262,17 +262,16 @@ export class FeedbackService {
     res.send(fileBuffer);
   }
 
-  async getFeedbackById(id: string): Promise<SingleFeedbackResponseDto> {
-    const feedback = await this.db
-      .select()
-      .from(schema.feedbacksSchema)
-      .where(and(eq(schema.feedbacksSchema.id, id)))
-      .limit(1);
+async getFeedbackById(id: string): Promise<FeedbackSingResponseDto> {
+  const feedback = await this.db.query.feedbacksSchema.findFirst({
+    where: eq(schema.feedbacksSchema.id, id)
+  })
 
-    if (!feedback || feedback.length === 0) {
-      throw new BadRequestException(`Feedback with id ${id} not found`);
-    }
-
-    return feedback[0];
+  if (!feedback) {
+    throw new BadRequestException(`Feedback with id ${id} not found`);
   }
+
+  return feedback;
+}
+
 }

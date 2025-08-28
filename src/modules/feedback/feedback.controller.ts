@@ -50,7 +50,7 @@ import {
   FeedbackSummaryResponseSchema,
   type ReportDownloadQueryDto,
   SentimentEnum,
-  SingleFeedbackResponseSchema,
+  FeedbackSingResponseSchema,
 } from './dto/feedback.dto';
 // biome-ignore lint/style/useImportType: Needed for DI
 import { FeedbackService } from './feedback.service';
@@ -341,12 +341,12 @@ export class FeedbackController {
   })
   @ApiOkResponse({
     type: createBaseResponseDto(
-      SingleFeedbackResponseSchema,
-      'SingleFeedbackResponseSchema',
+      FeedbackSingResponseSchema,
+      'FeedbackSingResponseSchema',
     ),
   })
-  @ZodSerializerDto(SingleFeedbackResponseSchema)
-  async getOneFeedback(@Param('id', ParseUUIDPipe) id: string) {
+  @ZodSerializerDto(FeedbackSingResponseSchema)
+  async getFeedbackById(@Param('id', ParseUUIDPipe) id: string) {
     return this.feedbackService.getFeedbackById(id);
   }
 }
