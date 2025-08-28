@@ -46,11 +46,11 @@ import {
   FeedbackQuerySchemaDto,
   type FeedbackResponseDto,
   FeedbackResponseSchema,
+  FeedbackSingResponseSchema,
   FeedbackSummaryResponseDto,
   FeedbackSummaryResponseSchema,
   type ReportDownloadQueryDto,
   SentimentEnum,
-  FeedbackSingResponseSchema,
 } from './dto/feedback.dto';
 // biome-ignore lint/style/useImportType: Needed for DI
 import { FeedbackService } from './feedback.service';

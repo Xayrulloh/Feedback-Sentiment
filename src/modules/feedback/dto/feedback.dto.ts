@@ -20,9 +20,7 @@ const FeedbackSingParamSchema = z.object({
   id: z.string().uuid(),
 });
 
-type FeedbackSingParamSchemaType = z.infer<
-  typeof FeedbackSingParamSchema
->;
+type FeedbackSingParamSchemaType = z.infer<typeof FeedbackSingParamSchema>;
 
 // Response schemas
 const FeedbackResponseSchema = FeedbackSchema.array();
