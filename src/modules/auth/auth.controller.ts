@@ -1,4 +1,11 @@
-import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  HttpStatus,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiBody,
@@ -9,6 +16,7 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { ZodSerializerDto } from 'nestjs-zod';
+import { UserStatusGuard } from 'src/common/guards/user-status.guards';
 import { createBaseResponseDto } from 'src/utils/zod.schemas';
 // biome-ignore lint/style/useImportType: Needed for DI
 import { AuthService } from './auth.service';
@@ -22,6 +30,7 @@ import {
 
 @ApiTags('Auth')
 @Controller('auth')
+@UseGuards(UserStatusGuard)
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 

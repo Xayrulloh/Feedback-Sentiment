@@ -10,6 +10,7 @@ import {
 } from '@nestjs/swagger';
 import { ZodSerializerDto, ZodValidationPipe } from 'nestjs-zod';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
+import { RolesGuard } from 'src/common/guards/roles.guard';
 import { createBaseResponseDto } from 'src/utils/zod.schemas';
 import {
   FeedbackFilteredResponseSchema,
@@ -29,7 +30,7 @@ import { SampleService } from './sample.service';
 @Controller('sample')
 @ApiTags('Sample')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @ApiUnauthorizedResponse({
   description: 'Unauthorized',
   schema: {

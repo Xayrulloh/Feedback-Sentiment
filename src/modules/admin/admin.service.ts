@@ -1,4 +1,9 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { DrizzleAsyncProvider } from 'src/database/drizzle.provider';
@@ -33,6 +38,10 @@ export class AdminService {
       throw new NotFoundException('User not found');
     }
 
+    if (user.role === 'ADMIN') {
+      throw new ForbiddenException('Cannot disable an admin user');
+    }
+
     const [disabledUser] = await this.db
       .update(schema.usersSchema)
       .set({ isDisabled: !user.isDisabled })
@@ -50,6 +59,10 @@ export class AdminService {
 
     if (!user) {
       throw new NotFoundException('User not found');
+    }
+
+    if (user.role === 'ADMIN') {
+      throw new ForbiddenException('Cannot suspend an admin user');
     }
 
     const [suspendedUser] = await this.db
