@@ -13,7 +13,6 @@ import { ZodExceptionFilter } from './common/filters/zod.exception.filter';
 import { RateLimitInterceptor } from './common/interceptors/rate-limit.interceptor';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { ZodSerializerInterceptorCustom } from './common/interceptors/zod.response-checker.interceptor';
-import { AdminMiddleware } from './common/middlewares/admin.middleware';
 import { MetricsMiddleware } from './common/middlewares/metrics.middleware';
 import { EnvModule } from './config/env/env.module';
 import { DrizzleModule } from './database/drizzle.module';
@@ -24,6 +23,7 @@ import { FeedbackModule } from './modules/feedback/feedback.module';
 import { FileModule } from './modules/file/file.module';
 import { MonitoringModule } from './modules/monitoring/monitoring.module';
 import { RedisModule } from './modules/redis/redis.module';
+import { SampleModule } from './modules/sample/sample.module';
 import { UserModule } from './modules/user/user.module';
 import { WebsocketModule } from './modules/websocket/websocket.module';
 @Module({
@@ -40,6 +40,7 @@ import { WebsocketModule } from './modules/websocket/websocket.module';
     MonitoringModule,
     RedisModule,
     UserModule,
+    SampleModule,
   ],
 
   controllers: [AppController],
@@ -47,10 +48,9 @@ import { WebsocketModule } from './modules/websocket/websocket.module';
     { provide: APP_PIPE, useClass: ZodValidationPipe },
     { provide: APP_INTERCEPTOR, useClass: RateLimitInterceptor },
     { provide: APP_INTERCEPTOR, useClass: ResponseInterceptor },
+    { provide: APP_INTERCEPTOR, useClass: ZodSerializerInterceptorCustom },
     { provide: APP_FILTER, useClass: HttpExceptionFilter },
     { provide: APP_FILTER, useClass: ZodExceptionFilter },
-    { provide: APP_INTERCEPTOR, useClass: ZodSerializerInterceptorCustom },
-    AdminMiddleware,
   ],
 })
 export class AppModule implements NestModule {
@@ -62,10 +62,5 @@ export class AppModule implements NestModule {
         { path: 'admin/monitoring', method: RequestMethod.ALL },
       )
       .forRoutes({ path: '*', method: RequestMethod.ALL });
-
-    consumer.apply(AdminMiddleware).forRoutes({
-      path: '*',
-      method: RequestMethod.ALL,
-    });
   }
 }

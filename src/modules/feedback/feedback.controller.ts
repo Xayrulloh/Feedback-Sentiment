@@ -5,6 +5,8 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Param,
+  ParseUUIDPipe,
   Post,
   Query,
   Req,
@@ -33,6 +35,7 @@ import type { Express, Response } from 'express';
 import { ZodSerializerDto, ZodValidationPipe } from 'nestjs-zod';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
+import { UserStatusGuard } from 'src/common/guards/user-status.guard';
 import type { AuthenticatedRequest } from 'src/shared/types/request-with-user';
 import { createBaseResponseDto, UserRoleEnum } from 'src/utils/zod.schemas';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -44,6 +47,7 @@ import {
   FeedbackQuerySchemaDto,
   type FeedbackResponseDto,
   FeedbackResponseSchema,
+  FeedbackSingleResponseSchema,
   FeedbackSummaryResponseDto,
   FeedbackSummaryResponseSchema,
   type ReportDownloadQueryDto,
@@ -54,7 +58,7 @@ import { FeedbackService } from './feedback.service';
 
 @ApiTags('Feedback')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, UserStatusGuard)
 @Roles(UserRoleEnum.ADMIN, UserRoleEnum.USER)
 @ApiForbiddenResponse({
   description: 'Forbidden - user is disabled or suspended',
@@ -327,5 +331,23 @@ export class FeedbackController {
     @Res() res: Response,
   ) {
     return this.feedbackService.feedbackReportDownload(query, req.user, res);
+  }
+
+  @Get(':id')
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Fetching single feedback by its id' })
+  @ApiOkResponse({
+    description: 'Fetching single feedback by id',
+  })
+  @ApiOkResponse({
+    type: createBaseResponseDto(
+      FeedbackSingleResponseSchema,
+      'FeedbackSingleResponseSchema',
+    ),
+  })
+  @ZodSerializerDto(FeedbackSingleResponseSchema)
+  async getFeedbackById(@Param('id', ParseUUIDPipe) id: string) {
+    return this.feedbackService.getFeedbackById(id);
   }
 }

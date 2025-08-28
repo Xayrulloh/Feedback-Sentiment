@@ -22,6 +22,7 @@ import {
   FeedbackManualRequestSchema,
   type FeedbackQuerySchemaDto,
   type FeedbackResponseDto,
+  type FeedbackSingleResponseDto,
   type FeedbackSummaryResponseDto,
   FeedbackSummaryResponseSchema,
   type ReportDownloadQueryDto,
@@ -203,7 +204,6 @@ export class FeedbackService {
       .from(schema.feedbacksSchema)
       .where(eq(schema.feedbacksSchema.userId, userId))
       .groupBy(schema.feedbacksSchema.summary)
-      .having(sql`COUNT(*) > 1`)
       .orderBy(desc(count(schema.feedbacksSchema.id)))
       .limit(20);
   }
@@ -259,5 +259,17 @@ export class FeedbackService {
     );
 
     res.send(fileBuffer);
+  }
+
+  async getFeedbackById(id: string): Promise<FeedbackSingleResponseDto> {
+    const feedback = await this.db.query.feedbacksSchema.findFirst({
+      where: eq(schema.feedbacksSchema.id, id),
+    });
+
+    if (!feedback) {
+      throw new BadRequestException(`Feedback with id ${id} not found`);
+    }
+
+    return feedback;
   }
 }
