@@ -1,3 +1,4 @@
+// TODO: Try to create a better prompt
 export function generateSentimentPrompt(feedback: string): string {
   return `Return JSON only:
 

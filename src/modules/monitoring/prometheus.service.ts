@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import axios from 'axios';
 
+// Give proper Scopes to inject
 @Injectable()
 export class PrometheusService {
   private readonly logger = new Logger(PrometheusService.name);
@@ -15,6 +16,7 @@ export class PrometheusService {
       return res.data.data.result;
     } catch (error) {
       this.logger.error(`Prometheus query failed: ${query}`, error.stack);
+
       throw new Error('Failed to fetch data from Prometheus');
     }
   }

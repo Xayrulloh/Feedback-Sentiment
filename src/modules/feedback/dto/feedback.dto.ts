@@ -1,3 +1,4 @@
+// TODO: group the schema/type/dto/class/etc... (IN ALL .dto.ts FILES)
 import { createZodDto } from 'nestjs-zod';
 import {
   FeedbackSchema,
@@ -16,6 +17,7 @@ const FeedbackManualRequestSchema = z.object({
 });
 
 // feedback request params
+// FIXME: we don't need this
 const FeedbackSingleParamSchema = z.object({
   id: z.string().uuid(),
 });
@@ -23,8 +25,10 @@ const FeedbackSingleParamSchema = z.object({
 type FeedbackSingleParamSchemaType = z.infer<typeof FeedbackSingleParamSchema>;
 
 // Response schemas
+// TODO: describe
 const FeedbackResponseSchema = FeedbackSchema.array();
 
+// TODO: describe
 const FeedbackSingleResponseSchema = FeedbackSchema;
 
 const FeedbackSummaryResponseSchema = z
@@ -82,6 +86,7 @@ const SentimentEnum = z.enum([
   FeedbackSentimentEnum.UNKNOWN,
 ]);
 
+// TODO: describe
 const FeedbackQuerySchema = z.object({
   sentiment: z
     .union([SentimentEnum, z.array(SentimentEnum)])
@@ -90,12 +95,14 @@ const FeedbackQuerySchema = z.object({
       if (!val) return undefined;
       return Array.isArray(val) ? val : [val];
     }),
+  // FIXME: create base PaginationQuerySchema with limit and page and merge it to where u use it
   limit: z.coerce.number().int().min(1).max(100).default(20),
   page: z.coerce.number().int().min(1).default(1),
 });
 
 class FeedbackQuerySchemaDto extends createZodDto(FeedbackQuerySchema) {}
 
+// TODO: describe
 const FeedbackFilteredResponseSchema = z.object({
   feedbacks: FeedbackSchema.array(),
   pagination: PaginationSchema,
@@ -105,6 +112,7 @@ type FeedbackFilteredResponseSchemaType = z.infer<
   typeof FeedbackFilteredResponseSchema
 >;
 
+// TODO: describe
 const FeedbackGroupedResponseSchema = z.object({
   summary: z.string().describe('Summary of grouped feedback items'),
   count: z.number().describe('Number of feedback items in this group'),
@@ -119,6 +127,7 @@ const FeedbackGroupedResponseSchema = z.object({
     .describe('Array of feedback items in this group'),
 });
 
+// TODO: describe
 const FeedbackGroupedArrayResponseSchema =
   FeedbackGroupedResponseSchema.array();
 
@@ -126,6 +135,7 @@ class FeedbackGroupedResponseDto extends createZodDto(
   FeedbackGroupedResponseSchema,
 ) {}
 
+// TODO: describe
 const ReportDownloadQuerySchema = z.object({
   format: z.enum(['pdf', 'csv']),
   type: z.enum(['summary', 'detailed']),
@@ -137,6 +147,7 @@ class FeedbackGroupedArrayResponseDto extends createZodDto(
   FeedbackGroupedArrayResponseSchema,
 ) {}
 
+// FIXME: REMOVE ALL TYPE THINGS FROM ALL .dto.ts FILES AND USE DTO INSTEAD (not FeedbackGroupedResponseType but FeedbackGroupedResponseDto)
 type FeedbackGroupedResponseType = z.infer<
   typeof FeedbackGroupedResponseSchema
 >;

@@ -24,6 +24,7 @@ import {
   UserSearchResponseSchema,
   type UserSearchResponseSchemaType,
 } from './dto/user.dto';
+// FIXME: Research to fix this, instead of using every time we need better solution
 // biome-ignore lint/style/useImportType: Needed for DI
 import { UserService } from './user.service';
 
@@ -87,6 +88,7 @@ import { UserService } from './user.service';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
+  // FIXME: no need api bearer auth since we already gave it in controller layer
   @ApiBearerAuth()
   @Get()
   @ApiQuery({ name: 'page', required: false, type: Number })
@@ -103,6 +105,7 @@ export class UserController {
     return this.userService.getAllUsers(query);
   }
 
+  // FIXME: no need api bearer auth since we already gave it in controller layer
   @ApiBearerAuth()
   @Get('search')
   @ApiQuery({ name: 'email', required: true, type: String })

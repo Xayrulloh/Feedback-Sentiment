@@ -8,10 +8,12 @@ import {
 } from '@nestjs/websockets';
 import type { Server, Socket } from 'socket.io';
 import type { WebSocketEventSchemaType } from './dto/websocket.dto';
+// FIXME: Research to fix this, instead of using every time we need better solution
 // biome-ignore lint/style/useImportType: Needed for DI
 import { SocketMiddleware } from './socket.middleware';
 
 @WebSocketGateway({ cors: { origin: '*' } })
+// Give proper Scopes to inject
 @Injectable()
 export class SocketGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect

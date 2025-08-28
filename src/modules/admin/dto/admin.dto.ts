@@ -22,12 +22,15 @@ type AdminDisableSuspendResponseSchemaType = z.infer<
 
 // rate limiter
 
+// TODO: describe
 const RateLimitUpsertSchema = RateLimitSchema;
 
 class RateLimitUpsertDto extends createZodDto(RateLimitUpsertSchema) {}
 
+// FIXME: REMOVE ALL TYPE THINGS FROM ALL .dto.ts FILES AND USE DTO INSTEAD (not RateLimitUpsertSchemaType but RateLimitUpsertDto)
 type RateLimitUpsertSchemaType = z.infer<typeof RateLimitUpsertSchema>;
 
+// TODO: describe
 const RateLimitGetSchema = RateLimitSchema.array();
 
 class RateLimitGetDto extends createZodDto(RateLimitGetSchema) {}
@@ -36,6 +39,7 @@ type RateLimitGetSchemaType = z.infer<typeof RateLimitGetSchema>;
 
 // Monitoring
 
+// TODO: describe
 const MetricsSchema = z.object({
   uploads: z.number().int().nonnegative(),
   apiUsage: z.array(

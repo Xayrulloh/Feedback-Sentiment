@@ -1,6 +1,8 @@
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+// FIXME: Research to fix this, instead of using every time we need better solution
 // biome-ignore lint/style/useImportType: Needed for DI
 import { ConfigService } from '@nestjs/config';
+// FIXME: Research to fix this, instead of using every time we need better solution
 // biome-ignore lint/style/useImportType: Needed for DI
 import { JwtService } from '@nestjs/jwt';
 import { eq } from 'drizzle-orm';
@@ -9,6 +11,7 @@ import type { Socket } from 'socket.io';
 import { DrizzleAsyncProvider } from 'src/database/drizzle.provider';
 import * as schema from 'src/database/schema';
 
+// Give proper Scopes to inject
 @Injectable()
 export class SocketMiddleware {
   private readonly jwtSecret: string;

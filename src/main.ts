@@ -10,6 +10,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.setGlobalPrefix(GLOBAL_PREFIX);
+
   app.use(
     cors({
       origin: CLIENT_URL,

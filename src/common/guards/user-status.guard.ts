@@ -12,6 +12,7 @@ import { DrizzleAsyncProvider } from 'src/database/drizzle.provider';
 import * as schema from 'src/database/schema';
 import type { AuthenticatedRequest } from 'src/shared/types/request-with-user';
 
+// Give proper Scopes to inject
 @Injectable()
 export class UserStatusGuard implements CanActivate {
   constructor(

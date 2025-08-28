@@ -1,3 +1,4 @@
+// FIXME: all decorators should be in common folder
 import { SetMetadata } from '@nestjs/common';
 import type { UserRoleEnum } from 'src/utils/zod.schemas';
 
