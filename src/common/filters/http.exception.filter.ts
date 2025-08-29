@@ -6,6 +6,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
+// FIXME: Research to fix this, instead of using every time we need better solution
 // biome-ignore lint/style/useImportType: Needed for DI
 import { MonitoringService } from 'src/modules/monitoring/monitoring.service';
 import type {
@@ -26,11 +27,13 @@ export class HttpExceptionFilter implements ExceptionFilter {
   catch(exception: HttpException, host: ArgumentsHost): void {
     Logger.error(exception.message, HttpExceptionFilter.name);
 
+    // TODO: take request first then response
     const [response, request] = [
       host.switchToHttp().getResponse<Response>(),
       host.switchToHttp().getRequest<Request>(),
     ];
 
+    // wrap it in block scope
     this.monitoringService.incrementError(
       request.method,
       request.path,
@@ -40,6 +43,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const status = exception.getStatus();
     const rawResponse = exception.getResponse();
 
+    // TODO: the logic below is too complex make it simple
     let message: string;
     let errors: ErrorDetailsSchemaType[] | undefined;
 
@@ -47,6 +51,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       message = rawResponse;
     } else if (typeof rawResponse === 'object' && rawResponse !== null) {
       const typed = rawResponse as HttpErrorResponse;
+
       message = typed.message ?? exception.message;
 
       if (typed.errors) {
@@ -60,6 +65,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       message = exception.message;
     }
 
+    // TODO: take base error response by the function inside helper
     const errorResponse: BaseErrorResponseSchemaType & {
       errors?: ErrorDetailsSchemaType[];
     } = {

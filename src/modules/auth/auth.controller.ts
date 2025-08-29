@@ -18,6 +18,7 @@ import {
 import { ZodSerializerDto } from 'nestjs-zod';
 import { UserStatusGuard } from 'src/common/guards/user-status.guard';
 import { createBaseResponseDto } from 'src/utils/zod.schemas';
+// FIXME: Research to fix this, instead of using every time we need better solution
 // biome-ignore lint/style/useImportType: Needed for DI
 import { AuthService } from './auth.service';
 import {

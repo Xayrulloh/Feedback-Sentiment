@@ -3,6 +3,7 @@ import {
   InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
+// FIXME: Research to fix this, instead of using every time we need better solution
 // biome-ignore lint/style/useImportType: Needed for DI
 import { ConfigService } from '@nestjs/config';
 import axios, { type AxiosError } from 'axios';
@@ -16,6 +17,7 @@ import {
 } from './dto/AI.dto';
 import { generateSentimentPrompt } from './prompts/sentiment.prompt';
 
+// Give proper Scopes to inject
 @Injectable()
 export class AIService {
   private MISTRAL_API_KEY: string;
@@ -51,6 +53,7 @@ export class AIService {
         throw new InternalServerErrorException('Error while sending prompt');
       });
 
+    // FIXME: use zod safeParse and throw meaningful error
     const validatedResponse = MistralResponseSchema.parse(data);
     const content = validatedResponse.choices[0].message.content;
 
@@ -61,6 +64,7 @@ export class AIService {
     const prompt = generateSentimentPrompt(feedback);
     const jsonResponse = await this.sendPrompt(prompt);
 
+    // FIXME: use zod safeParse and throw meaningful error
     const parsed = PromptResponseSchema.parse(jsonResponse);
 
     return {
@@ -76,6 +80,7 @@ export class AIService {
       this.analyzeOne(feedback),
     );
 
+    // FIXME: Use safer promise all
     return Promise.all(promises);
   }
 }

@@ -1,6 +1,7 @@
 import { Inject, Injectable, type OnModuleDestroy } from '@nestjs/common';
 import type { Redis } from 'ioredis';
 
+// Give proper Scopes to inject
 @Injectable()
 export class RedisService implements OnModuleDestroy {
   constructor(@Inject('REDIS_CLIENT') private readonly redisClient: Redis) {}
@@ -11,6 +12,7 @@ export class RedisService implements OnModuleDestroy {
 
   async get(key: string): Promise<string | null> {
     const value = await this.redisClient.get(key);
+
     return value;
   }
 
@@ -32,6 +34,7 @@ export class RedisService implements OnModuleDestroy {
 
   async keys(pattern: string): Promise<string[]> {
     const keys = await this.redisClient.keys(pattern);
+
     return keys;
   }
 

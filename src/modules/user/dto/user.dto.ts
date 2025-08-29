@@ -2,6 +2,7 @@ import { createZodDto } from 'nestjs-zod';
 import { PaginationSchema, UserSchema } from 'src/utils/zod.schemas';
 import * as z from 'zod';
 
+// TODO: describe
 const UserResponseSchema = z.object({
   users: UserSchema.array(),
   pagination: PaginationSchema.optional(),
@@ -11,6 +12,7 @@ type UserResponseSchemaType = z.infer<typeof UserResponseSchema>;
 
 class UserResponseDto extends createZodDto(UserResponseSchema) {}
 
+// TODO: describe
 const UserQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(20),
   page: z.coerce.number().int().min(1).default(1),
@@ -18,12 +20,14 @@ const UserQuerySchema = z.object({
 
 class UserQueryDto extends createZodDto(UserQuerySchema) {}
 
+// TODO: describe
 const UserSearchQuerySchema = z.object({
   email: z.string().trim().min(3).describe('Email to search for'),
 });
 
 class UserSearchQueryDto extends createZodDto(UserSearchQuerySchema) {}
 
+// TODO: describe
 const UserSearchResponseSchema = UserSchema.array();
 type UserSearchResponseSchemaType = z.infer<typeof UserSearchResponseSchema>;
 

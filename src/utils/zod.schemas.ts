@@ -45,6 +45,7 @@ const enum FeedbackSentimentEnum {
   UNKNOWN = 'unknown',
 }
 
+// TODO: it should not be in feedback part but separated pagination comment. And also name should be PaginationResponseSchema
 const PaginationSchema = z.object({
   limit: z.number().int().min(1).max(100),
   page: z.number().int().min(1),
@@ -100,6 +101,7 @@ const FileSchema = z
 
 type FileSchemaType = z.infer<typeof FileSchema>;
 
+// TODO: give another proper name
 // interceptors and filters
 const BaseSuccessResponseSchema = <T extends z.ZodTypeAny>(dataSchema?: T) =>
   z.object({
@@ -114,6 +116,7 @@ type BaseSuccessResponseSchemaType<T = z.ZodTypeAny> = z.infer<
   ReturnType<typeof BaseSuccessResponseSchema<z.ZodType<T>>>
 >;
 
+// FIXME: this function should be in helper not in zod.schema file
 function createBaseResponseDto(schema: z.ZodTypeAny, name: string) {
   const responseSchema = BaseSuccessResponseSchema(schema);
   const className = `${name}Dto`;

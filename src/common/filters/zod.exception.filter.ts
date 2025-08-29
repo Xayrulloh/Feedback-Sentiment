@@ -13,6 +13,7 @@ export class ZodExceptionFilter implements ExceptionFilter {
   catch(exception: ZodError, host: ArgumentsHost) {
     Logger.error(exception.message, ZodExceptionFilter.name);
 
+    // TODO: take request first then response
     const [response, request] = [
       host.switchToHttp().getResponse<Response>(),
       host.switchToHttp().getRequest<Request>(),
@@ -24,6 +25,7 @@ export class ZodExceptionFilter implements ExceptionFilter {
       code: issue.code.toUpperCase(),
     }));
 
+    // TODO: call the function inside helper
     response.status(HttpStatus.BAD_REQUEST).json({
       success: false,
       statusCode: HttpStatus.BAD_REQUEST,
@@ -33,3 +35,5 @@ export class ZodExceptionFilter implements ExceptionFilter {
     });
   }
 }
+
+// TODO: add global exception filter which works after all other filters and throws proper error

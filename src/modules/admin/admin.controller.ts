@@ -33,8 +33,10 @@ import {
   UserRoleEnum,
 } from 'src/utils/zod.schemas';
 import { Roles } from '../auth/decorators/roles.decorator';
+// FIXME: Research to fix this, instead of using every time we need better solution
 // biome-ignore lint/style/useImportType: Needed for DI
 import { PrometheusService } from '../monitoring/prometheus.service';
+// FIXME: Research to fix this, instead of using every time we need better solution
 // biome-ignore lint/style/useImportType: Needed for DI
 import { AdminService } from './admin.service';
 import {

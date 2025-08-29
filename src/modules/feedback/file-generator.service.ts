@@ -7,6 +7,7 @@ import type {
   ReportDownloadQueryDto,
 } from './dto/feedback.dto';
 
+// Give proper Scopes to inject
 @Injectable()
 export class FileGeneratorService {
   async generate(
@@ -17,13 +18,16 @@ export class FileGeneratorService {
     if (format === 'csv') {
       return this.generateCSV(data, type);
     }
+
     return this.generatePDF(data, type);
   }
 
+  // FIXME: it's generating all in one column, fix it so all will be in separated columns
   private async generateCSV(
     data: FeedbackSchemaType[] | FeedbackSummaryResponseDto,
     type: ReportDownloadQueryDto['type'],
   ): Promise<Buffer> {
+    // TODO: use destructuring
     const delimiter = '   ';
     const quote = false;
 
@@ -38,6 +42,7 @@ export class FileGeneratorService {
         Sentiment: f.sentiment,
         Confidence: f.confidence,
       }));
+
       csv = toCSV(detailedData, ['Feedback', 'Sentiment', 'Confidence']);
     } else {
       const summaryArray = data as FeedbackSummaryResponseDto;
@@ -46,6 +51,7 @@ export class FileGeneratorService {
         Count: f.count,
         Percentage: `${f.percentage.toFixed(1)}%`,
       }));
+
       csv = toCSV(summaryData, ['Sentiment', 'Count', 'Percentage']);
     }
 
@@ -60,6 +66,7 @@ export class FileGeneratorService {
     const page = pdfDoc.addPage([595, 842]); // A4
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
+    // TODO: use destructuring
     let yPos = 800;
     const fontSizeTitle = 18;
     const fontSizeHeader = 12;
@@ -106,6 +113,7 @@ export class FileGeneratorService {
     }
 
     const pdfBytes = await pdfDoc.save();
+
     return Buffer.from(pdfBytes);
   }
 }

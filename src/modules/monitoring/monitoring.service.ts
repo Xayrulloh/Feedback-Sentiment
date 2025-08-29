@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import * as client from 'prom-client';
 
+// TODO: is this really best practice? Is there a better way to do this (the whole code)?
+// Give proper Scopes to inject
 @Injectable()
 export class MonitoringService {
   private readonly registry: client.Registry;

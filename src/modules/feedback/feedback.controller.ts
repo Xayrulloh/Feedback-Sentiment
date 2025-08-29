@@ -53,6 +53,7 @@ import {
   type ReportDownloadQueryDto,
   SentimentEnum,
 } from './dto/feedback.dto';
+// FIXME: Research to fix this, instead of using every time we need better solution
 // biome-ignore lint/style/useImportType: Needed for DI
 import { FeedbackService } from './feedback.service';
 
@@ -117,6 +118,7 @@ export class FeedbackController {
   constructor(private readonly feedbackService: FeedbackService) {}
 
   @Post('manual')
+  // FIXME: instead of giving apibearerauth for each just move it to controller layer, if it already has then remove from all method layers
   @ApiBearerAuth()
   @HttpCode(HttpStatus.CREATED)
   @ApiBody({ type: FeedbackManualRequestDto })
@@ -149,6 +151,7 @@ export class FeedbackController {
       },
     },
   })
+  // FIXME: why we have 2 zod serializer
   @ZodSerializerDto(FeedbackResponseSchema)
   @ApiOperation({
     summary: 'Sending text based feedback and getting the ai analyze',
@@ -165,6 +168,7 @@ export class FeedbackController {
   @ApiBearerAuth()
   @HttpCode(HttpStatus.CREATED)
   @ApiConsumes('multipart/form-data')
+  // FIXME: why we have 2 zod serializer
   @ZodSerializerDto(FeedbackResponseSchema)
   @UseInterceptors(FileInterceptor('file'))
   @ApiOperation({ summary: 'Upload CSV feedback file' })
@@ -264,6 +268,7 @@ export class FeedbackController {
       'FeedbackSummaryResponseSchema',
     ),
   })
+  // FIXME: zod serializer takes schema not dto
   @ZodSerializerDto(FeedbackSummaryResponseDto)
   async getSentimentSummary(
     @Req() req: AuthenticatedRequest,
