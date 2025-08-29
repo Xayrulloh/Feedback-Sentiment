@@ -12,7 +12,8 @@ import { ZodSerializerDto, ZodValidationPipe } from 'nestjs-zod';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
-import { createBaseResponseDto, UserRoleEnum } from 'src/utils/zod.schemas';
+import { createBaseResponseDto } from 'src/utils/helpers';
+import { UserRoleEnum } from 'src/utils/zod.schemas';
 import {
   FeedbackFilteredResponseDto,
   FeedbackFilteredResponseSchema,

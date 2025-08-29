@@ -47,13 +47,30 @@ export class AIService {
       )
       .catch((err: AxiosError) => {
         Logger.error(err, AIService.name);
-
         throw new InternalServerErrorException('Error while sending prompt');
       });
 
-    // FIXME: use zod safeParse and throw meaningful error
-    const validatedResponse = MistralResponseSchema.parse(data);
-    const content = validatedResponse.choices[0].message.content;
+    const parsed = MistralResponseSchema.safeParse(data);
+
+    if (!parsed.success) {
+      const issues = parsed.error.errors.map((issue) => ({
+        path: issue.path.join('.'),
+        message: issue.message,
+        code: issue.code,
+      }));
+
+      Logger.error(
+        `Invalid Mistral API response: ${JSON.stringify(issues)}`,
+        AIService.name,
+      );
+
+      throw new InternalServerErrorException({
+        message: 'Invalid response from Mistral API',
+        errors: issues,
+      });
+    }
+
+    const content = parsed.data.choices[0].message.content;
 
     return JSON.parse(content);
   }
@@ -62,21 +79,61 @@ export class AIService {
     const prompt = generateSentimentPrompt(feedback);
     const jsonResponse = await this.sendPrompt(prompt);
 
-    // FIXME: use zod safeParse and throw meaningful error
-    const parsed = PromptResponseSchema.parse(jsonResponse);
+    const parsed = PromptResponseSchema.safeParse(jsonResponse);
+
+    if (!parsed.success) {
+      const issues = parsed.error.errors.map((issue) => ({
+        field: issue.path.length ? issue.path.join('.') : 'root',
+        message: issue.message,
+        code: issue.code,
+      }));
+
+      Logger.error(
+        `Invalid prompt response: ${JSON.stringify(issues)}`,
+        AIService.name,
+      );
+
+      throw new InternalServerErrorException({
+        message: 'Invalid response from AI prompt',
+        errors: issues,
+      });
+    }
 
     return {
-      ...parsed,
+      ...parsed.data,
       content: feedback,
     };
   }
 
   async analyzeMany(input: AIRequestDto): Promise<AIResponseDto[]> {
-    const promises = input.feedbacks.map((feedback) =>
-      this.analyzeOne(feedback),
+    const results = await Promise.allSettled(
+      input.feedbacks.map((feedback) => this.analyzeOne(feedback)),
     );
 
-    // FIXME: Use safer promise all
-    return Promise.all(promises);
+    const validResponses = results
+      .filter(
+        (r): r is PromiseFulfilledResult<AIResponseDto> =>
+          r.status === 'fulfilled',
+      )
+      .map((r) => r.value);
+
+    if (validResponses.length !== input.feedbacks.length) {
+      const failed = results
+        .map((r, idx) =>
+          r.status === 'rejected'
+            ? {
+                feedback: input.feedbacks[idx],
+                error: (r.reason as Error).message,
+              }
+            : null,
+        )
+        .filter((x) => x !== null);
+
+      throw new Error(
+        `One or more feedback analyses failed: ${JSON.stringify(failed)}`,
+      );
+    }
+
+    return validResponses;
   }
 }

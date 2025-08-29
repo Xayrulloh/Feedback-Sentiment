@@ -26,8 +26,8 @@ import {
 import { ZodSerializerDto } from 'nestjs-zod';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
+import { createBaseResponseDto } from 'src/utils/helpers';
 import {
-  createBaseResponseDto,
   RateLimitSchema,
   type RateLimitSchemaType,
   UserRoleEnum,

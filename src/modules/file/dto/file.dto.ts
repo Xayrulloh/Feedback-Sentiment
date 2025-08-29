@@ -1,5 +1,5 @@
 import { createZodDto } from 'nestjs-zod';
-import { FileSchema, PaginationSchema } from 'src/utils/zod.schemas';
+import { FileSchema, PaginationResponseSchema } from 'src/utils/zod.schemas';
 import * as z from 'zod';
 
 // ==================== Query ====================
@@ -32,7 +32,7 @@ class FileQueryDto extends createZodDto(FileQuerySchema) {}
  */
 const FileResponseSchema = z.object({
   files: FileSchema.array().describe('List of files'),
-  pagination: PaginationSchema.describe('Pagination metadata'),
+  pagination: PaginationResponseSchema.describe('Pagination metadata'),
 });
 
 class FileResponseDto extends createZodDto(FileResponseSchema) {}

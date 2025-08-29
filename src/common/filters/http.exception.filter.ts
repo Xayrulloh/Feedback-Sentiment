@@ -3,7 +3,6 @@ import {
   Catch,
   type ExceptionFilter,
   HttpException,
-  Logger,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { MonitoringService } from 'src/modules/monitoring/monitoring.service';
@@ -23,57 +22,71 @@ export class HttpExceptionFilter implements ExceptionFilter {
   constructor(private readonly monitoringService: MonitoringService) {}
 
   catch(exception: HttpException, host: ArgumentsHost): void {
-    Logger.error(exception.message, HttpExceptionFilter.name);
-
     const [request, response] = [
       host.switchToHttp().getRequest<Request>(),
       host.switchToHttp().getResponse<Response>(),
     ];
 
-    // wrap it in block scope
-    this.monitoringService.incrementError(
-      request.method,
-      request.path,
-      exception.message,
-    );
+    {
+      const { method, path } = request;
+      this.monitoringService.incrementError({
+        method,
+        endpoint: path,
+        error_message: exception.message,
+      });
+    }
 
     const status = exception.getStatus();
     const rawResponse = exception.getResponse();
 
-    // TODO: the logic below is too complex make it simple
-    let message: string;
-    let errors: ErrorDetailsSchemaType[] | undefined;
+    const { message, errors } = this.parseHttpException(
+      rawResponse,
+      exception.message,
+    );
 
-    if (typeof rawResponse === 'string') {
-      message = rawResponse;
-    } else if (typeof rawResponse === 'object' && rawResponse !== null) {
-      const typed = rawResponse as HttpErrorResponse;
+    const errorResponse = this.createBaseErrorResponse(
+      status,
+      message,
+      errors,
+      request.url,
+    );
 
-      message = typed.message ?? exception.message;
+    response.status(status).json(errorResponse);
+  }
 
-      if (typed.errors) {
-        errors = typed.errors.map((issue: ZodIssue) => ({
-          field: issue.path.length > 0 ? issue.path.join('.') : 'root',
-          message: issue.message,
-          code: issue.code.toUpperCase(),
-        }));
-      }
-    } else {
-      message = exception.message;
+  private parseHttpException(
+    rawResponse: unknown,
+    defaultMessage: string,
+  ): { message: string; errors?: ErrorDetailsSchemaType[] } {
+    if (!rawResponse || typeof rawResponse !== 'object') {
+      return { message: String(rawResponse ?? defaultMessage) };
     }
 
-    // TODO: take base error response by the function inside helper
-    const errorResponse: BaseErrorResponseSchemaType & {
-      errors?: ErrorDetailsSchemaType[];
-    } = {
+    const typed = rawResponse as HttpErrorResponse;
+
+    return {
+      message: typed.message ?? defaultMessage,
+      errors: typed.errors?.map((issue: ZodIssue) => ({
+        field: issue.path?.length ? issue.path.join('.') : 'root',
+        message: issue.message,
+        code: issue.code?.toUpperCase(),
+      })),
+    };
+  }
+
+  private createBaseErrorResponse(
+    statusCode: number,
+    message: string,
+    errors: ErrorDetailsSchemaType[] | undefined,
+    path: string,
+  ): BaseErrorResponseSchemaType & { errors?: ErrorDetailsSchemaType[] } {
+    return {
       success: false,
-      statusCode: status,
+      statusCode,
       message,
       ...(errors ? { errors } : {}),
       timestamp: new Date().toISOString(),
-      path: request.url,
+      path,
     };
-
-    response.status(status).json(errorResponse);
   }
 }

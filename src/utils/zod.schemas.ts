@@ -1,4 +1,3 @@
-import { createZodDto } from 'nestjs-zod';
 import * as z from 'zod';
 
 // base
@@ -93,9 +92,8 @@ const FileSchema = z
 
 type FileSchemaType = z.infer<typeof FileSchema>;
 
-// TODO: give another proper name
 // interceptors and filters
-const BaseSuccessResponseSchema = <T extends z.ZodTypeAny>(dataSchema?: T) =>
+const SuccessResponseSchema = <T extends z.ZodTypeAny>(dataSchema?: T) =>
   z.object({
     success: z.boolean(),
     statusCode: z.number(),
@@ -104,21 +102,9 @@ const BaseSuccessResponseSchema = <T extends z.ZodTypeAny>(dataSchema?: T) =>
     timestamp: z.string(),
   });
 
-type BaseSuccessResponseSchemaType<T = z.ZodTypeAny> = z.infer<
-  ReturnType<typeof BaseSuccessResponseSchema<z.ZodType<T>>>
+type SuccessResponseSchemaType<T = z.ZodTypeAny> = z.infer<
+  ReturnType<typeof SuccessResponseSchema<z.ZodType<T>>>
 >;
-
-// FIXME: this function should be in helper not in zod.schema file
-function createBaseResponseDto(schema: z.ZodTypeAny, name: string) {
-  const responseSchema = BaseSuccessResponseSchema(schema);
-  const className = `${name}Dto`;
-
-  const namedClass = {
-    [className]: class extends createZodDto(responseSchema) {},
-  };
-
-  return namedClass[className];
-}
 
 const ErrorDetailsSchema = z.object({
   field: z.string().optional(),
@@ -209,15 +195,15 @@ const RateLimitEventSchema = z.object({
 
 type RateLimitEventSchemaType = z.infer<typeof RateLimitEventSchema>;
 
-// Pagination base schema
-
-const PaginationSchema = z.object({
+// Pagination response schema
+const PaginationResponseSchema = z.object({
   limit: z.number().int().min(1).max(100),
   page: z.number().int().min(1),
   total: z.number().int().min(0),
   pages: z.number().int().min(0),
 });
 
+// pagination query schema
 const PaginationQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(20),
   page: z.coerce.number().int().min(1).default(1),
@@ -231,14 +217,13 @@ export {
   type UserSchemaType,
   UserRoleEnum,
   BaseSchema,
-  PaginationSchema,
+  PaginationResponseSchema,
   type BaseSchemaType,
   FeedbackSchema,
   type FeedbackSchemaType,
   FeedbackSentimentEnum,
-  BaseSuccessResponseSchema,
-  type BaseSuccessResponseSchemaType,
-  createBaseResponseDto,
+  SuccessResponseSchema,
+  type SuccessResponseSchemaType,
   ErrorDetailsSchema,
   BaseErrorResponseSchema,
   type BaseErrorResponseSchemaType,

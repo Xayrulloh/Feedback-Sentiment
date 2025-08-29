@@ -1,5 +1,5 @@
 import { createZodDto } from 'nestjs-zod';
-import { PaginationSchema, UserSchema } from 'src/utils/zod.schemas';
+import { PaginationResponseSchema, UserSchema } from 'src/utils/zod.schemas';
 import * as z from 'zod';
 
 // ==================== Query ====================
@@ -41,7 +41,9 @@ class UserSearchQueryDto extends createZodDto(UserSearchQuerySchema) {}
  */
 const UserResponseSchema = z.object({
   users: UserSchema.array().describe('List of users'),
-  pagination: PaginationSchema.optional().describe('Pagination metadata'),
+  pagination: PaginationResponseSchema.optional().describe(
+    'Pagination metadata',
+  ),
 });
 
 class UserResponseDto extends createZodDto(UserResponseSchema) {}

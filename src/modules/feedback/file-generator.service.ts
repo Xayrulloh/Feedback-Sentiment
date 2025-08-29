@@ -22,7 +22,6 @@ export class FileGeneratorService {
     return this.generatePDF(data, type);
   }
 
-  // FIXME: it's generating all in one column, fix it so all will be in separated columns
   private async generateCSV(
     data: FeedbackSchemaType[] | FeedbackSummaryResponseDto,
     type: ReportDownloadQueryDto['type'],

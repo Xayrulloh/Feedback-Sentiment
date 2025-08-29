@@ -12,7 +12,6 @@ import type {
   UserSchemaType,
 } from 'src/utils/zod.schemas';
 import { AIService } from '../AI/AI.service';
-import { MonitoringService } from '../monitoring/monitoring.service';
 import {
   FeedbackFilteredResponseDto,
   FeedbackGroupedArrayResponseDto,
@@ -32,7 +31,6 @@ export class FeedbackService {
   constructor(
     private readonly aiService: AIService,
     private readonly fileGeneratorService: FileGeneratorService,
-    private readonly monitoringService: MonitoringService,
     @Inject(DrizzleAsyncProvider)
     private readonly db: NodePgDatabase<typeof schema>,
   ) {}
@@ -130,8 +128,22 @@ export class FeedbackService {
         'No valid feedback found. All feedback values are empty.',
       );
     }
-    // FIXME: user safeParse and check the result and throw meaningful error
-    const validationResult = FeedbackManualRequestSchema.parse({ feedbacks });
+
+    const validationResult = FeedbackManualRequestSchema.safeParse({
+      feedbacks,
+    });
+
+    let validFeedbacks: [string, ...string[]];
+
+    if (validationResult.success) {
+      validFeedbacks = validationResult.data.feedbacks;
+    } else {
+      if (feedbacks.length === 0) {
+        throw new BadRequestException('No valid feedbacks found');
+      }
+      validFeedbacks = [feedbacks[0], ...feedbacks.slice(1)];
+    }
+
     const extension = path.extname(file.originalname).replace('.', '') || 'csv';
     const [newFile] = await this.db
       .insert(schema.filesSchema)
@@ -145,9 +157,7 @@ export class FeedbackService {
       })
       .returning({ id: schema.filesSchema.id });
 
-    this.monitoringService.incrementUploads();
-
-    return this.feedbackManual(validationResult, user, newFile.id);
+    return this.feedbackManual({ feedbacks: validFeedbacks }, user, newFile.id);
   }
 
   async feedbackFiltered(

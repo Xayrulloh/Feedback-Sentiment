@@ -3,7 +3,7 @@ import {
   FeedbackSchema,
   FeedbackSentimentEnum,
   PaginationQuerySchema,
-  PaginationSchema,
+  PaginationResponseSchema,
 } from 'src/utils/zod.schemas';
 import * as z from 'zod';
 
@@ -89,7 +89,7 @@ const FeedbackSummaryResponseSchema = z
 const FeedbackFilteredResponseSchema = z
   .object({
     feedbacks: FeedbackSchema.array().describe('Filtered feedback results'),
-    pagination: PaginationSchema.describe('Pagination metadata'),
+    pagination: PaginationResponseSchema.describe('Pagination metadata'),
   })
   .describe('Filtered feedback response with pagination');
 

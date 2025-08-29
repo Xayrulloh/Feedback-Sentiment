@@ -1,5 +1,5 @@
 import { createZodDto } from 'nestjs-zod/dto';
-import { UserRoleEnum, UserSchema } from 'src/utils/zod.schemas';
+import { type UserRoleEnum, UserSchema } from 'src/utils/zod.schemas';
 import { z } from 'zod';
 
 // ==================== Types ====================

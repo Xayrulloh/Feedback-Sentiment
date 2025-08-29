@@ -6,6 +6,11 @@ import {
   Logger,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
+import { createBaseErrorResponse } from 'src/utils/helpers';
+import type {
+  BaseErrorResponseSchemaType,
+  ErrorDetailsSchemaType,
+} from 'src/utils/zod.schemas';
 import { ZodError } from 'zod';
 
 @Catch(ZodError)
@@ -18,21 +23,21 @@ export class ZodExceptionFilter implements ExceptionFilter {
       host.switchToHttp().getResponse<Response>(),
     ];
 
-    const issues = exception.issues.map((issue) => ({
+    const issues: ErrorDetailsSchemaType[] = exception.issues.map((issue) => ({
       field: issue.path.length > 0 ? issue.path.join('.') : 'root',
       message: issue.message,
       code: issue.code.toUpperCase(),
     }));
 
-    // TODO: call the function inside helper
-    response.status(HttpStatus.BAD_REQUEST).json({
-      success: false,
-      statusCode: HttpStatus.BAD_REQUEST,
-      ...(issues.length > 0 ? { errors: issues } : {}),
-      timestamp: new Date().toISOString(),
-      path: request.url,
-    });
+    const errorResponse: BaseErrorResponseSchemaType & {
+      errors?: ErrorDetailsSchemaType[];
+    } = createBaseErrorResponse(
+      HttpStatus.BAD_REQUEST,
+      'Validation failed',
+      issues,
+      request.url,
+    );
+
+    response.status(HttpStatus.BAD_REQUEST).json(errorResponse);
   }
 }
-
-// TODO: add global exception filter which works after all other filters and throws proper error

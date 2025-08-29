@@ -17,7 +17,7 @@ import {
 } from '@nestjs/swagger';
 import { ZodSerializerDto } from 'nestjs-zod';
 import { UserStatusGuard } from 'src/common/guards/user-status.guard';
-import { createBaseResponseDto } from 'src/utils/zod.schemas';
+import { createBaseResponseDto } from 'src/utils/helpers';
 import { AuthService } from './auth.service';
 import {
   AuthAdminResponseDto,
