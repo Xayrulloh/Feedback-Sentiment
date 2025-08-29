@@ -30,9 +30,9 @@ export class AdminService {
 
   async adminDisable(userId: string): Promise<UserSchemaType> {
     const [user] = await this.db
-    .select()
-    .from(schema.usersSchema)
-    .where(eq(schema.usersSchema.id, userId));
+      .select()
+      .from(schema.usersSchema)
+      .where(eq(schema.usersSchema.id, userId));
 
     if (!user) {
       throw new NotFoundException('User not found');
@@ -55,9 +55,9 @@ export class AdminService {
 
   async adminSuspend(userId: string): Promise<UserSchemaType> {
     const [user] = await this.db
-    .select()
-    .from(schema.usersSchema)
-    .where(eq(schema.usersSchema.id, userId));
+      .select()
+      .from(schema.usersSchema)
+      .where(eq(schema.usersSchema.id, userId));
 
     if (!user) {
       throw new NotFoundException('User not found');
@@ -65,15 +65,15 @@ export class AdminService {
 
     if (user.role === 'ADMIN') {
       throw new ForbiddenException('Cannot suspend an admin user');
-  }
+    }
 
-  const [suspendedUser] = await this.db
-    .update(schema.usersSchema)
-    .set({ isSuspended: !user.isSuspended })
-    .where(eq(schema.usersSchema.id, userId))
-    .returning();
+    const [suspendedUser] = await this.db
+      .update(schema.usersSchema)
+      .set({ isSuspended: !user.isSuspended })
+      .where(eq(schema.usersSchema.id, userId))
+      .returning();
 
-  return suspendedUser;
+    return suspendedUser;
   }
 
   async adminUpsertRateLimit(
