@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { sql } from 'drizzle-orm';
+import { desc, sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { DrizzleAsyncProvider } from 'src/database/drizzle.provider';
 import * as schema from 'src/database/schema';
@@ -32,7 +32,8 @@ export class UserService {
       .select()
       .from(schema.usersSchema)
       .limit(limit)
-      .offset((page - 1) * limit);
+      .offset((page - 1) * limit)
+      .orderBy(desc(schema.usersSchema.createdAt));
 
     return {
       users: allUsers,
@@ -55,7 +56,8 @@ export class UserService {
       .select()
       .from(schema.usersSchema)
       .where(sql`email ILIKE ${searchTerm}`)
-      .limit(5);
+      .limit(5)
+      .orderBy(desc(schema.usersSchema.createdAt));
 
     return users;
   }

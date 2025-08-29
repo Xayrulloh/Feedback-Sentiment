@@ -61,13 +61,13 @@ import { FeedbackService } from './feedback.service';
 @UseGuards(JwtAuthGuard, RolesGuard, UserStatusGuard)
 @Roles(UserRoleEnum.ADMIN, UserRoleEnum.USER)
 @ApiForbiddenResponse({
-  description: 'Forbidden - user is disabled or suspended',
+  description: 'Forbidden - user is suspended',
   schema: {
     type: 'object',
     properties: {
       success: { type: 'boolean', example: false },
       statusCode: { type: 'number', example: 403 },
-      message: { type: 'string', example: 'User account is disabled' },
+      message: { type: 'string', example: 'User account is suspended' },
       errors: {
         type: 'array',
         items: {

@@ -44,7 +44,9 @@ export class AdminService {
 
     const [disabledUser] = await this.db
       .update(schema.usersSchema)
-      .set({ isDisabled: !user.isDisabled })
+      .set({
+        deletedAt: new Date(),
+      })
       .where(eq(schema.usersSchema.id, userId))
       .returning();
 
@@ -67,9 +69,7 @@ export class AdminService {
 
     const [suspendedUser] = await this.db
       .update(schema.usersSchema)
-      .set({
-        deletedAt: new Date(),
-      })
+      .set({ isSuspended: !user.isSuspended })
       .where(eq(schema.usersSchema.id, userId))
       .returning();
 
