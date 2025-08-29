@@ -8,6 +8,11 @@ import {
 } from 'src/utils/zod.schemas';
 import z from 'zod';
 
+// ==================== Admin ====================
+
+/**
+ * DTO for admin disable/suspend operations response
+ */
 const AdminDisableSuspendResponseSchema = UserSchema.describe(
   'Response schema for admin disable/suspend operations',
 );
@@ -16,52 +21,56 @@ class AdminDisableSuspendResponseDto extends createZodDto(
   AdminDisableSuspendResponseSchema,
 ) {}
 
-type AdminDisableSuspendResponseSchemaType = z.infer<
-  typeof AdminDisableSuspendResponseSchema
->;
+// ==================== Rate Limiter ====================
 
-// rate limiter
-
-// TODO: describe
+/**
+ * DTO for creating/updating rate limits
+ */
 const RateLimitUpsertSchema = RateLimitSchema;
 
 class RateLimitUpsertDto extends createZodDto(RateLimitUpsertSchema) {}
 
-// FIXME: REMOVE ALL TYPE THINGS FROM ALL .dto.ts FILES AND USE DTO INSTEAD (not RateLimitUpsertSchemaType but RateLimitUpsertDto)
-type RateLimitUpsertSchemaType = z.infer<typeof RateLimitUpsertSchema>;
-
-// TODO: describe
+/**
+ * DTO for fetching rate limits
+ */
 const RateLimitGetSchema = RateLimitSchema.array();
 
 class RateLimitGetDto extends createZodDto(RateLimitGetSchema) {}
 
-type RateLimitGetSchemaType = z.infer<typeof RateLimitGetSchema>;
+// ==================== Monitoring ====================
 
-// Monitoring
-
-// TODO: describe
+/**
+ * DTO for monitoring metrics
+ */
 const MetricsSchema = z.object({
-  uploads: z.number().int().nonnegative(),
-  apiUsage: z.array(
-    z.object({
-      method: z.string(),
-      endpoint: z.string(),
-      count: z.number().int().nonnegative(),
-    }),
-  ),
-  errorRates: z.array(
-    z.object({
-      method: z.string(),
-      endpoint: z.string(),
-      count: z.number().int().nonnegative(),
-    }),
-  ),
+  uploads: z.number().int().nonnegative().describe('Total uploads count'),
+  apiUsage: z
+    .array(
+      z.object({
+        method: z.string(),
+        endpoint: z.string(),
+        count: z.number().int().nonnegative(),
+      }),
+    )
+    .describe('API usage per endpoint'),
+  errorRates: z
+    .array(
+      z.object({
+        method: z.string(),
+        endpoint: z.string(),
+        count: z.number().int().nonnegative(),
+      }),
+    )
+    .describe('Error counts per endpoint'),
 });
 
-type MetricsSchemaType = z.infer<typeof MetricsSchema>;
+class MetricsDto extends createZodDto(MetricsSchema) {}
 
-// Suspicious Activities
+// ==================== Suspicious Activities ====================
 
+/**
+ * DTO for suspicious activity responses
+ */
 const SuspiciousActivityResponseSchema = z
   .object({
     userId: z.string().uuid().nullable(),
@@ -84,27 +93,22 @@ const SuspiciousActivityResponseSchema = z
   .merge(BaseSchema)
   .array()
   .describe('List of suspicious activities');
-type SuspiciousActivityResponseSchemaType = z.infer<
-  typeof SuspiciousActivityResponseSchema
->;
 
 class SuspiciousActivityResponseDto extends createZodDto(
   SuspiciousActivityResponseSchema,
 ) {}
 
+// ==================== Exports ====================
+
 export {
   AdminDisableSuspendResponseSchema,
   AdminDisableSuspendResponseDto,
-  type AdminDisableSuspendResponseSchemaType,
   RateLimitUpsertSchema,
   RateLimitUpsertDto,
-  type RateLimitUpsertSchemaType,
   RateLimitGetSchema,
   RateLimitGetDto,
-  type RateLimitGetSchemaType,
   MetricsSchema,
-  type MetricsSchemaType,
+  MetricsDto,
   SuspiciousActivityResponseSchema,
-  type SuspiciousActivityResponseSchemaType,
   SuspiciousActivityResponseDto,
 };

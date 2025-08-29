@@ -32,23 +32,19 @@ import {
   type RateLimitSchemaType,
   UserRoleEnum,
 } from 'src/utils/zod.schemas';
-import { Roles } from '../auth/decorators/roles.decorator';
-// FIXME: Research to fix this, instead of using every time we need better solution
-// biome-ignore lint/style/useImportType: Needed for DI
+import { Roles } from '../../common/decorators/roles.decorator';
 import { PrometheusService } from '../monitoring/prometheus.service';
-// FIXME: Research to fix this, instead of using every time we need better solution
-// biome-ignore lint/style/useImportType: Needed for DI
 import { AdminService } from './admin.service';
 import {
+  AdminDisableSuspendResponseDto,
   AdminDisableSuspendResponseSchema,
-  type AdminDisableSuspendResponseSchemaType,
+  MetricsDto,
   MetricsSchema,
-  type MetricsSchemaType,
+  RateLimitGetDto,
   RateLimitGetSchema,
-  type RateLimitGetSchemaType,
   RateLimitUpsertDto,
+  SuspiciousActivityResponseDto,
   SuspiciousActivityResponseSchema,
-  type SuspiciousActivityResponseSchemaType,
 } from './dto/admin.dto';
 
 @ApiTags('Admin')
@@ -139,7 +135,7 @@ export class AdminController {
   @ZodSerializerDto(AdminDisableSuspendResponseSchema)
   async adminDisable(
     @Param('userId', ParseUUIDPipe) userId: string,
-  ): Promise<AdminDisableSuspendResponseSchemaType> {
+  ): Promise<AdminDisableSuspendResponseDto> {
     return this.adminService.adminDisable(userId);
   }
 
@@ -186,7 +182,7 @@ export class AdminController {
   @ZodSerializerDto(AdminDisableSuspendResponseSchema)
   async adminSuspend(
     @Param('userId', ParseUUIDPipe) userId: string,
-  ): Promise<AdminDisableSuspendResponseSchemaType> {
+  ): Promise<AdminDisableSuspendResponseDto> {
     return this.adminService.adminSuspend(userId);
   }
 
@@ -195,7 +191,7 @@ export class AdminController {
     type: createBaseResponseDto(MetricsSchema, 'MetricsSchema'),
   })
   @ApiOperation({ summary: 'Get app metrics' })
-  async adminMetrics(): Promise<MetricsSchemaType> {
+  async adminMetrics(): Promise<MetricsDto> {
     return {
       uploads: await this.prometheusService.getUploadsPerDay(),
       apiUsage: await this.prometheusService.getApiUsage(),
@@ -251,7 +247,7 @@ export class AdminController {
   })
   @ApiOperation({ summary: 'Get rate limit rules' })
   @ZodSerializerDto(RateLimitGetSchema)
-  async adminGetRateLimits(): Promise<RateLimitGetSchemaType> {
+  async adminGetRateLimits(): Promise<RateLimitGetDto> {
     return this.adminService.adminGetRateLimits();
   }
 
@@ -265,7 +261,7 @@ export class AdminController {
   })
   @ApiOperation({ summary: 'Get suspicious activities' })
   @ZodSerializerDto(SuspiciousActivityResponseSchema)
-  async adminGetSuspiciousActivities(): Promise<SuspiciousActivityResponseSchemaType> {
+  async adminGetSuspiciousActivities(): Promise<SuspiciousActivityResponseDto> {
     return this.adminService.adminGetSuspiciousActivities();
   }
 }

@@ -12,13 +12,11 @@ import type {
   RateLimitSchemaType,
   UserSchemaType,
 } from 'src/utils/zod.schemas';
-// FIXME: Research to fix this, instead of using every time we need better solution
-// biome-ignore lint/style/useImportType: Needed for DI
 import { RedisService } from '../redis/redis.service';
 import type {
-  RateLimitGetSchemaType,
+  RateLimitGetDto,
   RateLimitUpsertDto,
-  SuspiciousActivityResponseSchemaType,
+  SuspiciousActivityResponseDto,
 } from './dto/admin.dto';
 
 // Give proper Scopes to inject
@@ -102,12 +100,12 @@ export class AdminService {
     return upsertedRateLimit;
   }
 
-  async adminGetRateLimits(): Promise<RateLimitGetSchemaType> {
+  async adminGetRateLimits(): Promise<RateLimitGetDto> {
     // TODO: use query
     return this.db.select().from(schema.rateLimitsSchema);
   }
 
-  async adminGetSuspiciousActivities(): Promise<SuspiciousActivityResponseSchemaType> {
+  async adminGetSuspiciousActivities(): Promise<SuspiciousActivityResponseDto> {
     // TODO: use query
     return this.db.select().from(schema.suspiciousActivitySchema);
   }

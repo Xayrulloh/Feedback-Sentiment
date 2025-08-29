@@ -15,17 +15,15 @@ import { ZodSerializerDto, ZodValidationPipe } from 'nestjs-zod';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { createBaseResponseDto, UserRoleEnum } from 'src/utils/zod.schemas';
-import { Roles } from '../auth/decorators/roles.decorator';
+import { Roles } from '../../common/decorators/roles.decorator';
 import {
   UserQueryDto,
+  UserResponseDto,
   UserResponseSchema,
-  type UserResponseSchemaType,
   UserSearchQueryDto,
+  UserSearchResponseDto,
   UserSearchResponseSchema,
-  type UserSearchResponseSchemaType,
 } from './dto/user.dto';
-// FIXME: Research to fix this, instead of using every time we need better solution
-// biome-ignore lint/style/useImportType: Needed for DI
 import { UserService } from './user.service';
 
 @ApiTags('Users')
@@ -88,8 +86,6 @@ import { UserService } from './user.service';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  // FIXME: no need api bearer auth since we already gave it in controller layer
-  @ApiBearerAuth()
   @Get()
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -101,12 +97,10 @@ export class UserController {
   async getAllUsers(
     @Query(new ZodValidationPipe(UserQueryDto))
     query: UserQueryDto,
-  ): Promise<UserResponseSchemaType> {
+  ): Promise<UserResponseDto> {
     return this.userService.getAllUsers(query);
   }
 
-  // FIXME: no need api bearer auth since we already gave it in controller layer
-  @ApiBearerAuth()
   @Get('search')
   @ApiQuery({ name: 'email', required: true, type: String })
   @ApiOperation({ summary: 'Search users by email (max 5)' })
@@ -144,7 +138,7 @@ export class UserController {
   async searchUsers(
     @Query(new ZodValidationPipe(UserSearchQueryDto))
     query: UserSearchQueryDto,
-  ): Promise<UserSearchResponseSchemaType> {
+  ): Promise<UserSearchResponseDto> {
     return this.userService.searchUsers(query);
   }
 }

@@ -1,59 +1,68 @@
 import { createZodDto } from 'nestjs-zod/dto';
-import { type UserRoleEnum, UserSchema } from 'src/utils/zod.schemas';
+import { UserRoleEnum, UserSchema } from 'src/utils/zod.schemas';
 import { z } from 'zod';
 
+// ==================== Types ====================
+
+/**
+ * JWT payload type embedded in the access token
+ */
 type JWTPayloadType = {
   sub: string;
   email: string;
   role: UserRoleEnum;
 };
 
-const AuthCredentialsSchema = UserSchema.pick({ email: true })
-  .merge(
-    z.object({
-      password: z.string().min(8).describe('User password'),
-    }),
-  )
-  .describe(
-    'Credentials for user authentication, including email and password',
-  );
+// ==================== Credentials ====================
 
-// TODO: describe
-const AuthUserResponseSchema = z.object({
-  token: z.string().describe('JWT token'),
-  role: z.literal('USER').describe('User role'),
-  redirectTo: z
-    .literal('/dashboard')
-    .describe('Redirection path after authentication'),
-});
+/**
+ * DTO for user login credentials (email + password)
+ */
+const AuthCredentialsSchema = UserSchema.pick({ email: true }).merge(
+  z.object({
+    password: z.string().min(8).describe('User password'),
+  }),
+);
 
 class AuthCredentialsDto extends createZodDto(AuthCredentialsSchema) {}
+
+// ==================== User Auth ====================
+
+/**
+ * Response DTO returned after user login
+ */
+const AuthUserResponseSchema = z.object({
+  token: z.string().describe('JWT access token'),
+  role: z.literal('USER').describe('User role'),
+  redirectTo: z.literal('/dashboard').describe('Redirect path after login'),
+});
+
 class AuthUserResponseDto extends createZodDto(AuthUserResponseSchema) {}
 
-type AuthUserResponseSchemaType = z.infer<typeof AuthUserResponseSchema>;
+// ==================== Admin Auth ====================
 
-// TODO: describe
-export const AuthAdminResponseSchema = z.object({
-  token: z.string().describe('JWT token'),
+/**
+ * Response DTO returned after admin login
+ */
+const AuthAdminResponseSchema = z.object({
+  token: z.string().describe('JWT access token'),
   role: z.literal('ADMIN').describe('Admin role'),
-  redirectTo: z
-    .literal('/admin')
-    .describe('Redirection path after authentication'),
+  redirectTo: z.literal('/admin').describe('Redirect path after login'),
 });
 
 class AuthAdminResponseDto extends createZodDto(AuthAdminResponseSchema) {}
 
-type AuthAdminResponseSchemaType = z.infer<typeof AuthAdminResponseSchema>;
+// ==================== Exports ====================
 
 export {
-  AuthCredentialsDto,
-  AuthUserResponseDto,
-  AuthAdminResponseDto,
+  // Credentials
   AuthCredentialsSchema,
+  AuthCredentialsDto,
+  // User Auth
   AuthUserResponseSchema,
+  AuthUserResponseDto,
+  // Admin Auth
+  AuthAdminResponseSchema,
+  AuthAdminResponseDto,
 };
-export type {
-  JWTPayloadType,
-  AuthUserResponseSchemaType,
-  AuthAdminResponseSchemaType,
-};
+export type { JWTPayloadType };

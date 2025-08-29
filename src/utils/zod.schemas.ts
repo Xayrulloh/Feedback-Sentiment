@@ -45,14 +45,6 @@ const enum FeedbackSentimentEnum {
   UNKNOWN = 'unknown',
 }
 
-// TODO: it should not be in feedback part but separated pagination comment. And also name should be PaginationResponseSchema
-const PaginationSchema = z.object({
-  limit: z.number().int().min(1).max(100),
-  page: z.number().int().min(1),
-  total: z.number().int().min(0),
-  pages: z.number().int().min(0),
-});
-
 const FeedbackSchema = z
   .object({
     content: z.string().min(3).describe('Feedback content'),
@@ -217,7 +209,22 @@ const RateLimitEventSchema = z.object({
 
 type RateLimitEventSchemaType = z.infer<typeof RateLimitEventSchema>;
 
+// Pagination base schema
+
+const PaginationSchema = z.object({
+  limit: z.number().int().min(1).max(100),
+  page: z.number().int().min(1),
+  total: z.number().int().min(0),
+  pages: z.number().int().min(0),
+});
+
+const PaginationQuerySchema = z.object({
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  page: z.coerce.number().int().min(1).default(1),
+});
+
 export {
+  PaginationQuerySchema,
   type FileSchemaType,
   FileSchema,
   UserSchema,

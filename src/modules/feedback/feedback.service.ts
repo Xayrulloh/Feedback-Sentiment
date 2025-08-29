@@ -11,26 +11,18 @@ import type {
   FeedbackSentimentEnum,
   UserSchemaType,
 } from 'src/utils/zod.schemas';
-// FIXME: Research to fix this, instead of using every time we need better solution
-// biome-ignore lint/style/useImportType: Needed for DI
 import { AIService } from '../AI/AI.service';
-// FIXME: Research to fix this, instead of using every time we need better solution
-// biome-ignore lint/style/useImportType: Needed for DI
-import { MonitoringService } from '../monitoring/monitoring.service';
 import {
-  type FeedbackFilteredResponseSchemaType,
-  type FeedbackGroupedArrayResponseType,
+  FeedbackFilteredResponseDto,
+  FeedbackGroupedArrayResponseDto,
   type FeedbackManualRequestDto,
   FeedbackManualRequestSchema,
-  type FeedbackQuerySchemaDto,
+  FeedbackQueryDto,
   type FeedbackResponseDto,
   type FeedbackSingleResponseDto,
   type FeedbackSummaryResponseDto,
-  FeedbackSummaryResponseSchema,
   type ReportDownloadQueryDto,
 } from './dto/feedback.dto';
-// FIXME: Research to fix this, instead of using every time we need better solution
-// biome-ignore lint/style/useImportType: Needed for DI
 import { FileGeneratorService } from './file-generator.service';
 
 // Give proper Scopes to inject
@@ -39,7 +31,6 @@ export class FeedbackService {
   constructor(
     private readonly aiService: AIService,
     private readonly fileGeneratorService: FileGeneratorService,
-    private readonly monitoringService: MonitoringService,
     @Inject(DrizzleAsyncProvider)
     private readonly db: NodePgDatabase<typeof schema>,
   ) {}
@@ -49,8 +40,7 @@ export class FeedbackService {
     user: UserSchemaType,
     fileId: string | null = null,
   ): Promise<FeedbackResponseDto> {
-    // FIXME: user safer promise
-    const response: FeedbackResponseDto = await Promise.all(
+    const results = await Promise.allSettled(
       input.feedbacks.map(async (feedback) => {
         const aiResult = await this.aiService.analyzeOne(feedback);
 
@@ -69,6 +59,14 @@ export class FeedbackService {
         return newFeedback;
       }),
     );
+
+    const isFulfilled = <T>(
+      r: PromiseSettledResult<T>,
+    ): r is PromiseFulfilledResult<T> => r.status === 'fulfilled';
+
+    const response: FeedbackResponseDto = results
+      .filter(isFulfilled)
+      .map((r) => r.value);
 
     return response;
   }
@@ -140,16 +138,13 @@ export class FeedbackService {
       })
       .returning({ id: schema.filesSchema.id });
 
-    // FIXME: you are breaking SOLID, haven't we added it to metrics middleware?
-    this.monitoringService.incrementUploads();
-
     return this.feedbackManual(validationResult, user, newFile.id);
   }
 
   async feedbackFiltered(
-    query: FeedbackQuerySchemaDto,
+    query: FeedbackQueryDto,
     user: UserSchemaType,
-  ): Promise<FeedbackFilteredResponseSchemaType> {
+  ): Promise<FeedbackFilteredResponseDto> {
     const { sentiment, limit, page } = query;
 
     const whereConditions = [eq(schema.feedbacksSchema.userId, user.id)];
@@ -190,7 +185,7 @@ export class FeedbackService {
 
   async feedbackGrouped(
     userId: string,
-  ): Promise<FeedbackGroupedArrayResponseType> {
+  ): Promise<FeedbackGroupedArrayResponseDto> {
     return await this.db
       .select({
         summary: schema.feedbacksSchema.summary,
@@ -217,7 +212,7 @@ export class FeedbackService {
   }
 
   async feedbackSummary(userId: string): Promise<FeedbackSummaryResponseDto> {
-    const results = await this.db
+    return this.db
       .select({
         sentiment: schema.feedbacksSchema.sentiment,
         count: sql<number>`CAST(COUNT(*) AS INTEGER)`,
@@ -226,12 +221,9 @@ export class FeedbackService {
       .from(schema.feedbacksSchema)
       .where(eq(schema.feedbacksSchema.userId, userId))
       .groupBy(schema.feedbacksSchema.sentiment);
-
-    // FIXME: why are you parsing? Haven't we gave zod serializer?
-    return FeedbackSummaryResponseSchema.parse(results);
   }
 
-  async getAllFeedback(user: UserSchemaType): Promise<FeedbackSchemaType[]> {
+  async getAllFeedback(user: UserSchemaType): Promise<FeedbackResponseDto> {
     // FIXME: Use query
     return this.db
       .select()

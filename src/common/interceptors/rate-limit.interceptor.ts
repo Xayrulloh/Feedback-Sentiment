@@ -11,11 +11,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { Observable } from 'rxjs';
 import { DrizzleAsyncProvider } from 'src/database/drizzle.provider';
 import * as schema from 'src/database/schema';
-// FIXME: Research to fix this, instead of using every time we need better solution
-// biome-ignore lint/style/useImportType: Needed for DI
 import { RedisService } from 'src/modules/redis/redis.service';
-// FIXME: Research to fix this, instead of using every time we need better solution
-// biome-ignore lint/style/useImportType: Needed for DI
 import { SocketGateway } from 'src/modules/websocket/websocket.gateaway';
 import type { AuthenticatedRequest } from 'src/shared/types/request-with-user';
 import { HOUR_SECONDS } from 'src/utils/constants';

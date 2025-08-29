@@ -38,13 +38,13 @@ import { RolesGuard } from 'src/common/guards/roles.guard';
 import { UserStatusGuard } from 'src/common/guards/user-status.guard';
 import type { AuthenticatedRequest } from 'src/shared/types/request-with-user';
 import { createBaseResponseDto, UserRoleEnum } from 'src/utils/zod.schemas';
-import { Roles } from '../auth/decorators/roles.decorator';
+import { Roles } from '../../common/decorators/roles.decorator';
 import {
   FeedbackFilteredResponseSchema,
   type FeedbackGroupedArrayResponseDto,
   FeedbackGroupedArrayResponseSchema,
   FeedbackManualRequestDto,
-  FeedbackQuerySchemaDto,
+  FeedbackQueryDto,
   type FeedbackResponseDto,
   FeedbackResponseSchema,
   FeedbackSingleResponseSchema,
@@ -53,8 +53,6 @@ import {
   type ReportDownloadQueryDto,
   SentimentEnum,
 } from './dto/feedback.dto';
-// FIXME: Research to fix this, instead of using every time we need better solution
-// biome-ignore lint/style/useImportType: Needed for DI
 import { FeedbackService } from './feedback.service';
 
 @ApiTags('Feedback')
@@ -118,8 +116,6 @@ export class FeedbackController {
   constructor(private readonly feedbackService: FeedbackService) {}
 
   @Post('manual')
-  // FIXME: instead of giving apibearerauth for each just move it to controller layer, if it already has then remove from all method layers
-  @ApiBearerAuth()
   @HttpCode(HttpStatus.CREATED)
   @ApiBody({ type: FeedbackManualRequestDto })
   @ApiCreatedResponse({
@@ -151,12 +147,10 @@ export class FeedbackController {
       },
     },
   })
-  // FIXME: why we have 2 zod serializer
   @ZodSerializerDto(FeedbackResponseSchema)
   @ApiOperation({
     summary: 'Sending text based feedback and getting the ai analyze',
   })
-  @ZodSerializerDto(FeedbackResponseSchema)
   async feedbackManual(
     @Body() body: FeedbackManualRequestDto,
     @Req() req: AuthenticatedRequest,
@@ -165,10 +159,8 @@ export class FeedbackController {
   }
 
   @Post('upload')
-  @ApiBearerAuth()
   @HttpCode(HttpStatus.CREATED)
   @ApiConsumes('multipart/form-data')
-  // FIXME: why we have 2 zod serializer
   @ZodSerializerDto(FeedbackResponseSchema)
   @UseInterceptors(FileInterceptor('file'))
   @ApiOperation({ summary: 'Upload CSV feedback file' })
@@ -223,7 +215,6 @@ export class FeedbackController {
       },
     },
   })
-  @ZodSerializerDto(FeedbackResponseSchema)
   async feedbackUpload(
     @UploadedFile() file: Express.Multer.File,
     @Req() req: AuthenticatedRequest,
@@ -268,8 +259,7 @@ export class FeedbackController {
       'FeedbackSummaryResponseSchema',
     ),
   })
-  // FIXME: zod serializer takes schema not dto
-  @ZodSerializerDto(FeedbackSummaryResponseDto)
+  @ZodSerializerDto(FeedbackSummaryResponseSchema)
   async getSentimentSummary(
     @Req() req: AuthenticatedRequest,
   ): Promise<FeedbackSummaryResponseDto> {
@@ -315,8 +305,8 @@ export class FeedbackController {
   })
   @ZodSerializerDto(FeedbackFilteredResponseSchema)
   async feedbackFiltered(
-    @Query(new ZodValidationPipe(FeedbackQuerySchemaDto))
-    query: FeedbackQuerySchemaDto,
+    @Query(new ZodValidationPipe(FeedbackQueryDto))
+    query: FeedbackQueryDto,
     @Req() req: AuthenticatedRequest,
   ) {
     return this.feedbackService.feedbackFiltered(query, req.user);

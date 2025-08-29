@@ -5,9 +5,9 @@ import { DrizzleAsyncProvider } from 'src/database/drizzle.provider';
 import * as schema from 'src/database/schema';
 import type {
   UserQueryDto,
-  UserResponseSchemaType,
+  UserResponseDto,
   UserSearchQueryDto,
-  UserSearchResponseSchemaType,
+  UserSearchResponseDto,
 } from './dto/user.dto';
 
 // Give proper Scopes to inject
@@ -18,7 +18,7 @@ export class UserService {
     private readonly db: NodePgDatabase<typeof schema>,
   ) {}
 
-  async getAllUsers(query: UserQueryDto): Promise<UserResponseSchemaType> {
+  async getAllUsers(query: UserQueryDto): Promise<UserResponseDto> {
     const { limit, page } = query;
 
     const totalResult = await this.db
@@ -30,15 +30,14 @@ export class UserService {
     const total = totalResult[0]?.count ?? 0;
 
     // TODO: just call it users
-    // FIXME: Use query
-    const allUsers = await this.db
+    const users = await this.db
       .select()
       .from(schema.usersSchema)
       .limit(limit)
       .offset((page - 1) * limit);
 
     return {
-      users: allUsers,
+      users: users,
       pagination: {
         limit,
         page,
@@ -48,9 +47,7 @@ export class UserService {
     };
   }
 
-  async searchUsers(
-    query: UserSearchQueryDto,
-  ): Promise<UserSearchResponseSchemaType> {
+  async searchUsers(query: UserSearchQueryDto): Promise<UserSearchResponseDto> {
     const { email } = query;
     const searchTerm = `%${email.trim()}%`;
 
