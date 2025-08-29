@@ -33,8 +33,6 @@ import {
   FileResponseDto,
   FileResponseSchema,
 } from './dto/file.dto';
-// FIXME: Research to fix this, instead of using every time we need better solution
-// biome-ignore lint/style/useImportType: Needed for DI
 import { FileService } from './file.service';
 
 @ApiTags('Files')

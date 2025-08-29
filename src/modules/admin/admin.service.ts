@@ -12,8 +12,6 @@ import type {
   RateLimitSchemaType,
   UserSchemaType,
 } from 'src/utils/zod.schemas';
-// FIXME: Research to fix this, instead of using every time we need better solution
-// biome-ignore lint/style/useImportType: Needed for DI
 import { RedisService } from '../redis/redis.service';
 import type {
   RateLimitGetSchemaType,

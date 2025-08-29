@@ -5,8 +5,6 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-// FIXME: Research to fix this, instead of using every time we need better solution
-// biome-ignore lint/style/useImportType: Needed for DI
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { eq } from 'drizzle-orm';

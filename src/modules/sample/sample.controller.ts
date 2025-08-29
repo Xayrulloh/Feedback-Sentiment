@@ -25,8 +25,6 @@ import {
   type FeedbackSummaryResponseSchemaType,
   SentimentEnum,
 } from '../feedback/dto/feedback.dto';
-// FIXME: Research to fix this, instead of using every time we need better solution
-// biome-ignore lint/style/useImportType: Needed for DI
 import { SampleService } from './sample.service';
 
 @Controller('sample')

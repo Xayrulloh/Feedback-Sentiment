@@ -24,8 +24,6 @@ import {
   UserSearchResponseSchema,
   type UserSearchResponseSchemaType,
 } from './dto/user.dto';
-// FIXME: Research to fix this, instead of using every time we need better solution
-// biome-ignore lint/style/useImportType: Needed for DI
 import { UserService } from './user.service';
 
 @ApiTags('Users')

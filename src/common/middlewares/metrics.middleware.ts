@@ -1,6 +1,4 @@
 import { Injectable, type NestMiddleware } from '@nestjs/common';
-// FIXME: Research to fix this, instead of using every time we need better solution
-// biome-ignore lint/style/useImportType: Needed for DI
 import { MonitoringService } from 'src/modules/monitoring/monitoring.service';
 
 // Give proper Scopes to inject

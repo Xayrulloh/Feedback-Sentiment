@@ -11,11 +11,7 @@ import type {
   FeedbackSentimentEnum,
   UserSchemaType,
 } from 'src/utils/zod.schemas';
-// FIXME: Research to fix this, instead of using every time we need better solution
-// biome-ignore lint/style/useImportType: Needed for DI
 import { AIService } from '../AI/AI.service';
-// FIXME: Research to fix this, instead of using every time we need better solution
-// biome-ignore lint/style/useImportType: Needed for DI
 import { MonitoringService } from '../monitoring/monitoring.service';
 import {
   type FeedbackFilteredResponseSchemaType,
@@ -29,8 +25,6 @@ import {
   FeedbackSummaryResponseSchema,
   type ReportDownloadQueryDto,
 } from './dto/feedback.dto';
-// FIXME: Research to fix this, instead of using every time we need better solution
-// biome-ignore lint/style/useImportType: Needed for DI
 import { FileGeneratorService } from './file-generator.service';
 
 // Give proper Scopes to inject
