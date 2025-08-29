@@ -166,6 +166,7 @@ export class FeedbackService {
       .select()
       .from(schema.feedbacksSchema)
       .where(and(...whereConditions))
+      .orderBy(desc(schema.feedbacksSchema.createdAt))
       .limit(limit)
       .offset((page - 1) * limit);
 
@@ -198,7 +199,7 @@ export class FeedbackService {
             'id', ${schema.feedbacksSchema.id}::text,
             'content', ${schema.feedbacksSchema.content},
             'sentiment', ${schema.feedbacksSchema.sentiment}
-          )
+          ) ORDER BY ${schema.feedbacksSchema.createdAt} DESC
         )`,
       })
       .from(schema.feedbacksSchema)
@@ -226,7 +227,8 @@ export class FeedbackService {
     return this.db
       .select()
       .from(schema.feedbacksSchema)
-      .where(eq(schema.feedbacksSchema.userId, user.id));
+      .where(eq(schema.feedbacksSchema.userId, user.id))
+      .orderBy(desc(schema.feedbacksSchema.createdAt));
   }
 
   async feedbackReportDownload(
