@@ -12,25 +12,27 @@ import type {
   UserSchemaType,
 } from 'src/utils/zod.schemas';
 import { AIService } from '../AI/AI.service';
+import { MonitoringService } from '../monitoring/monitoring.service';
 import {
   FeedbackFilteredResponseDto,
   FeedbackGroupedArrayResponseDto,
-  type FeedbackManualRequestDto,
+  FeedbackManualRequestDto,
   FeedbackManualRequestSchema,
   FeedbackQueryDto,
-  type FeedbackResponseDto,
-  type FeedbackSingleResponseDto,
-  type FeedbackSummaryResponseDto,
-  type ReportDownloadQueryDto,
+  FeedbackResponseDto,
+  FeedbackSingleResponseDto,
+  FeedbackSummaryResponseDto,
+  FeedbackSummaryResponseSchema,
+  ReportDownloadQueryDto,
 } from './dto/feedback.dto';
 import { FileGeneratorService } from './file-generator.service';
 
-// Give proper Scopes to inject
 @Injectable()
 export class FeedbackService {
   constructor(
     private readonly aiService: AIService,
     private readonly fileGeneratorService: FileGeneratorService,
+    private readonly monitoringService: MonitoringService,
     @Inject(DrizzleAsyncProvider)
     private readonly db: NodePgDatabase<typeof schema>,
   ) {}
@@ -42,33 +44,39 @@ export class FeedbackService {
   ): Promise<FeedbackResponseDto> {
     const results = await Promise.allSettled(
       input.feedbacks.map(async (feedback) => {
-        const aiResult = await this.aiService.analyzeOne(feedback);
+        try {
+          const aiResult = await this.aiService.analyzeOne(feedback);
 
-        const [newFeedback] = await this.db
-          .insert(schema.feedbacksSchema)
-          .values({
-            content: feedback,
-            userId: user.id,
-            fileId: fileId,
-            sentiment: aiResult.sentiment,
-            confidence: Math.round(aiResult.confidence),
-            summary: aiResult.summary,
-          })
-          .returning();
+          const [newFeedback] = await this.db
+            .insert(schema.feedbacksSchema)
+            .values({
+              content: feedback,
+              userId: user.id,
+              fileId,
+              sentiment: aiResult.sentiment,
+              confidence: Math.round(aiResult.confidence),
+              summary: aiResult.summary,
+            })
+            .returning();
 
-        return newFeedback;
+          if (!newFeedback) {
+            throw new Error('DB insert returned undefined');
+          }
+
+          return newFeedback;
+        } catch (err) {
+          throw new Error(
+            `Failed to process feedback "${feedback}": ${(err as Error).message}`,
+          );
+        }
       }),
     );
 
-    const isFulfilled = <T>(
-      r: PromiseSettledResult<T>,
-    ): r is PromiseFulfilledResult<T> => r.status === 'fulfilled';
+    const validFeedbacks = results
+      .filter((r) => r.status === 'fulfilled' && r.value !== null)
+      .map((r: PromiseFulfilledResult<FeedbackSchemaType>) => r.value);
 
-    const response: FeedbackResponseDto = results
-      .filter(isFulfilled)
-      .map((r) => r.value);
-
-    return response;
+    return validFeedbacks;
   }
 
   async feedbackUpload(
@@ -122,7 +130,6 @@ export class FeedbackService {
         'No valid feedback found. All feedback values are empty.',
       );
     }
-
     // FIXME: user safeParse and check the result and throw meaningful error
     const validationResult = FeedbackManualRequestSchema.parse({ feedbacks });
     const extension = path.extname(file.originalname).replace('.', '') || 'csv';
@@ -137,6 +144,8 @@ export class FeedbackService {
         extension,
       })
       .returning({ id: schema.filesSchema.id });
+
+    this.monitoringService.incrementUploads();
 
     return this.feedbackManual(validationResult, user, newFile.id);
   }
@@ -164,7 +173,6 @@ export class FeedbackService {
 
     const total = totalResult[0]?.count ?? 0;
 
-    // TODO: Use query
     const feedbacks = await this.db
       .select()
       .from(schema.feedbacksSchema)
@@ -212,7 +220,7 @@ export class FeedbackService {
   }
 
   async feedbackSummary(userId: string): Promise<FeedbackSummaryResponseDto> {
-    return this.db
+    const results = await this.db
       .select({
         sentiment: schema.feedbacksSchema.sentiment,
         count: sql<number>`CAST(COUNT(*) AS INTEGER)`,
@@ -221,10 +229,11 @@ export class FeedbackService {
       .from(schema.feedbacksSchema)
       .where(eq(schema.feedbacksSchema.userId, userId))
       .groupBy(schema.feedbacksSchema.sentiment);
+
+    return FeedbackSummaryResponseSchema.parse(results);
   }
 
-  async getAllFeedback(user: UserSchemaType): Promise<FeedbackResponseDto> {
-    // FIXME: Use query
+  async getAllFeedback(user: UserSchemaType): Promise<FeedbackSchemaType[]> {
     return this.db
       .select()
       .from(schema.feedbacksSchema)

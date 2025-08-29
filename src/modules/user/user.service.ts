@@ -29,7 +29,6 @@ export class UserService {
 
     const total = totalResult[0]?.count ?? 0;
 
-    // TODO: just call it users
     const users = await this.db
       .select()
       .from(schema.usersSchema)
@@ -51,12 +50,10 @@ export class UserService {
     const { email } = query;
     const searchTerm = `%${email.trim()}%`;
 
-    // TODO: use query
-    const users = await this.db
-      .select()
-      .from(schema.usersSchema)
-      .where(sql`email ILIKE ${searchTerm}`)
-      .limit(5);
+    const users = await this.db.query.usersSchema.findMany({
+      where: sql`email ILIKE ${searchTerm}`,
+      limit: 5,
+    });
 
     return users;
   }

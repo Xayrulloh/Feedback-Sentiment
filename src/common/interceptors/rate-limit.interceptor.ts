@@ -37,12 +37,13 @@ export class RateLimitInterceptor implements NestInterceptor {
     next: CallHandler,
   ): Promise<Observable<unknown>> {
     const ctx = context.switchToHttp();
-    // TODO: use destructuring for request and response
-    const request = ctx.getRequest<AuthenticatedRequest>();
-    const response = ctx.getResponse();
-    // TODO: use destructuring for user and ip
-    const user = request.user;
-    const ip = request.ip;
+
+    const [request, response] = [
+      ctx.getRequest<AuthenticatedRequest>(),
+      ctx.getResponse(),
+    ];
+
+    const { user, ip } = request;
 
     if (user?.role === UserRoleEnum.ADMIN || request.method === 'GET') {
       return next.handle();

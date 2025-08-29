@@ -11,7 +11,7 @@ export class MetricsMiddleware implements NestMiddleware {
 
     this.monitoringService.incrementApiUsage(req.method, path);
 
-    if (path.startsWith('/feedback/upload')) {
+    if (path.startsWith('/api/feedback/upload')) {
       this.monitoringService.incrementUploads();
     }
 

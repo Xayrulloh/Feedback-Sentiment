@@ -1,11 +1,18 @@
+import { createZodDto } from 'nestjs-zod';
 import { FeedbackManualRequestSchema } from 'src/modules/feedback/dto/feedback.dto';
 import { FeedbackSchema } from 'src/utils/zod.schemas';
 import { z } from 'zod';
 
-// TODO: describe
+/**
+ * AI request schema.
+ * Reuses manual feedback request structure as the input for AI.
+ */
 const AIRequestSchema = FeedbackManualRequestSchema;
 
-// TODO: describe
+/**
+ * Schema for a raw response coming from Mistral API.
+ * Contains an array of choices, each with a message and content.
+ */
 const MistralResponseSchema = z.object({
   choices: z
     .array(
@@ -18,7 +25,11 @@ const MistralResponseSchema = z.object({
     .min(1),
 });
 
-// TODO: describe
+/**
+ * AI response schema.
+ * Extracted subset of feedback fields that AI provides:
+ * sentiment, confidence, summary, and the original content.
+ */
 const AIResponseSchema = FeedbackSchema.pick({
   sentiment: true,
   confidence: true,
@@ -26,25 +37,31 @@ const AIResponseSchema = FeedbackSchema.pick({
   content: true,
 });
 
-// TODO: describe
+/**
+ * Prompt response schema.
+ * Same as AIResponseSchema, but omits the original content field.
+ * Useful when showing only the processed AI output.
+ */
 const PromptResponseSchema = AIResponseSchema.omit({ content: true });
 
-type AIRequestSchemaDto = z.infer<typeof AIRequestSchema>;
-type MistralResponse = z.infer<typeof MistralResponseSchema>;
-type AIResponseSchemaType = z.infer<typeof AIResponseSchema>;
-type PromptResponseSchemaType = z.infer<typeof PromptResponseSchema>;
+/**
+ * DTOs inferred from schemas.
+ */
+class AIRequestDto extends createZodDto(AIRequestSchema) {}
+class MistralResponseDto extends createZodDto(MistralResponseSchema) {}
+class AIResponseDto extends createZodDto(AIResponseSchema) {}
+class PromptResponseDto extends createZodDto(PromptResponseSchema) {}
 
-// TODO: let's have only one export
+/**
+ * Unified export block — only schemas and DTOs.
+ */
 export {
   AIRequestSchema,
   AIResponseSchema,
   MistralResponseSchema,
   PromptResponseSchema,
-};
-
-export type {
-  AIRequestSchemaDto,
-  MistralResponse,
-  AIResponseSchemaType,
-  PromptResponseSchemaType,
+  AIRequestDto,
+  MistralResponseDto,
+  AIResponseDto,
+  PromptResponseDto,
 };

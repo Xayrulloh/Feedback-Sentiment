@@ -33,12 +33,12 @@ import {
 } from '@nestjs/swagger';
 import type { Express, Response } from 'express';
 import { ZodSerializerDto, ZodValidationPipe } from 'nestjs-zod';
+import { Roles } from 'src/common/decorators/roles.decorator';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { UserStatusGuard } from 'src/common/guards/user-status.guard';
 import type { AuthenticatedRequest } from 'src/shared/types/request-with-user';
 import { createBaseResponseDto, UserRoleEnum } from 'src/utils/zod.schemas';
-import { Roles } from '../../common/decorators/roles.decorator';
 import {
   FeedbackFilteredResponseSchema,
   type FeedbackGroupedArrayResponseDto,
@@ -116,6 +116,7 @@ export class FeedbackController {
   constructor(private readonly feedbackService: FeedbackService) {}
 
   @Post('manual')
+  @ApiBearerAuth()
   @HttpCode(HttpStatus.CREATED)
   @ApiBody({ type: FeedbackManualRequestDto })
   @ApiCreatedResponse({
@@ -151,6 +152,7 @@ export class FeedbackController {
   @ApiOperation({
     summary: 'Sending text based feedback and getting the ai analyze',
   })
+  @ZodSerializerDto(FeedbackResponseSchema)
   async feedbackManual(
     @Body() body: FeedbackManualRequestDto,
     @Req() req: AuthenticatedRequest,
@@ -159,6 +161,7 @@ export class FeedbackController {
   }
 
   @Post('upload')
+  @ApiBearerAuth()
   @HttpCode(HttpStatus.CREATED)
   @ApiConsumes('multipart/form-data')
   @ZodSerializerDto(FeedbackResponseSchema)
@@ -215,6 +218,7 @@ export class FeedbackController {
       },
     },
   })
+  @ZodSerializerDto(FeedbackResponseSchema)
   async feedbackUpload(
     @UploadedFile() file: Express.Multer.File,
     @Req() req: AuthenticatedRequest,
@@ -259,7 +263,7 @@ export class FeedbackController {
       'FeedbackSummaryResponseSchema',
     ),
   })
-  @ZodSerializerDto(FeedbackSummaryResponseSchema)
+  @ZodSerializerDto(FeedbackSummaryResponseDto)
   async getSentimentSummary(
     @Req() req: AuthenticatedRequest,
   ): Promise<FeedbackSummaryResponseDto> {

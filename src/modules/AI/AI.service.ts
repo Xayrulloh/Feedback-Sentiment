@@ -7,11 +7,11 @@ import { ConfigService } from '@nestjs/config';
 import axios, { type AxiosError } from 'axios';
 import type { EnvType } from 'src/config/env/env-validation';
 import {
-  type AIRequestSchemaDto,
-  type AIResponseSchemaType,
+  AIRequestDto,
+  AIResponseDto,
   MistralResponseSchema,
+  PromptResponseDto,
   PromptResponseSchema,
-  type PromptResponseSchemaType,
 } from './dto/AI.dto';
 import { generateSentimentPrompt } from './prompts/sentiment.prompt';
 
@@ -28,7 +28,7 @@ export class AIService {
   private async sendPrompt(
     prompt: string,
     model: string = 'mistralai/mistral-7b-instruct',
-  ): Promise<PromptResponseSchemaType> {
+  ): Promise<PromptResponseDto> {
     const { data } = await axios
       .post(
         'https://openrouter.ai/api/v1/chat/completions',
@@ -58,7 +58,7 @@ export class AIService {
     return JSON.parse(content);
   }
 
-  async analyzeOne(feedback: string): Promise<AIResponseSchemaType> {
+  async analyzeOne(feedback: string): Promise<AIResponseDto> {
     const prompt = generateSentimentPrompt(feedback);
     const jsonResponse = await this.sendPrompt(prompt);
 
@@ -71,9 +71,7 @@ export class AIService {
     };
   }
 
-  async analyzeMany(
-    input: AIRequestSchemaDto,
-  ): Promise<AIResponseSchemaType[]> {
+  async analyzeMany(input: AIRequestDto): Promise<AIResponseDto[]> {
     const promises = input.feedbacks.map((feedback) =>
       this.analyzeOne(feedback),
     );

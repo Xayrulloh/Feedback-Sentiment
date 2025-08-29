@@ -25,10 +25,9 @@ export class HttpExceptionFilter implements ExceptionFilter {
   catch(exception: HttpException, host: ArgumentsHost): void {
     Logger.error(exception.message, HttpExceptionFilter.name);
 
-    // TODO: take request first then response
-    const [response, request] = [
-      host.switchToHttp().getResponse<Response>(),
+    const [request, response] = [
       host.switchToHttp().getRequest<Request>(),
+      host.switchToHttp().getResponse<Response>(),
     ];
 
     // wrap it in block scope

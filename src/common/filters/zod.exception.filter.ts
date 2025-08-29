@@ -13,10 +13,9 @@ export class ZodExceptionFilter implements ExceptionFilter {
   catch(exception: ZodError, host: ArgumentsHost) {
     Logger.error(exception.message, ZodExceptionFilter.name);
 
-    // TODO: take request first then response
-    const [response, request] = [
-      host.switchToHttp().getResponse<Response>(),
+    const [request, response] = [
       host.switchToHttp().getRequest<Request>(),
+      host.switchToHttp().getResponse<Response>(),
     ];
 
     const issues = exception.issues.map((issue) => ({

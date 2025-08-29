@@ -29,11 +29,9 @@ export class AdminService {
   ) {}
 
   async adminDisable(userId: string): Promise<UserSchemaType> {
-    // TODO: use query
-    const [user] = await this.db
-      .select()
-      .from(schema.usersSchema)
-      .where(eq(schema.usersSchema.id, userId));
+    const user = await this.db.query.usersSchema.findFirst({
+      where: eq(schema.usersSchema.id, userId),
+    });
 
     if (!user) {
       throw new NotFoundException('User not found');
@@ -53,11 +51,9 @@ export class AdminService {
   }
 
   async adminSuspend(userId: string): Promise<UserSchemaType> {
-    // TODO: use query
-    const [user] = await this.db
-      .select()
-      .from(schema.usersSchema)
-      .where(eq(schema.usersSchema.id, userId));
+    const user = await this.db.query.usersSchema.findFirst({
+      where: eq(schema.usersSchema.id, userId),
+    });
 
     if (!user) {
       throw new NotFoundException('User not found');
@@ -101,12 +97,10 @@ export class AdminService {
   }
 
   async adminGetRateLimits(): Promise<RateLimitGetDto> {
-    // TODO: use query
-    return this.db.select().from(schema.rateLimitsSchema);
+    return this.db.query.rateLimitsSchema.findMany();
   }
 
   async adminGetSuspiciousActivities(): Promise<SuspiciousActivityResponseDto> {
-    // TODO: use query
-    return this.db.select().from(schema.suspiciousActivitySchema);
+    return this.db.query.suspiciousActivitySchema.findMany();
   }
 }
