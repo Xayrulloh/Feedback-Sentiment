@@ -1,44 +1,57 @@
 import { createZodDto } from 'nestjs-zod';
-import { PaginationSchema, UserSchema } from 'src/utils/zod.schemas';
+import { PaginationResponseSchema, UserSchema } from 'src/utils/zod.schemas';
 import * as z from 'zod';
 
-// TODO: describe
-const UserResponseSchema = z.object({
-  users: UserSchema.array(),
-  pagination: PaginationSchema.optional(),
-});
+// ==================== Query ====================
 
-type UserResponseSchemaType = z.infer<typeof UserResponseSchema>;
-
-class UserResponseDto extends createZodDto(UserResponseSchema) {}
-
-// TODO: describe
 const UserQuerySchema = z.object({
-  limit: z.coerce.number().int().min(1).max(100).default(20),
-  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(100)
+    .default(20)
+    .describe('Number of users to fetch per page'),
+  page: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .default(1)
+    .describe('Page number for pagination'),
 });
 
 class UserQueryDto extends createZodDto(UserQuerySchema) {}
 
-// TODO: describe
 const UserSearchQuerySchema = z.object({
-  email: z.string().trim().min(3).describe('Email to search for'),
+  email: z.string().trim().min(3).describe('Email substring to search for'),
 });
 
 class UserSearchQueryDto extends createZodDto(UserSearchQuerySchema) {}
 
-// TODO: describe
-const UserSearchResponseSchema = UserSchema.array();
-type UserSearchResponseSchemaType = z.infer<typeof UserSearchResponseSchema>;
+// ==================== Response ====================
+
+const UserResponseSchema = z.object({
+  users: UserSchema.array().describe('List of users'),
+  pagination: PaginationResponseSchema.optional().describe(
+    'Pagination metadata',
+  ),
+});
+
+class UserResponseDto extends createZodDto(UserResponseSchema) {}
+
+const UserSearchResponseSchema = UserSchema.array().describe(
+  'List of users matching search criteria',
+);
+
+class UserSearchResponseDto extends createZodDto(UserSearchResponseSchema) {}
 
 export {
-  UserResponseSchema,
-  type UserResponseSchemaType,
-  UserResponseDto,
   UserQuerySchema,
   UserQueryDto,
   UserSearchQuerySchema,
   UserSearchQueryDto,
+  UserResponseSchema,
+  UserResponseDto,
   UserSearchResponseSchema,
-  type UserSearchResponseSchemaType,
+  UserSearchResponseDto,
 };

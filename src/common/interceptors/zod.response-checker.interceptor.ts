@@ -27,7 +27,6 @@ export class ZodSerializerInterceptorCustom implements NestInterceptor {
 
     return next.handle().pipe(
       map((res: object | object[]) => {
-        // TODO: I'm not sure that this if condition ever works
         if (!responseSchema) {
           return res;
         }

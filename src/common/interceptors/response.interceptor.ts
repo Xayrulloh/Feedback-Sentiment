@@ -13,10 +13,9 @@ import { map } from 'rxjs/operators';
 @Injectable()
 export class ResponseInterceptor<T> implements NestInterceptor<T, unknown> {
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
-    // TODO: take request first then response
-    const [response, request] = [
-      context.switchToHttp().getResponse<Response>(),
+    const [request, response] = [
       context.switchToHttp().getRequest<Request>(),
+      context.switchToHttp().getResponse<Response>(),
     ];
 
     if (request.path === '/api/metrics') {

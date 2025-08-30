@@ -1,0 +1,1 @@
+ALTER TABLE "users" RENAME COLUMN "is_disabled" TO "is_suspended";

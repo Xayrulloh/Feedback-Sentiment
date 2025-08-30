@@ -5,8 +5,6 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-// FIXME: Research to fix this, instead of using every time we need better solution
-// biome-ignore lint/style/useImportType: Needed for DI
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { eq } from 'drizzle-orm';
@@ -15,12 +13,11 @@ import { DrizzleAsyncProvider } from 'src/database/drizzle.provider';
 import * as schema from 'src/database/schema';
 import { UserRoleEnum, type UserSchemaType } from 'src/utils/zod.schemas';
 import type {
-  AuthAdminResponseSchemaType,
+  AuthAdminResponseDto,
   AuthCredentialsDto,
-  AuthUserResponseSchemaType,
+  AuthUserResponseDto,
 } from './dto/auth.dto';
 
-// Give proper Scopes to inject
 @Injectable()
 export class AuthService {
   constructor(
@@ -29,9 +26,7 @@ export class AuthService {
     private db: NodePgDatabase<typeof schema>,
   ) {}
 
-  async registerUser(
-    input: AuthCredentialsDto,
-  ): Promise<AuthUserResponseSchemaType> {
+  async registerUser(input: AuthCredentialsDto): Promise<AuthUserResponseDto> {
     const existingUser = await this.getUser(input.email);
 
     if (existingUser) {
@@ -52,9 +47,7 @@ export class AuthService {
     return this.generateTokens(newUser);
   }
 
-  async loginUser(
-    input: AuthCredentialsDto,
-  ): Promise<AuthUserResponseSchemaType> {
+  async loginUser(input: AuthCredentialsDto): Promise<AuthUserResponseDto> {
     const user = await this.getUser(input.email);
 
     if (!user) {
@@ -71,7 +64,7 @@ export class AuthService {
 
   async registerAdmin(
     input: AuthCredentialsDto,
-  ): Promise<AuthAdminResponseSchemaType> {
+  ): Promise<AuthAdminResponseDto> {
     const existingUser = await this.getUser(input.email);
 
     if (existingUser) {
@@ -92,9 +85,7 @@ export class AuthService {
     return this.generateTokens(newAdmin);
   }
 
-  async loginAdmin(
-    input: AuthCredentialsDto,
-  ): Promise<AuthAdminResponseSchemaType> {
+  async loginAdmin(input: AuthCredentialsDto): Promise<AuthAdminResponseDto> {
     const user = await this.getUser(input.email);
 
     if (!user || user.role !== UserRoleEnum.ADMIN) {
@@ -111,7 +102,7 @@ export class AuthService {
   }
 
   private async generateTokens<
-    T extends AuthUserResponseSchemaType | AuthAdminResponseSchemaType,
+    T extends AuthUserResponseDto | AuthAdminResponseDto,
   >(user: Pick<UserSchemaType, 'id' | 'email' | 'role'>): Promise<T> {
     const token = await this.jwtService.signAsync({
       sub: user.id,
