@@ -32,7 +32,7 @@ export class UserService {
       limit,
       offset: (page - 1) * limit,
       orderBy: desc(schema.usersSchema.createdAt),
-    });    
+    });
 
     return {
       users: users,
