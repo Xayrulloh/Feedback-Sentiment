@@ -31,9 +31,4 @@ const FileResponseSchema = z.object({
 
 class FileResponseDto extends createZodDto(FileResponseSchema) {}
 
-export {
-  FileQuerySchema,
-  FileQueryDto,
-  FileResponseSchema,
-  FileResponseDto,
-};
+export { FileQuerySchema, FileQueryDto, FileResponseSchema, FileResponseDto };

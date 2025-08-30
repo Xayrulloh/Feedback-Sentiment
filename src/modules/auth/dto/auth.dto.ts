@@ -40,7 +40,6 @@ const AuthAdminResponseSchema = z.object({
 
 class AuthAdminResponseDto extends createZodDto(AuthAdminResponseSchema) {}
 
-
 export {
   AuthCredentialsSchema,
   AuthCredentialsDto,
@@ -50,4 +49,3 @@ export {
   AuthAdminResponseDto,
   type JWTPayloadType,
 };
-

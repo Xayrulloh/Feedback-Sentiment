@@ -348,16 +348,16 @@ export class FeedbackController {
     },
   })
   @ApiNotFoundResponse({
-      description: 'Feedback not found',
-      schema: {
-        type: 'object',
-        properties: {
-          success: { type: 'boolean', example: false },
-          statusCode: { type: 'number', example: 404 },
-          message: { type: 'string', example: 'Feedback not found' },
-          timestamp: { type: 'string', example: new Date().toISOString() },
-        },
+    description: 'Feedback not found',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: false },
+        statusCode: { type: 'number', example: 404 },
+        message: { type: 'string', example: 'Feedback not found' },
+        timestamp: { type: 'string', example: new Date().toISOString() },
       },
+    },
   })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Fetch single feedback by its id' })
@@ -368,7 +368,9 @@ export class FeedbackController {
     ),
   })
   @ZodSerializerDto(FeedbackSingleResponseSchema)
-  async getFeedbackById(@Param('feedbackId', ParseUUIDPipe) feedbackId: string) {
+  async getFeedbackById(
+    @Param('feedbackId', ParseUUIDPipe) feedbackId: string,
+  ) {
     return this.feedbackService.getFeedbackById(feedbackId);
   }
 }
