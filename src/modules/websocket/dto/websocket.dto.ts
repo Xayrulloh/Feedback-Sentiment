@@ -1,8 +1,6 @@
 import { RateLimitEventSchema } from 'src/utils/zod.schemas';
 import { z } from 'zod';
 
-//  * Schema representing a WebSocket event message.
-
 const WebSocketEventSchema = z
   .object({
     event: z.string(),

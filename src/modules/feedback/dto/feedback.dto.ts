@@ -7,7 +7,7 @@ import {
 } from 'src/utils/zod.schemas';
 import * as z from 'zod';
 
-/* -------------------- ENUMS -------------------- */
+// ==================== ENUMS ====================
 
 const SentimentEnum = z.enum([
   FeedbackSentimentEnum.NEGATIVE,
@@ -16,9 +16,8 @@ const SentimentEnum = z.enum([
   FeedbackSentimentEnum.UNKNOWN,
 ]);
 
-/* -------------------- REQUEST SCHEMAS -------------------- */
+// ==================== REQUEST SCHEMAS ====================
 
-// Manual feedback submission request
 const FeedbackManualRequestSchema = z
   .object({
     feedbacks: z
@@ -29,7 +28,6 @@ const FeedbackManualRequestSchema = z
   })
   .describe('Manual feedback submission payload');
 
-// Feedback query (filter + pagination)
 const FeedbackQuerySchema = z
   .object({
     sentiment: z
@@ -43,7 +41,6 @@ const FeedbackQuerySchema = z
   .merge(PaginationQuerySchema)
   .describe('Feedback query parameters with sentiment filter and pagination');
 
-// Report download query
 const ReportDownloadQuerySchema = z
   .object({
     format: z.enum(['pdf', 'csv']).describe('Download file format'),
@@ -53,19 +50,16 @@ const ReportDownloadQuerySchema = z
   })
   .describe('Query parameters for downloading feedback reports');
 
-/* -------------------- RESPONSE SCHEMAS -------------------- */
+// ==================== RESPONSE SCHEMAS ====================
 
-// Array of feedback responses
 const FeedbackResponseSchema = FeedbackSchema.array().describe(
   'Array of feedback items',
 );
 
-// Single feedback response
 const FeedbackSingleResponseSchema = FeedbackSchema.describe(
   'Single feedback item',
 );
 
-// Feedback sentiment summary
 const FeedbackSummaryResponseSchema = z
   .array(
     z.object({
@@ -85,7 +79,6 @@ const FeedbackSummaryResponseSchema = z
     'Summary of feedback sentiment analysis, including counts and percentages for each sentiment type',
   );
 
-// Filtered feedback with pagination
 const FeedbackFilteredResponseSchema = z
   .object({
     feedbacks: FeedbackSchema.array().describe('Filtered feedback results'),
@@ -93,7 +86,6 @@ const FeedbackFilteredResponseSchema = z
   })
   .describe('Filtered feedback response with pagination');
 
-// Grouped feedback response
 const FeedbackGroupedResponseSchema = z
   .object({
     summary: z.string().describe('Summary of grouped feedback items'),
@@ -113,7 +105,7 @@ const FeedbackGroupedResponseSchema = z
 const FeedbackGroupedArrayResponseSchema =
   FeedbackGroupedResponseSchema.array().describe('Array of grouped feedbacks');
 
-/* -------------------- DTO CLASSES -------------------- */
+// ==================== DTO CLASSES ====================
 
 class FeedbackManualRequestDto extends createZodDto(
   FeedbackManualRequestSchema,
@@ -145,12 +137,8 @@ class FeedbackQueryDto extends createZodDto(FeedbackQuerySchema) {}
 
 class ReportDownloadQueryDto extends createZodDto(ReportDownloadQuerySchema) {}
 
-/* -------------------- EXPORTS -------------------- */
-
 export {
-  // Enums
   SentimentEnum,
-  // Schemas
   FeedbackManualRequestSchema,
   FeedbackResponseSchema,
   FeedbackSingleResponseSchema,
@@ -160,7 +148,6 @@ export {
   FeedbackGroupedArrayResponseSchema,
   FeedbackQuerySchema,
   ReportDownloadQuerySchema,
-  // DTOs
   FeedbackManualRequestDto,
   FeedbackResponseDto,
   FeedbackSingleResponseDto,

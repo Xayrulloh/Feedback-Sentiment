@@ -18,7 +18,6 @@ import type {
   AuthUserResponseDto,
 } from './dto/auth.dto';
 
-// Give proper Scopes to inject
 @Injectable()
 export class AuthService {
   constructor(

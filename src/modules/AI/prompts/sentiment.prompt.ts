@@ -1,20 +1,19 @@
 export function generateSentimentPrompt(feedback: string): string {
-  return `Return JSON only:
+  return `Output strictly JSON:
 
-{
-  "sentiment": "positive" | "neutral" | "negative" | "unknown",
-  "confidence": 0-100,
-  "summary": "2-4 words"
-}
+  {
+    "sentiment": "positive" | "neutral" | "negative" | "unknown",
+    "confidence": 0-100,
+    "summary": "2-4 words, lowercase, category + brief descriptor"
+  }
 
-Rules:
-- positive = clear praise
-- negative = clear complaint
-- neutral = mixed/balanced
-- unknown = unclear
-- confidence: 0-40=neg, 41-60=neu, 61-100=pos
-- summary = key topic (e.g., shipping, quality, service, product, etc.)
+  Rules:
+  - sentiment: positive=praise, negative=complaint, neutral=mixed, unknown=unclear
+  - confidence: AI certainty in sentiment (0=low, 100=high)
+  - summary: combine one category (shipping, quality, service, product, pricing, usability, staff, support, other) with a short descriptor (e.g., "shipping delay", "product quality", "service speed")
+  - summary must be consistent, lowercase, no punctuation
+  - Return JSON only, no extra text before and after
 
-Important: You must return only JSON (don't add anything else (eg. comments, explanations, etc)).
-Feedback: "${feedback}"`;
+  Customer feedback:
+  """${feedback}"""`;
 }

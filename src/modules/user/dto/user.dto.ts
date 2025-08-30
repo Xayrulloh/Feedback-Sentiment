@@ -4,9 +4,6 @@ import * as z from 'zod';
 
 // ==================== Query ====================
 
-/**
- * Query parameters for fetching a paginated list of users
- */
 const UserQuerySchema = z.object({
   limit: z.coerce
     .number()
@@ -25,9 +22,6 @@ const UserQuerySchema = z.object({
 
 class UserQueryDto extends createZodDto(UserQuerySchema) {}
 
-/**
- * Query parameters for searching users by email
- */
 const UserSearchQuerySchema = z.object({
   email: z.string().trim().min(3).describe('Email substring to search for'),
 });
@@ -36,9 +30,6 @@ class UserSearchQueryDto extends createZodDto(UserSearchQuerySchema) {}
 
 // ==================== Response ====================
 
-/**
- * Response containing a list of users with optional pagination
- */
 const UserResponseSchema = z.object({
   users: UserSchema.array().describe('List of users'),
   pagination: PaginationResponseSchema.optional().describe(
@@ -48,24 +39,17 @@ const UserResponseSchema = z.object({
 
 class UserResponseDto extends createZodDto(UserResponseSchema) {}
 
-/**
- * Response containing a list of users matching a search query
- */
 const UserSearchResponseSchema = UserSchema.array().describe(
   'List of users matching search criteria',
 );
 
 class UserSearchResponseDto extends createZodDto(UserSearchResponseSchema) {}
 
-// ==================== Exports ====================
-
 export {
-  // Query
   UserQuerySchema,
   UserQueryDto,
   UserSearchQuerySchema,
   UserSearchQueryDto,
-  // Response
   UserResponseSchema,
   UserResponseDto,
   UserSearchResponseSchema,

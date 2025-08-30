@@ -15,7 +15,6 @@ import {
 } from './dto/AI.dto';
 import { generateSentimentPrompt } from './prompts/sentiment.prompt';
 
-// Give proper Scopes to inject
 @Injectable()
 export class AIService {
   private MISTRAL_API_KEY: string;

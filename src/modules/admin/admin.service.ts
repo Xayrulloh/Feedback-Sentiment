@@ -19,7 +19,6 @@ import type {
   SuspiciousActivityResponseDto,
 } from './dto/admin.dto';
 
-// Give proper Scopes to inject
 @Injectable()
 export class AdminService {
   constructor(

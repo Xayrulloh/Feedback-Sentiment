@@ -10,7 +10,6 @@ import type {
   UserSearchResponseDto,
 } from './dto/user.dto';
 
-// Give proper Scopes to inject
 @Injectable()
 export class UserService {
   constructor(

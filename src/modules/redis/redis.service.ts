@@ -1,7 +1,6 @@
 import { Inject, Injectable, type OnModuleDestroy } from '@nestjs/common';
 import type { Redis } from 'ioredis';
 
-// Give proper Scopes to inject
 @Injectable()
 export class RedisService implements OnModuleDestroy {
   constructor(@Inject('REDIS_CLIENT') private readonly redisClient: Redis) {}

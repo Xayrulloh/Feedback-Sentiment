@@ -25,6 +25,7 @@ import {
   ApiCreatedResponse,
   ApiForbiddenResponse,
   ApiInternalServerErrorResponse,
+  ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiQuery,
@@ -117,7 +118,6 @@ export class FeedbackController {
   constructor(private readonly feedbackService: FeedbackService) {}
 
   @Post('manual')
-  @ApiBearerAuth()
   @HttpCode(HttpStatus.CREATED)
   @ApiBody({ type: FeedbackManualRequestDto })
   @ApiCreatedResponse({
@@ -162,7 +162,6 @@ export class FeedbackController {
   }
 
   @Post('upload')
-  @ApiBearerAuth()
   @HttpCode(HttpStatus.CREATED)
   @ApiConsumes('multipart/form-data')
   @ZodSerializerDto(FeedbackResponseSchema)
@@ -255,7 +254,6 @@ export class FeedbackController {
     return this.feedbackService.feedbackUpload(file, req.user);
   }
 
-  @ApiBearerAuth()
   @Get('sentiment-summary')
   @ApiOperation({ summary: 'Get sentiment summary for user' })
   @ApiOkResponse({
@@ -272,7 +270,6 @@ export class FeedbackController {
   }
 
   @Get('grouped')
-  @ApiBearerAuth()
   @ApiOperation({
     summary: 'Get feedbacks grouped by sentiment',
   })
@@ -290,7 +287,6 @@ export class FeedbackController {
   }
 
   @Get()
-  @ApiBearerAuth()
   @ApiQuery({
     name: 'sentiment',
     required: false,
@@ -317,12 +313,11 @@ export class FeedbackController {
     return this.feedbackService.feedbackFiltered(query, req.user);
   }
 
-  @ApiBearerAuth()
+  @Get('report')
   @ApiOperation({ summary: 'Download either pdf or csv report file' })
   @ApiOkResponse({
     description: 'Download report file',
   })
-  @Get('report')
   @ApiQuery({ name: 'format', enum: ['csv', 'pdf'], required: true })
   @ApiQuery({ name: 'type', enum: ['detailed', 'summary'], required: true })
   async getFeedbackReport(
@@ -333,13 +328,39 @@ export class FeedbackController {
     return this.feedbackService.feedbackReportDownload(query, req.user, res);
   }
 
-  @Get(':id')
-  @ApiBearerAuth()
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Fetching single feedback by its id' })
-  @ApiOkResponse({
-    description: 'Fetching single feedback by id',
+  @Get(':feedbackId')
+  @ApiBadRequestResponse({
+    description: 'Validation failed (uuid is expected)',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: false },
+        statusCode: { type: 'number', example: 400 },
+        message: {
+          type: 'string',
+          example: 'Validation failed (uuid is expected)',
+        },
+        timestamp: {
+          type: 'string',
+          example: new Date().toISOString(),
+        },
+      },
+    },
   })
+  @ApiNotFoundResponse({
+      description: 'Feedback not found',
+      schema: {
+        type: 'object',
+        properties: {
+          success: { type: 'boolean', example: false },
+          statusCode: { type: 'number', example: 404 },
+          message: { type: 'string', example: 'Feedback not found' },
+          timestamp: { type: 'string', example: new Date().toISOString() },
+        },
+      },
+  })
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Fetch single feedback by its id' })
   @ApiOkResponse({
     type: createBaseResponseDto(
       FeedbackSingleResponseSchema,
@@ -347,7 +368,7 @@ export class FeedbackController {
     ),
   })
   @ZodSerializerDto(FeedbackSingleResponseSchema)
-  async getFeedbackById(@Param('id', ParseUUIDPipe) id: string) {
-    return this.feedbackService.getFeedbackById(id);
+  async getFeedbackById(@Param('feedbackId', ParseUUIDPipe) feedbackId: string) {
+    return this.feedbackService.getFeedbackById(feedbackId);
   }
 }

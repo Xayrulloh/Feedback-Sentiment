@@ -1,7 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import * as client from 'prom-client';
 
-// Give proper Scopes to inject
 @Injectable()
 export class MonitoringService {
   private readonly uploadCounter: client.Counter<string>;

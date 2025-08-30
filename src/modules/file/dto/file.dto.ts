@@ -4,9 +4,6 @@ import * as z from 'zod';
 
 // ==================== Query ====================
 
-/**
- * Query parameters for fetching files with pagination
- */
 const FileQuerySchema = z.object({
   limit: z.coerce
     .number()
@@ -27,9 +24,6 @@ class FileQueryDto extends createZodDto(FileQuerySchema) {}
 
 // ==================== Response ====================
 
-/**
- * Response DTO containing a paginated list of files
- */
 const FileResponseSchema = z.object({
   files: FileSchema.array().describe('List of files'),
   pagination: PaginationResponseSchema.describe('Pagination metadata'),
@@ -37,13 +31,9 @@ const FileResponseSchema = z.object({
 
 class FileResponseDto extends createZodDto(FileResponseSchema) {}
 
-// ==================== Exports ====================
-
 export {
-  // Query
   FileQuerySchema,
   FileQueryDto,
-  // Response
   FileResponseSchema,
   FileResponseDto,
 };

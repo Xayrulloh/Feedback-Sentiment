@@ -7,7 +7,6 @@ import type { Socket } from 'socket.io';
 import { DrizzleAsyncProvider } from 'src/database/drizzle.provider';
 import * as schema from 'src/database/schema';
 
-// Give proper Scopes to inject
 @Injectable()
 export class SocketMiddleware {
   private readonly jwtSecret: string;

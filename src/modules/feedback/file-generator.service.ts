@@ -7,7 +7,6 @@ import type {
   ReportDownloadQueryDto,
 } from './dto/feedback.dto';
 
-// Give proper Scopes to inject
 @Injectable()
 export class FileGeneratorService {
   async generate(

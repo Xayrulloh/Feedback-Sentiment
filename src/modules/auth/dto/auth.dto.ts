@@ -4,9 +4,6 @@ import { z } from 'zod';
 
 // ==================== Types ====================
 
-/**
- * JWT payload type embedded in the access token
- */
 type JWTPayloadType = {
   sub: string;
   email: string;
@@ -15,9 +12,6 @@ type JWTPayloadType = {
 
 // ==================== Credentials ====================
 
-/**
- * DTO for user login credentials (email + password)
- */
 const AuthCredentialsSchema = UserSchema.pick({ email: true }).merge(
   z.object({
     password: z.string().min(8).describe('User password'),
@@ -28,9 +22,6 @@ class AuthCredentialsDto extends createZodDto(AuthCredentialsSchema) {}
 
 // ==================== User Auth ====================
 
-/**
- * Response DTO returned after user login
- */
 const AuthUserResponseSchema = z.object({
   token: z.string().describe('JWT access token'),
   role: z.literal('USER').describe('User role'),
@@ -41,9 +32,6 @@ class AuthUserResponseDto extends createZodDto(AuthUserResponseSchema) {}
 
 // ==================== Admin Auth ====================
 
-/**
- * Response DTO returned after admin login
- */
 const AuthAdminResponseSchema = z.object({
   token: z.string().describe('JWT access token'),
   role: z.literal('ADMIN').describe('Admin role'),
@@ -52,17 +40,14 @@ const AuthAdminResponseSchema = z.object({
 
 class AuthAdminResponseDto extends createZodDto(AuthAdminResponseSchema) {}
 
-// ==================== Exports ====================
 
 export {
-  // Credentials
   AuthCredentialsSchema,
   AuthCredentialsDto,
-  // User Auth
   AuthUserResponseSchema,
   AuthUserResponseDto,
-  // Admin Auth
   AuthAdminResponseSchema,
   AuthAdminResponseDto,
+  type JWTPayloadType,
 };
-export type { JWTPayloadType };
+

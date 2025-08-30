@@ -10,9 +10,8 @@ import type { Server, Socket } from 'socket.io';
 import type { WebSocketEventSchemaType } from './dto/websocket.dto';
 import { SocketMiddleware } from './socket.middleware';
 
-@WebSocketGateway({ cors: { origin: '*' } })
-// Give proper Scopes to inject
 @Injectable()
+@WebSocketGateway({ cors: { origin: '*' } })
 export class SocketGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {

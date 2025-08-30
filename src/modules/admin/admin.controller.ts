@@ -115,7 +115,7 @@ export class AdminController {
         },
         timestamp: {
           type: 'string',
-          example: '2025-08-26T22:15:00.000Z',
+          example: new Date().toISOString(),
         },
       },
     },
@@ -162,7 +162,7 @@ export class AdminController {
         },
         timestamp: {
           type: 'string',
-          example: '2025-08-26T22:15:00.000Z',
+          example: new Date().toISOString(),
         },
       },
     },
@@ -226,7 +226,7 @@ export class AdminController {
         },
         timestamp: {
           type: 'string',
-          example: '2025-08-25T21:59:30.357Z',
+          example: new Date().toISOString(),
         },
         path: { type: 'string', example: '/api/admin/rate-limit' },
       },

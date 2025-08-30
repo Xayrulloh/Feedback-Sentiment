@@ -11,7 +11,6 @@ import {
   feedbackSummaryData,
 } from './sample.data';
 
-// Give proper Scopes to inject
 @Injectable()
 export class SampleService {
   sampleFeedbackFiltered(query: FeedbackQueryDto): FeedbackFilteredResponseDto {

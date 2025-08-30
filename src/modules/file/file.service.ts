@@ -6,7 +6,6 @@ import * as schema from 'src/database/schema';
 import type { UserSchemaType } from 'src/utils/zod.schemas';
 import type { FileQueryDto, FileResponseDto } from './dto/file.dto';
 
-// Give proper Scopes to inject
 @Injectable()
 export class FileService {
   constructor(

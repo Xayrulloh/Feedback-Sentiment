@@ -10,9 +10,6 @@ import z from 'zod';
 
 // ==================== Admin ====================
 
-/**
- * DTO for admin disable/suspend operations response
- */
 const AdminDisableSuspendResponseSchema = UserSchema.describe(
   'Response schema for admin disable/suspend operations',
 );
@@ -23,25 +20,16 @@ class AdminDisableSuspendResponseDto extends createZodDto(
 
 // ==================== Rate Limiter ====================
 
-/**
- * DTO for creating/updating rate limits
- */
 const RateLimitUpsertSchema = RateLimitSchema;
 
 class RateLimitUpsertDto extends createZodDto(RateLimitUpsertSchema) {}
 
-/**
- * DTO for fetching rate limits
- */
 const RateLimitGetSchema = RateLimitSchema.array();
 
 class RateLimitGetDto extends createZodDto(RateLimitGetSchema) {}
 
 // ==================== Monitoring ====================
 
-/**
- * DTO for monitoring metrics
- */
 const MetricsSchema = z.object({
   uploads: z.number().int().nonnegative().describe('Total uploads count'),
   apiUsage: z
@@ -68,9 +56,6 @@ class MetricsDto extends createZodDto(MetricsSchema) {}
 
 // ==================== Suspicious Activities ====================
 
-/**
- * DTO for suspicious activity responses
- */
 const SuspiciousActivityResponseSchema = z
   .object({
     userId: z.string().uuid().nullable(),
@@ -97,8 +82,6 @@ const SuspiciousActivityResponseSchema = z
 class SuspiciousActivityResponseDto extends createZodDto(
   SuspiciousActivityResponseSchema,
 ) {}
-
-// ==================== Exports ====================
 
 export {
   AdminDisableSuspendResponseSchema,
