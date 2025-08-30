@@ -94,7 +94,7 @@ export class AdminController {
 
   @Post('disable/:userId')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Toggle disable/enable a user' })
+  @ApiOperation({ summary: 'Disable a user' })
   @ApiParam({ name: 'userId', type: 'string', description: 'User ID (uuid)' })
   @ApiOkResponse({
     type: createBaseResponseDto(
@@ -141,7 +141,7 @@ export class AdminController {
 
   @Post('suspend/:userId')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Suspend (soft-delete) a user' })
+  @ApiOperation({ summary: 'Toggle to suspend a user' })
   @ApiParam({ name: 'userId', type: 'string', description: 'User ID (uuid)' })
   @ApiOkResponse({
     type: createBaseResponseDto(

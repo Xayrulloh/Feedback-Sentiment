@@ -27,10 +27,10 @@ const UserSchema = z
     role: z
       .enum([UserRoleEnum.USER, UserRoleEnum.ADMIN])
       .describe("Role might be either 'USER' or 'ADMIN'"),
-    isDisabled: z
+    isSuspended: z
       .boolean()
       .default(false)
-      .describe('Whether the user is disabled (cannot perform actions)'),
+      .describe('Whether the user is suspended (cannot perform actions)'),
   })
   .merge(BaseSchema);
 
