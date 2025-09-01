@@ -6,13 +6,9 @@ import {
   Logger,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
-// FIXME: Research to fix this, instead of using every time we need better solution
-// biome-ignore lint/style/useImportType: Needed for DI
+import { createBaseErrorResponse } from 'src/helpers/create-base-error-response.helper';
 import { MonitoringService } from 'src/modules/monitoring/monitoring.service';
-import type {
-  BaseErrorResponseSchemaType,
-  ErrorDetailsSchemaType,
-} from 'src/utils/zod.schemas';
+import type { ErrorDetailsSchemaType } from 'src/utils/zod.schemas';
 import type { ZodIssue } from 'zod';
 
 interface HttpErrorResponse {
@@ -27,56 +23,47 @@ export class HttpExceptionFilter implements ExceptionFilter {
   catch(exception: HttpException, host: ArgumentsHost): void {
     Logger.error(exception.message, HttpExceptionFilter.name);
 
-    // TODO: take request first then response
-    const [response, request] = [
-      host.switchToHttp().getResponse<Response>(),
+    const [request, response] = [
       host.switchToHttp().getRequest<Request>(),
+      host.switchToHttp().getResponse<Response>(),
     ];
 
-    // wrap it in block scope
-    this.monitoringService.incrementError(
-      request.method,
-      request.path,
-      exception.message,
-    );
+    this.monitoringService.incrementError({
+      method: request.method,
+      endpoint: request.path,
+      error_message: exception.message,
+    });
 
     const status = exception.getStatus();
     const rawResponse = exception.getResponse();
 
-    // TODO: the logic below is too complex make it simple
-    let message: string;
-    let errors: ErrorDetailsSchemaType[] | undefined;
+    const { message, errors } = this.parseHttpException(
+      rawResponse,
+      exception.message,
+    );
 
-    if (typeof rawResponse === 'string') {
-      message = rawResponse;
-    } else if (typeof rawResponse === 'object' && rawResponse !== null) {
-      const typed = rawResponse as HttpErrorResponse;
+    response
+      .status(status)
+      .json(createBaseErrorResponse(status, message, errors, request.url));
+  }
 
-      message = typed.message ?? exception.message;
-
-      if (typed.errors) {
-        errors = typed.errors.map((issue: ZodIssue) => ({
-          field: issue.path.length > 0 ? issue.path.join('.') : 'root',
-          message: issue.message,
-          code: issue.code.toUpperCase(),
-        }));
-      }
-    } else {
-      message = exception.message;
+  private parseHttpException(
+    rawResponse: unknown,
+    defaultMessage: string,
+  ): { message: string; errors?: ErrorDetailsSchemaType[] } {
+    if (!rawResponse || typeof rawResponse !== 'object') {
+      return { message: String(rawResponse ?? defaultMessage) };
     }
 
-    // TODO: take base error response by the function inside helper
-    const errorResponse: BaseErrorResponseSchemaType & {
-      errors?: ErrorDetailsSchemaType[];
-    } = {
-      success: false,
-      statusCode: status,
-      message,
-      ...(errors ? { errors } : {}),
-      timestamp: new Date().toISOString(),
-      path: request.url,
-    };
+    const typed = rawResponse as HttpErrorResponse;
 
-    response.status(status).json(errorResponse);
+    return {
+      message: typed.message ?? defaultMessage,
+      errors: typed.errors?.map((issue: ZodIssue) => ({
+        field: issue.path?.length ? issue.path.join('.') : 'root',
+        message: issue.message,
+        code: issue.code?.toUpperCase(),
+      })),
+    };
   }
 }

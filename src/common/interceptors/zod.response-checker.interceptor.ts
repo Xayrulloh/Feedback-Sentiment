@@ -17,7 +17,6 @@ const createZodSerializationException = (error: ZodError) => {
   return new ZodSerializationException(error);
 };
 
-// Give proper Scopes to inject
 @Injectable()
 export class ZodSerializerInterceptorCustom implements NestInterceptor {
   constructor(@Inject(Reflector) protected readonly reflector: Reflector) {}
@@ -27,7 +26,6 @@ export class ZodSerializerInterceptorCustom implements NestInterceptor {
 
     return next.handle().pipe(
       map((res: object | object[]) => {
-        // TODO: I'm not sure that this if condition ever works
         if (!responseSchema) {
           return res;
         }

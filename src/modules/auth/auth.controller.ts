@@ -17,16 +17,14 @@ import {
 } from '@nestjs/swagger';
 import { ZodSerializerDto } from 'nestjs-zod';
 import { UserStatusGuard } from 'src/common/guards/user-status.guard';
-import { createBaseResponseDto } from 'src/utils/zod.schemas';
-// FIXME: Research to fix this, instead of using every time we need better solution
-// biome-ignore lint/style/useImportType: Needed for DI
+import { createBaseResponseDto } from 'src/helpers/create-base-response.helper';
 import { AuthService } from './auth.service';
 import {
+  AuthAdminResponseDto,
   AuthAdminResponseSchema,
-  type AuthAdminResponseSchemaType,
   AuthCredentialsDto,
+  AuthUserResponseDto,
   AuthUserResponseSchema,
-  type AuthUserResponseSchemaType,
 } from './dto/auth.dto';
 
 @ApiTags('Auth')
@@ -96,7 +94,7 @@ export class AuthController {
   @ZodSerializerDto(AuthUserResponseSchema)
   async registerUser(
     @Body() body: AuthCredentialsDto,
-  ): Promise<AuthUserResponseSchemaType> {
+  ): Promise<AuthUserResponseDto> {
     return this.authService.registerUser(body);
   }
 
@@ -161,7 +159,7 @@ export class AuthController {
   @ZodSerializerDto(AuthUserResponseSchema)
   async loginUser(
     @Body() body: AuthCredentialsDto,
-  ): Promise<AuthUserResponseSchemaType> {
+  ): Promise<AuthUserResponseDto> {
     return this.authService.loginUser(body);
   }
 
@@ -226,7 +224,7 @@ export class AuthController {
   @ZodSerializerDto(AuthAdminResponseSchema)
   async registerAdmin(
     @Body() body: AuthCredentialsDto,
-  ): Promise<AuthAdminResponseSchemaType> {
+  ): Promise<AuthAdminResponseDto> {
     return this.authService.registerAdmin(body);
   }
 
@@ -291,7 +289,7 @@ export class AuthController {
   @ZodSerializerDto(AuthAdminResponseSchema)
   async loginAdmin(
     @Body() body: AuthCredentialsDto,
-  ): Promise<AuthAdminResponseSchemaType> {
+  ): Promise<AuthAdminResponseDto> {
     return this.authService.loginAdmin(body);
   }
 }

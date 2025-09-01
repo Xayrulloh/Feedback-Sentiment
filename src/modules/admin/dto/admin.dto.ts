@@ -8,59 +8,49 @@ import {
 } from 'src/utils/zod.schemas';
 import z from 'zod';
 
+// ==================== Admin ====================
+
 const AdminDisableSuspendResponseSchema = UserSchema.describe(
   'Response schema for admin disable/suspend operations',
 );
 
-class AdminDisableSuspendResponseDto extends createZodDto(
-  AdminDisableSuspendResponseSchema,
-) {}
+// ==================== Rate Limiter ====================
 
-type AdminDisableSuspendResponseSchemaType = z.infer<
-  typeof AdminDisableSuspendResponseSchema
->;
+const RateLimitUpsertSchema = RateLimitSchema.describe(
+  'Rrate limit upsert data from request',
+);
 
-// rate limiter
+const RateLimitGetSchema = RateLimitSchema.array().describe(
+  'rate limit get schema as an array',
+);
 
-// TODO: describe
-const RateLimitUpsertSchema = RateLimitSchema;
+// ==================== Monitoring ====================
 
-class RateLimitUpsertDto extends createZodDto(RateLimitUpsertSchema) {}
+const MetricsSchema = z
+  .object({
+    uploads: z.number().int().nonnegative().describe('Total uploads count'),
+    apiUsage: z
+      .array(
+        z.object({
+          method: z.string(),
+          endpoint: z.string(),
+          count: z.number().int().nonnegative(),
+        }),
+      )
+      .describe('API usage per endpoint'),
+    errorRates: z
+      .array(
+        z.object({
+          method: z.string(),
+          endpoint: z.string(),
+          count: z.number().int().nonnegative(),
+        }),
+      )
+      .describe('Error counts per endpoint'),
+  })
+  .describe('App metrics data');
 
-// FIXME: REMOVE ALL TYPE THINGS FROM ALL .dto.ts FILES AND USE DTO INSTEAD (not RateLimitUpsertSchemaType but RateLimitUpsertDto)
-type RateLimitUpsertSchemaType = z.infer<typeof RateLimitUpsertSchema>;
-
-// TODO: describe
-const RateLimitGetSchema = RateLimitSchema.array();
-
-class RateLimitGetDto extends createZodDto(RateLimitGetSchema) {}
-
-type RateLimitGetSchemaType = z.infer<typeof RateLimitGetSchema>;
-
-// Monitoring
-
-// TODO: describe
-const MetricsSchema = z.object({
-  uploads: z.number().int().nonnegative(),
-  apiUsage: z.array(
-    z.object({
-      method: z.string(),
-      endpoint: z.string(),
-      count: z.number().int().nonnegative(),
-    }),
-  ),
-  errorRates: z.array(
-    z.object({
-      method: z.string(),
-      endpoint: z.string(),
-      count: z.number().int().nonnegative(),
-    }),
-  ),
-});
-
-type MetricsSchemaType = z.infer<typeof MetricsSchema>;
-
-// Suspicious Activities
+// ==================== Suspicious Activities ====================
 
 const SuspiciousActivityResponseSchema = z
   .object({
@@ -84,10 +74,14 @@ const SuspiciousActivityResponseSchema = z
   .merge(BaseSchema)
   .array()
   .describe('List of suspicious activities');
-type SuspiciousActivityResponseSchemaType = z.infer<
-  typeof SuspiciousActivityResponseSchema
->;
 
+// DTOs
+class AdminDisableSuspendResponseDto extends createZodDto(
+  AdminDisableSuspendResponseSchema,
+) {}
+class RateLimitUpsertDto extends createZodDto(RateLimitUpsertSchema) {}
+class RateLimitGetDto extends createZodDto(RateLimitGetSchema) {}
+class MetricsDto extends createZodDto(MetricsSchema) {}
 class SuspiciousActivityResponseDto extends createZodDto(
   SuspiciousActivityResponseSchema,
 ) {}
@@ -95,16 +89,12 @@ class SuspiciousActivityResponseDto extends createZodDto(
 export {
   AdminDisableSuspendResponseSchema,
   AdminDisableSuspendResponseDto,
-  type AdminDisableSuspendResponseSchemaType,
   RateLimitUpsertSchema,
   RateLimitUpsertDto,
-  type RateLimitUpsertSchemaType,
   RateLimitGetSchema,
   RateLimitGetDto,
-  type RateLimitGetSchemaType,
   MetricsSchema,
-  type MetricsSchemaType,
+  MetricsDto,
   SuspiciousActivityResponseSchema,
-  type SuspiciousActivityResponseSchemaType,
   SuspiciousActivityResponseDto,
 };

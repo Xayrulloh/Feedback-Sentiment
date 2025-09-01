@@ -9,24 +9,22 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { ZodSerializerDto, ZodValidationPipe } from 'nestjs-zod';
+import { Roles } from 'src/common/decorators/roles.decorator';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
-import { createBaseResponseDto, UserRoleEnum } from 'src/utils/zod.schemas';
-import { Roles } from '../auth/decorators/roles.decorator';
+import { createBaseResponseDto } from 'src/helpers/create-base-response.helper';
+import { UserRoleEnum } from 'src/utils/zod.schemas';
 import {
+  FeedbackFilteredResponseDto,
   FeedbackFilteredResponseSchema,
-  type FeedbackFilteredResponseSchemaType,
+  FeedbackGroupedArrayResponseDto,
   FeedbackGroupedArrayResponseSchema,
-  type FeedbackGroupedArrayResponseType,
-  FeedbackQuerySchemaDto,
+  FeedbackQueryDto,
   FeedbackResponseSchema,
   FeedbackSummaryResponseDto,
   FeedbackSummaryResponseSchema,
-  type FeedbackSummaryResponseSchemaType,
   SentimentEnum,
 } from '../feedback/dto/feedback.dto';
-// FIXME: Research to fix this, instead of using every time we need better solution
-// biome-ignore lint/style/useImportType: Needed for DI
 import { SampleService } from './sample.service';
 
 @Controller('sample')
@@ -79,9 +77,9 @@ export class SampleController {
   })
   @ZodSerializerDto(FeedbackFilteredResponseSchema)
   sampleFeedbackFiltered(
-    @Query(new ZodValidationPipe(FeedbackQuerySchemaDto))
-    query: FeedbackQuerySchemaDto,
-  ): FeedbackFilteredResponseSchemaType {
+    @Query(new ZodValidationPipe(FeedbackQueryDto))
+    query: FeedbackQueryDto,
+  ): FeedbackFilteredResponseDto {
     return this.sampleService.sampleFeedbackFiltered(query);
   }
 
@@ -96,7 +94,7 @@ export class SampleController {
     ),
   })
   @ZodSerializerDto(FeedbackGroupedArrayResponseSchema)
-  sampleFeedbackGrouped(): FeedbackGroupedArrayResponseType {
+  sampleFeedbackGrouped(): FeedbackGroupedArrayResponseDto {
     return this.sampleService.sampleFeedbackGrouped();
   }
 
@@ -109,7 +107,7 @@ export class SampleController {
     ),
   })
   @ZodSerializerDto(FeedbackSummaryResponseDto)
-  sampleFeedbackSentimentSummary(): FeedbackSummaryResponseSchemaType {
+  sampleFeedbackSentimentSummary(): FeedbackSummaryResponseDto {
     return this.sampleService.sampleFeedbackSentimentSummary();
   }
 }

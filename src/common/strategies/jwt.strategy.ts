@@ -1,6 +1,4 @@
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
-// FIXME: Research to fix this, instead of using every time we need better solution
-// biome-ignore lint/style/useImportType: Needed for DI
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { eq } from 'drizzle-orm';
@@ -11,7 +9,6 @@ import { DrizzleAsyncProvider } from 'src/database/drizzle.provider';
 import * as schema from 'src/database/schema';
 import type { JWTPayloadType } from 'src/modules/auth/dto/auth.dto';
 
-// Give proper Scopes to inject
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   constructor(

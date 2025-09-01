@@ -1,4 +1,3 @@
-import { createZodDto } from 'nestjs-zod';
 import * as z from 'zod';
 
 // base
@@ -28,10 +27,10 @@ const UserSchema = z
     role: z
       .enum([UserRoleEnum.USER, UserRoleEnum.ADMIN])
       .describe("Role might be either 'USER' or 'ADMIN'"),
-    isDisabled: z
+    isSuspended: z
       .boolean()
       .default(false)
-      .describe('Whether the user is disabled (cannot perform actions)'),
+      .describe('Whether the user is suspended (cannot perform actions)'),
   })
   .merge(BaseSchema);
 
@@ -44,14 +43,6 @@ const enum FeedbackSentimentEnum {
   NEGATIVE = 'negative',
   UNKNOWN = 'unknown',
 }
-
-// TODO: it should not be in feedback part but separated pagination comment. And also name should be PaginationResponseSchema
-const PaginationSchema = z.object({
-  limit: z.number().int().min(1).max(100),
-  page: z.number().int().min(1),
-  total: z.number().int().min(0),
-  pages: z.number().int().min(0),
-});
 
 const FeedbackSchema = z
   .object({
@@ -101,9 +92,8 @@ const FileSchema = z
 
 type FileSchemaType = z.infer<typeof FileSchema>;
 
-// TODO: give another proper name
 // interceptors and filters
-const BaseSuccessResponseSchema = <T extends z.ZodTypeAny>(dataSchema?: T) =>
+const SuccessResponseSchema = <T extends z.ZodTypeAny>(dataSchema?: T) =>
   z.object({
     success: z.boolean(),
     statusCode: z.number(),
@@ -112,21 +102,9 @@ const BaseSuccessResponseSchema = <T extends z.ZodTypeAny>(dataSchema?: T) =>
     timestamp: z.string(),
   });
 
-type BaseSuccessResponseSchemaType<T = z.ZodTypeAny> = z.infer<
-  ReturnType<typeof BaseSuccessResponseSchema<z.ZodType<T>>>
+type SuccessResponseSchemaType<T = z.ZodTypeAny> = z.infer<
+  ReturnType<typeof SuccessResponseSchema<z.ZodType<T>>>
 >;
-
-// FIXME: this function should be in helper not in zod.schema file
-function createBaseResponseDto(schema: z.ZodTypeAny, name: string) {
-  const responseSchema = BaseSuccessResponseSchema(schema);
-  const className = `${name}Dto`;
-
-  const namedClass = {
-    [className]: class extends createZodDto(responseSchema) {},
-  };
-
-  return namedClass[className];
-}
 
 const ErrorDetailsSchema = z.object({
   field: z.string().optional(),
@@ -217,21 +195,39 @@ const RateLimitEventSchema = z.object({
 
 type RateLimitEventSchemaType = z.infer<typeof RateLimitEventSchema>;
 
+// Pagination response and query schemas
+
+const PaginationResponseSchema = z
+  .object({
+    limit: z.number().int().min(1).max(100),
+    page: z.number().int().min(1),
+    total: z.number().int().min(0),
+    pages: z.number().int().min(0),
+  })
+  .describe('Pagination response schema');
+
+const PaginationQuerySchema = z
+  .object({
+    limit: z.coerce.number().int().min(1).max(100).default(20),
+    page: z.coerce.number().int().min(1).default(1),
+  })
+  .describe('pagination query schema');
+
 export {
+  PaginationQuerySchema,
   type FileSchemaType,
   FileSchema,
   UserSchema,
   type UserSchemaType,
   UserRoleEnum,
   BaseSchema,
-  PaginationSchema,
+  PaginationResponseSchema,
   type BaseSchemaType,
   FeedbackSchema,
   type FeedbackSchemaType,
   FeedbackSentimentEnum,
-  BaseSuccessResponseSchema,
-  type BaseSuccessResponseSchemaType,
-  createBaseResponseDto,
+  SuccessResponseSchema,
+  type SuccessResponseSchemaType,
   ErrorDetailsSchema,
   BaseErrorResponseSchema,
   type BaseErrorResponseSchemaType,

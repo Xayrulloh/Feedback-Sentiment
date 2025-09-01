@@ -11,35 +11,25 @@ import type {
   FeedbackSentimentEnum,
   UserSchemaType,
 } from 'src/utils/zod.schemas';
-// FIXME: Research to fix this, instead of using every time we need better solution
-// biome-ignore lint/style/useImportType: Needed for DI
 import { AIService } from '../AI/AI.service';
-// FIXME: Research to fix this, instead of using every time we need better solution
-// biome-ignore lint/style/useImportType: Needed for DI
-import { MonitoringService } from '../monitoring/monitoring.service';
 import {
-  type FeedbackFilteredResponseSchemaType,
-  type FeedbackGroupedArrayResponseType,
-  type FeedbackManualRequestDto,
+  FeedbackFilteredResponseDto,
+  FeedbackGroupedArrayResponseDto,
+  FeedbackManualRequestDto,
   FeedbackManualRequestSchema,
-  type FeedbackQuerySchemaDto,
-  type FeedbackResponseDto,
-  type FeedbackSingleResponseDto,
-  type FeedbackSummaryResponseDto,
-  FeedbackSummaryResponseSchema,
-  type ReportDownloadQueryDto,
+  FeedbackQueryDto,
+  FeedbackResponseDto,
+  FeedbackSingleResponseDto,
+  FeedbackSummaryResponseDto,
+  ReportDownloadQueryDto,
 } from './dto/feedback.dto';
-// FIXME: Research to fix this, instead of using every time we need better solution
-// biome-ignore lint/style/useImportType: Needed for DI
 import { FileGeneratorService } from './file-generator.service';
 
-// Give proper Scopes to inject
 @Injectable()
 export class FeedbackService {
   constructor(
     private readonly aiService: AIService,
     private readonly fileGeneratorService: FileGeneratorService,
-    private readonly monitoringService: MonitoringService,
     @Inject(DrizzleAsyncProvider)
     private readonly db: NodePgDatabase<typeof schema>,
   ) {}
@@ -49,8 +39,7 @@ export class FeedbackService {
     user: UserSchemaType,
     fileId: string | null = null,
   ): Promise<FeedbackResponseDto> {
-    // FIXME: user safer promise
-    const response: FeedbackResponseDto = await Promise.all(
+    const results = await Promise.allSettled(
       input.feedbacks.map(async (feedback) => {
         const aiResult = await this.aiService.analyzeOne(feedback);
 
@@ -59,7 +48,7 @@ export class FeedbackService {
           .values({
             content: feedback,
             userId: user.id,
-            fileId: fileId,
+            fileId,
             sentiment: aiResult.sentiment,
             confidence: Math.round(aiResult.confidence),
             summary: aiResult.summary,
@@ -70,7 +59,14 @@ export class FeedbackService {
       }),
     );
 
-    return response;
+    const validFeedbacks = results
+      .filter(
+        (r): r is PromiseFulfilledResult<FeedbackSchemaType> =>
+          r.status === 'fulfilled' && r.value !== null,
+      )
+      .map((r) => r.value);
+
+    return validFeedbacks;
   }
 
   async feedbackUpload(
@@ -125,8 +121,21 @@ export class FeedbackService {
       );
     }
 
-    // FIXME: user safeParse and check the result and throw meaningful error
-    const validationResult = FeedbackManualRequestSchema.parse({ feedbacks });
+    const validationResult = FeedbackManualRequestSchema.safeParse({
+      feedbacks,
+    });
+
+    let validFeedbacks: FeedbackManualRequestDto['feedbacks'];
+
+    if (validationResult.success) {
+      validFeedbacks = validationResult.data.feedbacks;
+    } else {
+      throw new BadRequestException({
+        message: 'Invalid feedback payload',
+        errors: validationResult.error.issues,
+      });
+    }
+
     const extension = path.extname(file.originalname).replace('.', '') || 'csv';
     const [newFile] = await this.db
       .insert(schema.filesSchema)
@@ -140,16 +149,13 @@ export class FeedbackService {
       })
       .returning({ id: schema.filesSchema.id });
 
-    // FIXME: you are breaking SOLID, haven't we added it to metrics middleware?
-    this.monitoringService.incrementUploads();
-
-    return this.feedbackManual(validationResult, user, newFile.id);
+    return this.feedbackManual({ feedbacks: validFeedbacks }, user, newFile.id);
   }
 
   async feedbackFiltered(
-    query: FeedbackQuerySchemaDto,
+    query: FeedbackQueryDto,
     user: UserSchemaType,
-  ): Promise<FeedbackFilteredResponseSchemaType> {
+  ): Promise<FeedbackFilteredResponseDto> {
     const { sentiment, limit, page } = query;
 
     const whereConditions = [eq(schema.feedbacksSchema.userId, user.id)];
@@ -169,13 +175,12 @@ export class FeedbackService {
 
     const total = totalResult[0]?.count ?? 0;
 
-    // TODO: Use query
-    const feedbacks = await this.db
-      .select()
-      .from(schema.feedbacksSchema)
-      .where(and(...whereConditions))
-      .limit(limit)
-      .offset((page - 1) * limit);
+    const feedbacks = await this.db.query.feedbacksSchema.findMany({
+      where: and(...whereConditions),
+      orderBy: [desc(schema.feedbacksSchema.createdAt)],
+      limit,
+      offset: (page - 1) * limit,
+    });
 
     return {
       feedbacks,
@@ -190,7 +195,7 @@ export class FeedbackService {
 
   async feedbackGrouped(
     userId: string,
-  ): Promise<FeedbackGroupedArrayResponseType> {
+  ): Promise<FeedbackGroupedArrayResponseDto> {
     return await this.db
       .select({
         summary: schema.feedbacksSchema.summary,
@@ -206,7 +211,7 @@ export class FeedbackService {
             'id', ${schema.feedbacksSchema.id}::text,
             'content', ${schema.feedbacksSchema.content},
             'sentiment', ${schema.feedbacksSchema.sentiment}
-          )
+          ) ORDER BY ${schema.feedbacksSchema.createdAt} DESC
         )`,
       })
       .from(schema.feedbacksSchema)
@@ -217,7 +222,7 @@ export class FeedbackService {
   }
 
   async feedbackSummary(userId: string): Promise<FeedbackSummaryResponseDto> {
-    const results = await this.db
+    return this.db
       .select({
         sentiment: schema.feedbacksSchema.sentiment,
         count: sql<number>`CAST(COUNT(*) AS INTEGER)`,
@@ -226,17 +231,13 @@ export class FeedbackService {
       .from(schema.feedbacksSchema)
       .where(eq(schema.feedbacksSchema.userId, userId))
       .groupBy(schema.feedbacksSchema.sentiment);
-
-    // FIXME: why are you parsing? Haven't we gave zod serializer?
-    return FeedbackSummaryResponseSchema.parse(results);
   }
 
   async getAllFeedback(user: UserSchemaType): Promise<FeedbackSchemaType[]> {
-    // FIXME: Use query
-    return this.db
-      .select()
-      .from(schema.feedbacksSchema)
-      .where(eq(schema.feedbacksSchema.userId, user.id));
+    return this.db.query.feedbacksSchema.findMany({
+      where: eq(schema.feedbacksSchema.userId, user.id),
+      orderBy: desc(schema.feedbacksSchema.createdAt),
+    });
   }
 
   async feedbackReportDownload(

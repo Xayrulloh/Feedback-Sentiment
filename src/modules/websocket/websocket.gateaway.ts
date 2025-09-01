@@ -7,14 +7,11 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import type { Server, Socket } from 'socket.io';
-import type { WebSocketEventSchemaType } from './dto/websocket.dto';
-// FIXME: Research to fix this, instead of using every time we need better solution
-// biome-ignore lint/style/useImportType: Needed for DI
+import { WebSocketEventSchemaDto } from './dto/websocket.dto';
 import { SocketMiddleware } from './socket.middleware';
 
-@WebSocketGateway({ cors: { origin: '*' } })
-// Give proper Scopes to inject
 @Injectable()
+@WebSocketGateway({ cors: { origin: '*' } })
 export class SocketGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
@@ -49,11 +46,11 @@ export class SocketGateway
     });
   }
 
-  notifyAll(payload: WebSocketEventSchemaType) {
+  notifyAll(payload: WebSocketEventSchemaDto) {
     this.server.emit(payload.event, payload.data);
   }
 
-  notifyAdmin(payload: WebSocketEventSchemaType) {
+  notifyAdmin(payload: WebSocketEventSchemaDto) {
     this.server.to('admin').emit(payload.event, payload.data);
   }
 }

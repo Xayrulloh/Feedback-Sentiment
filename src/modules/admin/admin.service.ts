@@ -12,16 +12,13 @@ import type {
   RateLimitSchemaType,
   UserSchemaType,
 } from 'src/utils/zod.schemas';
-// FIXME: Research to fix this, instead of using every time we need better solution
-// biome-ignore lint/style/useImportType: Needed for DI
 import { RedisService } from '../redis/redis.service';
 import type {
-  RateLimitGetSchemaType,
+  RateLimitGetDto,
   RateLimitUpsertDto,
-  SuspiciousActivityResponseSchemaType,
+  SuspiciousActivityResponseDto,
 } from './dto/admin.dto';
 
-// Give proper Scopes to inject
 @Injectable()
 export class AdminService {
   constructor(
@@ -31,11 +28,9 @@ export class AdminService {
   ) {}
 
   async adminDisable(userId: string): Promise<UserSchemaType> {
-    // TODO: use query
-    const [user] = await this.db
-      .select()
-      .from(schema.usersSchema)
-      .where(eq(schema.usersSchema.id, userId));
+    const user = await this.db.query.usersSchema.findFirst({
+      where: eq(schema.usersSchema.id, userId),
+    });
 
     if (!user) {
       throw new NotFoundException('User not found');
@@ -47,7 +42,9 @@ export class AdminService {
 
     const [disabledUser] = await this.db
       .update(schema.usersSchema)
-      .set({ isDisabled: !user.isDisabled })
+      .set({
+        deletedAt: new Date(),
+      })
       .where(eq(schema.usersSchema.id, userId))
       .returning();
 
@@ -55,11 +52,9 @@ export class AdminService {
   }
 
   async adminSuspend(userId: string): Promise<UserSchemaType> {
-    // TODO: use query
-    const [user] = await this.db
-      .select()
-      .from(schema.usersSchema)
-      .where(eq(schema.usersSchema.id, userId));
+    const user = await this.db.query.usersSchema.findFirst({
+      where: eq(schema.usersSchema.id, userId),
+    });
 
     if (!user) {
       throw new NotFoundException('User not found');
@@ -71,9 +66,7 @@ export class AdminService {
 
     const [suspendedUser] = await this.db
       .update(schema.usersSchema)
-      .set({
-        deletedAt: new Date(),
-      })
+      .set({ isSuspended: !user.isSuspended })
       .where(eq(schema.usersSchema.id, userId))
       .returning();
 
@@ -102,13 +95,11 @@ export class AdminService {
     return upsertedRateLimit;
   }
 
-  async adminGetRateLimits(): Promise<RateLimitGetSchemaType> {
-    // TODO: use query
-    return this.db.select().from(schema.rateLimitsSchema);
+  async adminGetRateLimits(): Promise<RateLimitGetDto> {
+    return this.db.query.rateLimitsSchema.findMany();
   }
 
-  async adminGetSuspiciousActivities(): Promise<SuspiciousActivityResponseSchemaType> {
-    // TODO: use query
-    return this.db.select().from(schema.suspiciousActivitySchema);
+  async adminGetSuspiciousActivities(): Promise<SuspiciousActivityResponseDto> {
+    return this.db.query.suspiciousActivitySchema.findMany();
   }
 }

@@ -1,9 +1,6 @@
 import { Injectable, type NestMiddleware } from '@nestjs/common';
-// FIXME: Research to fix this, instead of using every time we need better solution
-// biome-ignore lint/style/useImportType: Needed for DI
 import { MonitoringService } from 'src/modules/monitoring/monitoring.service';
 
-// Give proper Scopes to inject
 @Injectable()
 export class MetricsMiddleware implements NestMiddleware {
   constructor(private readonly monitoringService: MonitoringService) {}
@@ -11,13 +8,15 @@ export class MetricsMiddleware implements NestMiddleware {
   use(req: Request, _res: Response, next: () => void) {
     const path = req.url.split('?')[0];
 
-    this.monitoringService.incrementApiUsage(req.method, path);
+    this.monitoringService.incrementApiUsage({
+      method: req.method,
+      endpoint: path,
+    });
 
-    if (path.startsWith('/feedback/upload')) {
+    if (path.startsWith('/api/feedback/upload')) {
       this.monitoringService.incrementUploads();
     }
 
-    // FIXME: put return
-    next();
+    return next();
   }
 }

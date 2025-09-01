@@ -1,7 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import axios from 'axios';
 
-// Give proper Scopes to inject
 @Injectable()
 export class PrometheusService {
   private readonly logger = new Logger(PrometheusService.name);

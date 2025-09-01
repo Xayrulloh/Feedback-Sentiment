@@ -11,11 +11,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { Observable } from 'rxjs';
 import { DrizzleAsyncProvider } from 'src/database/drizzle.provider';
 import * as schema from 'src/database/schema';
-// FIXME: Research to fix this, instead of using every time we need better solution
-// biome-ignore lint/style/useImportType: Needed for DI
 import { RedisService } from 'src/modules/redis/redis.service';
-// FIXME: Research to fix this, instead of using every time we need better solution
-// biome-ignore lint/style/useImportType: Needed for DI
 import { SocketGateway } from 'src/modules/websocket/websocket.gateaway';
 import type { AuthenticatedRequest } from 'src/shared/types/request-with-user';
 import { HOUR_SECONDS } from 'src/utils/constants';
@@ -26,7 +22,6 @@ import {
   UserRoleEnum,
 } from 'src/utils/zod.schemas';
 
-// Give proper Scopes to inject
 @Injectable()
 export class RateLimitInterceptor implements NestInterceptor {
   constructor(
@@ -41,12 +36,13 @@ export class RateLimitInterceptor implements NestInterceptor {
     next: CallHandler,
   ): Promise<Observable<unknown>> {
     const ctx = context.switchToHttp();
-    // TODO: use destructuring for request and response
-    const request = ctx.getRequest<AuthenticatedRequest>();
-    const response = ctx.getResponse();
-    // TODO: use destructuring for user and ip
-    const user = request.user;
-    const ip = request.ip;
+
+    const [request, response] = [
+      ctx.getRequest<AuthenticatedRequest>(),
+      ctx.getResponse(),
+    ];
+
+    const { user, ip } = request;
 
     if (user?.role === UserRoleEnum.ADMIN || request.method === 'GET') {
       return next.handle();

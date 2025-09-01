@@ -1,12 +1,11 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { and, eq, sql } from 'drizzle-orm';
+import { and, desc, eq, sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { DrizzleAsyncProvider } from 'src/database/drizzle.provider';
 import * as schema from 'src/database/schema';
 import type { UserSchemaType } from 'src/utils/zod.schemas';
 import type { FileQueryDto, FileResponseDto } from './dto/file.dto';
 
-// Give proper Scopes to inject
 @Injectable()
 export class FileService {
   constructor(
@@ -31,13 +30,12 @@ export class FileService {
 
     const total = totalResult[0]?.count ?? 0;
 
-    // TODO: Use query
-    const userFiles = await this.db
-      .select()
-      .from(schema.filesSchema)
-      .where(and(...whereConditions))
-      .limit(limit)
-      .offset((page - 1) * limit);
+    const userFiles = await this.db.query.filesSchema.findMany({
+      where: and(...whereConditions),
+      limit,
+      offset: (page - 1) * limit,
+      orderBy: desc(schema.filesSchema.createdAt),
+    });
 
     return {
       files: userFiles,
@@ -51,17 +49,12 @@ export class FileService {
   }
 
   async fileDelete(fileId: string, user: UserSchemaType) {
-    // TODO: use query
-    const [file] = await this.db
-      .select()
-      .from(schema.filesSchema)
-      .where(
-        and(
-          eq(schema.filesSchema.id, fileId),
-          eq(schema.filesSchema.userId, user.id),
-        ),
-      )
-      .limit(1);
+    const file = await this.db.query.filesSchema.findFirst({
+      where: and(
+        eq(schema.filesSchema.id, fileId),
+        eq(schema.filesSchema.userId, user.id),
+      ),
+    });
 
     if (!file) {
       throw new NotFoundException('File not found');
