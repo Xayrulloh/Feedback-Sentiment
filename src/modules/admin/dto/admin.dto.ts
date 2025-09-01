@@ -10,52 +10,53 @@ import z from 'zod';
 
 // ==================== Admin ====================
 
+//Response schema for admin disable/suspend operations
 const AdminDisableSuspendResponseSchema = UserSchema.describe(
   'Response schema for admin disable/suspend operations',
 );
 
-class AdminDisableSuspendResponseDto extends createZodDto(
-  AdminDisableSuspendResponseSchema,
-) {}
-
 // ==================== Rate Limiter ====================
 
-const RateLimitUpsertSchema = RateLimitSchema;
+// rate limit upsert data from request
+const RateLimitUpsertSchema = RateLimitSchema.describe(
+  'Rrate limit upsert data from request',
+);
 
-class RateLimitUpsertDto extends createZodDto(RateLimitUpsertSchema) {}
-
-const RateLimitGetSchema = RateLimitSchema.array();
-
-class RateLimitGetDto extends createZodDto(RateLimitGetSchema) {}
+// rate limit get schema as an array
+const RateLimitGetSchema = RateLimitSchema.array().describe(
+  'rate limit get schema as an array',
+);
 
 // ==================== Monitoring ====================
 
-const MetricsSchema = z.object({
-  uploads: z.number().int().nonnegative().describe('Total uploads count'),
-  apiUsage: z
-    .array(
-      z.object({
-        method: z.string(),
-        endpoint: z.string(),
-        count: z.number().int().nonnegative(),
-      }),
-    )
-    .describe('API usage per endpoint'),
-  errorRates: z
-    .array(
-      z.object({
-        method: z.string(),
-        endpoint: z.string(),
-        count: z.number().int().nonnegative(),
-      }),
-    )
-    .describe('Error counts per endpoint'),
-});
-
-class MetricsDto extends createZodDto(MetricsSchema) {}
+//App metrics data
+const MetricsSchema = z
+  .object({
+    uploads: z.number().int().nonnegative().describe('Total uploads count'),
+    apiUsage: z
+      .array(
+        z.object({
+          method: z.string(),
+          endpoint: z.string(),
+          count: z.number().int().nonnegative(),
+        }),
+      )
+      .describe('API usage per endpoint'),
+    errorRates: z
+      .array(
+        z.object({
+          method: z.string(),
+          endpoint: z.string(),
+          count: z.number().int().nonnegative(),
+        }),
+      )
+      .describe('Error counts per endpoint'),
+  })
+  .describe('App metrics data');
 
 // ==================== Suspicious Activities ====================
 
+//List of suspicious activities
 const SuspiciousActivityResponseSchema = z
   .object({
     userId: z.string().uuid().nullable(),
@@ -79,6 +80,13 @@ const SuspiciousActivityResponseSchema = z
   .array()
   .describe('List of suspicious activities');
 
+// DTOs
+class AdminDisableSuspendResponseDto extends createZodDto(
+  AdminDisableSuspendResponseSchema,
+) {}
+class RateLimitUpsertDto extends createZodDto(RateLimitUpsertSchema) {}
+class RateLimitGetDto extends createZodDto(RateLimitGetSchema) {}
+class MetricsDto extends createZodDto(MetricsSchema) {}
 class SuspiciousActivityResponseDto extends createZodDto(
   SuspiciousActivityResponseSchema,
 ) {}

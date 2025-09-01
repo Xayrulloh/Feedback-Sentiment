@@ -3,28 +3,38 @@ import { FeedbackManualRequestSchema } from 'src/modules/feedback/dto/feedback.d
 import { FeedbackSchema } from 'src/utils/zod.schemas';
 import { z } from 'zod';
 
-const AIRequestSchema = FeedbackManualRequestSchema;
+// Feedbacks request data for ai
+const AIRequestSchema = FeedbackManualRequestSchema.describe(
+  'Feedbacks request data for ai',
+);
 
-const MistralResponseSchema = z.object({
-  choices: z
-    .array(
-      z.object({
-        message: z.object({
-          content: z.string(),
+//Response coming from Mistrak Ai
+const MistralResponseSchema = z
+  .object({
+    choices: z
+      .array(
+        z.object({
+          message: z.object({
+            content: z.string(),
+          }),
         }),
-      }),
-    )
-    .min(1),
-});
+      )
+      .min(1),
+  })
+  .describe('Response coming from Mistral Ai');
 
+// Structured response data coming from ai
 const AIResponseSchema = FeedbackSchema.pick({
   sentiment: true,
   confidence: true,
   summary: true,
   content: true,
-});
+}).describe('Structured response data coming from ai');
 
-const PromptResponseSchema = AIResponseSchema.omit({ content: true });
+// Response data from prompt
+const PromptResponseSchema = AIResponseSchema.omit({ content: true }).describe(
+  'Response data from prompt',
+);
 
 class AIRequestDto extends createZodDto(AIRequestSchema) {}
 class MistralResponseDto extends createZodDto(MistralResponseSchema) {}

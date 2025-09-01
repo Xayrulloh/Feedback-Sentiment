@@ -14,11 +14,13 @@ export class MonitoringService {
       'uploads_total',
       'Number of uploads',
     );
+
     this.apiUsageCounter = this.createCounter(
       'api_requests_total',
       'Total API requests',
       ['method', 'endpoint'],
     );
+
     this.errorCounter = this.createCounter(
       'api_errors_total',
       'Total API errors',

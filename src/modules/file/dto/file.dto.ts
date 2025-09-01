@@ -4,31 +4,36 @@ import * as z from 'zod';
 
 // ==================== Query ====================
 
-const FileQuerySchema = z.object({
-  limit: z.coerce
-    .number()
-    .int()
-    .min(1)
-    .max(100)
-    .default(20)
-    .describe('Number of files to fetch per page'),
-  page: z.coerce
-    .number()
-    .int()
-    .min(1)
-    .default(1)
-    .describe('Page number for pagination'),
-});
-
-class FileQueryDto extends createZodDto(FileQuerySchema) {}
+//File Query Request schema
+const FileQuerySchema = z
+  .object({
+    limit: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(100)
+      .default(20)
+      .describe('Number of files to fetch per page'),
+    page: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .default(1)
+      .describe('Limit and Page number for pagination'),
+  })
+  .describe('Pagination page number');
 
 // ==================== Response ====================
 
-const FileResponseSchema = z.object({
-  files: FileSchema.array().describe('List of files'),
-  pagination: PaginationResponseSchema.describe('Pagination metadata'),
-});
+//File response data with files and pagination data
+const FileResponseSchema = z
+  .object({
+    files: FileSchema.array().describe('List of files'),
+    pagination: PaginationResponseSchema.describe('Pagination metadata'),
+  })
+  .describe('File response data with files and pagination data');
 
 class FileResponseDto extends createZodDto(FileResponseSchema) {}
+class FileQueryDto extends createZodDto(FileQuerySchema) {}
 
 export { FileQuerySchema, FileQueryDto, FileResponseSchema, FileResponseDto };

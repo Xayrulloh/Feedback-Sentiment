@@ -116,23 +116,6 @@ export class AIService {
       )
       .map((r) => r.value);
 
-    if (validResponses.length !== input.feedbacks.length) {
-      const failed = results
-        .map((r, idx) =>
-          r.status === 'rejected'
-            ? {
-                feedback: input.feedbacks[idx],
-                error: (r.reason as Error).message,
-              }
-            : null,
-        )
-        .filter((x) => x !== null);
-
-      throw new Error(
-        `One or more feedback analyses failed: ${JSON.stringify(failed)}`,
-      );
-    }
-
     return validResponses;
   }
 }

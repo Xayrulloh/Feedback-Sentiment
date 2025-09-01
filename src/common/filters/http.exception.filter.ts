@@ -3,13 +3,12 @@ import {
   Catch,
   type ExceptionFilter,
   HttpException,
+  Logger,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { MonitoringService } from 'src/modules/monitoring/monitoring.service';
-import type {
-  BaseErrorResponseSchemaType,
-  ErrorDetailsSchemaType,
-} from 'src/utils/zod.schemas';
+import { createBaseErrorResponse } from 'src/helpers/base-error-response.helper';
+import type { ErrorDetailsSchemaType } from 'src/utils/zod.schemas';
 import type { ZodIssue } from 'zod';
 
 interface HttpErrorResponse {
@@ -22,19 +21,18 @@ export class HttpExceptionFilter implements ExceptionFilter {
   constructor(private readonly monitoringService: MonitoringService) {}
 
   catch(exception: HttpException, host: ArgumentsHost): void {
+    Logger.error(exception.message, HttpExceptionFilter.name);
+
     const [request, response] = [
       host.switchToHttp().getRequest<Request>(),
       host.switchToHttp().getResponse<Response>(),
     ];
 
-    {
-      const { method, path } = request;
-      this.monitoringService.incrementError({
-        method,
-        endpoint: path,
-        error_message: exception.message,
-      });
-    }
+    this.monitoringService.incrementError({
+      method: request.method,
+      endpoint: request.path,
+      error_message: exception.message,
+    });
 
     const status = exception.getStatus();
     const rawResponse = exception.getResponse();
@@ -44,14 +42,9 @@ export class HttpExceptionFilter implements ExceptionFilter {
       exception.message,
     );
 
-    const errorResponse = this.createBaseErrorResponse(
-      status,
-      message,
-      errors,
-      request.url,
-    );
-
-    response.status(status).json(errorResponse);
+    response
+      .status(status)
+      .json(createBaseErrorResponse(status, message, errors, request.url));
   }
 
   private parseHttpException(
@@ -71,22 +64,6 @@ export class HttpExceptionFilter implements ExceptionFilter {
         message: issue.message,
         code: issue.code?.toUpperCase(),
       })),
-    };
-  }
-
-  private createBaseErrorResponse(
-    statusCode: number,
-    message: string,
-    errors: ErrorDetailsSchemaType[] | undefined,
-    path: string,
-  ): BaseErrorResponseSchemaType & { errors?: ErrorDetailsSchemaType[] } {
-    return {
-      success: false,
-      statusCode,
-      message,
-      ...(errors ? { errors } : {}),
-      timestamp: new Date().toISOString(),
-      path,
     };
   }
 }

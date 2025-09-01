@@ -1,5 +1,11 @@
 import path from 'node:path';
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { and, count, desc, eq, inArray, sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { Response } from 'express';
@@ -42,37 +48,30 @@ export class FeedbackService {
   ): Promise<FeedbackResponseDto> {
     const results = await Promise.allSettled(
       input.feedbacks.map(async (feedback) => {
-        try {
-          const aiResult = await this.aiService.analyzeOne(feedback);
+        const aiResult = await this.aiService.analyzeOne(feedback);
 
-          const [newFeedback] = await this.db
-            .insert(schema.feedbacksSchema)
-            .values({
-              content: feedback,
-              userId: user.id,
-              fileId,
-              sentiment: aiResult.sentiment,
-              confidence: Math.round(aiResult.confidence),
-              summary: aiResult.summary,
-            })
-            .returning();
+        const [newFeedback] = await this.db
+          .insert(schema.feedbacksSchema)
+          .values({
+            content: feedback,
+            userId: user.id,
+            fileId,
+            sentiment: aiResult.sentiment,
+            confidence: Math.round(aiResult.confidence),
+            summary: aiResult.summary,
+          })
+          .returning();
 
-          if (!newFeedback) {
-            throw new Error('DB insert returned undefined');
-          }
-
-          return newFeedback;
-        } catch (err) {
-          throw new Error(
-            `Failed to process feedback "${feedback}": ${(err as Error).message}`,
-          );
-        }
+        return newFeedback;
       }),
     );
 
     const validFeedbacks = results
-      .filter((r) => r.status === 'fulfilled' && r.value !== null)
-      .map((r: PromiseFulfilledResult<FeedbackSchemaType>) => r.value);
+      .filter(
+        (r): r is PromiseFulfilledResult<FeedbackSchemaType> =>
+          r.status === 'fulfilled' && r.value !== null,
+      )
+      .map((r) => r.value);
 
     return validFeedbacks;
   }
@@ -133,15 +132,15 @@ export class FeedbackService {
       feedbacks,
     });
 
-    let validFeedbacks: [string, ...string[]];
+    let validFeedbacks: FeedbackManualRequestDto['feedbacks'];
 
     if (validationResult.success) {
       validFeedbacks = validationResult.data.feedbacks;
     } else {
-      if (feedbacks.length === 0) {
-        throw new BadRequestException('No valid feedbacks found');
-      }
-      validFeedbacks = [feedbacks[0], ...feedbacks.slice(1)];
+      throw new BadRequestException({
+        message: 'Invalid feedback payload',
+        errors: validationResult.error.issues,
+      });
     }
 
     const extension = path.extname(file.originalname).replace('.', '') || 'csv';
@@ -183,13 +182,12 @@ export class FeedbackService {
 
     const total = totalResult[0]?.count ?? 0;
 
-    const feedbacks = await this.db
-      .select()
-      .from(schema.feedbacksSchema)
-      .where(and(...whereConditions))
-      .orderBy(desc(schema.feedbacksSchema.createdAt))
-      .limit(limit)
-      .offset((page - 1) * limit);
+    const feedbacks = await this.db.query.feedbacksSchema.findMany({
+      where: and(...whereConditions),
+      orderBy: [desc(schema.feedbacksSchema.createdAt)],
+      limit,
+      offset: (page - 1) * limit,
+    });
 
     return {
       feedbacks,
@@ -231,7 +229,7 @@ export class FeedbackService {
   }
 
   async feedbackSummary(userId: string): Promise<FeedbackSummaryResponseDto> {
-    const results = await this.db
+    return this.db
       .select({
         sentiment: schema.feedbacksSchema.sentiment,
         count: sql<number>`CAST(COUNT(*) AS INTEGER)`,
@@ -240,16 +238,13 @@ export class FeedbackService {
       .from(schema.feedbacksSchema)
       .where(eq(schema.feedbacksSchema.userId, userId))
       .groupBy(schema.feedbacksSchema.sentiment);
-
-    return FeedbackSummaryResponseSchema.parse(results);
   }
 
   async getAllFeedback(user: UserSchemaType): Promise<FeedbackSchemaType[]> {
-    return this.db
-      .select()
-      .from(schema.feedbacksSchema)
-      .where(eq(schema.feedbacksSchema.userId, user.id))
-      .orderBy(desc(schema.feedbacksSchema.createdAt));
+    return this.db.query.feedbacksSchema.findMany({
+      where: eq(schema.feedbacksSchema.userId, user.id),
+      orderBy: desc(schema.feedbacksSchema.createdAt),
+    });
   }
 
   async feedbackReportDownload(
@@ -267,12 +262,10 @@ export class FeedbackService {
       data = await this.feedbackSummary(user.id);
     }
 
-    const fileBuffer = await this.fileGeneratorService.generate(
-      format,
-      type,
-      data,
-    );
+    console.log('Generating report for data:', data);
 
+    const fileBuffer = await this.fileGeneratorService.generate(format, type, data);
+  
     const fileName = `feedback-report-${type}-${Date.now()}.${format}`;
 
     res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);

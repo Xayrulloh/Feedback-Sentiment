@@ -195,19 +195,23 @@ const RateLimitEventSchema = z.object({
 
 type RateLimitEventSchemaType = z.infer<typeof RateLimitEventSchema>;
 
-// Pagination response schema
-const PaginationResponseSchema = z.object({
-  limit: z.number().int().min(1).max(100),
-  page: z.number().int().min(1),
-  total: z.number().int().min(0),
-  pages: z.number().int().min(0),
-});
+// Pagination response and query schemas
 
-// pagination query schema
-const PaginationQuerySchema = z.object({
-  limit: z.coerce.number().int().min(1).max(100).default(20),
-  page: z.coerce.number().int().min(1).default(1),
-});
+const PaginationResponseSchema = z
+  .object({
+    limit: z.number().int().min(1).max(100),
+    page: z.number().int().min(1),
+    total: z.number().int().min(0),
+    pages: z.number().int().min(0),
+  })
+  .describe('Pagination response schema');
+
+const PaginationQuerySchema = z
+  .object({
+    limit: z.coerce.number().int().min(1).max(100).default(20),
+    page: z.coerce.number().int().min(1).default(1),
+  })
+  .describe('pagination query schema');
 
 export {
   PaginationQuerySchema,

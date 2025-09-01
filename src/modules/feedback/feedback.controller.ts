@@ -39,7 +39,7 @@ import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { UserStatusGuard } from 'src/common/guards/user-status.guard';
 import type { AuthenticatedRequest } from 'src/shared/types/request-with-user';
-import { createBaseResponseDto } from 'src/utils/helpers';
+import { createBaseResponseDto } from 'src/helpers/create-base-response.helper';
 import { UserRoleEnum } from 'src/utils/zod.schemas';
 import {
   FeedbackFilteredResponseSchema,
@@ -149,7 +149,6 @@ export class FeedbackController {
       },
     },
   })
-  @ZodSerializerDto(FeedbackResponseSchema)
   @ApiOperation({
     summary: 'Sending text based feedback and getting the ai analyze',
   })
@@ -164,7 +163,6 @@ export class FeedbackController {
   @Post('upload')
   @HttpCode(HttpStatus.CREATED)
   @ApiConsumes('multipart/form-data')
-  @ZodSerializerDto(FeedbackResponseSchema)
   @UseInterceptors(FileInterceptor('file'))
   @ApiOperation({ summary: 'Upload CSV feedback file' })
   @ApiBody({
@@ -328,7 +326,7 @@ export class FeedbackController {
     return this.feedbackService.feedbackReportDownload(query, req.user, res);
   }
 
-  @Get(':feedbackId')
+  @Get(':id')
   @ApiBadRequestResponse({
     description: 'Validation failed (uuid is expected)',
     schema: {
@@ -368,9 +366,7 @@ export class FeedbackController {
     ),
   })
   @ZodSerializerDto(FeedbackSingleResponseSchema)
-  async getFeedbackById(
-    @Param('feedbackId', ParseUUIDPipe) feedbackId: string,
-  ) {
+  async getFeedbackById(@Param('id', ParseUUIDPipe) feedbackId: string) {
     return this.feedbackService.getFeedbackById(feedbackId);
   }
 }
