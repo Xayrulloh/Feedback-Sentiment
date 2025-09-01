@@ -255,8 +255,6 @@ export class FeedbackService {
       data = await this.feedbackSummary(user.id);
     }
 
-    console.log('Generating report for data:', data);
-
     const fileBuffer = await this.fileGeneratorService.generate(
       format,
       type,

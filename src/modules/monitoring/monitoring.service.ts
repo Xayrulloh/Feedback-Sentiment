@@ -38,6 +38,7 @@ export class MonitoringService {
       metric = new client.Counter({ name, help, labelNames });
       this.registry.registerMetric(metric);
     }
+
     return metric;
   }
 
