@@ -105,17 +105,8 @@ export class AIService {
   }
 
   async analyzeMany(input: AIRequestDto): Promise<AIResponseDto[]> {
-    const results = await Promise.allSettled(
+    return await Promise.all(
       input.feedbacks.map((feedback) => this.analyzeOne(feedback)),
     );
-
-    const validResponses = results
-      .filter(
-        (r): r is PromiseFulfilledResult<AIResponseDto> =>
-          r.status === 'fulfilled',
-      )
-      .map((r) => r.value);
-
-    return validResponses;
   }
 }
