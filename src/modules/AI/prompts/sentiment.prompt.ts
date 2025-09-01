@@ -1,54 +1,33 @@
 export function generateSentimentPrompt(feedback: string): string {
-  return `You are a JSON sentiment analyzer. Your output must be ONLY valid JSON with no additional text whatsoever.
+  return `You are a JSON sentiment analyzer specializing in customer feedback. Your task is to analyze the sentiment of the provided feedback and return a JSON object with the specified structure.
 
-CRITICAL REQUIREMENTS:
-- Output ONLY the JSON object below
-- NO explanatory text before, after, or around the JSON
-- NO markdown code blocks or formatting
-- NO comments or additional fields
-- Ensure valid JSON syntax (proper quotes, no trailing commas)
+Context:
+- Feedback: "${feedback}"
+- Sentiment categories:
+  - "positive": Clear praise, satisfaction, compliments, or recommendations
+  - "negative": Clear complaints, dissatisfaction, problems, or criticism
+  - "neutral": Mixed feedback, balanced pros/cons, or factual statements
+  - "unknown": Unclear, insufficient, or incomprehensible feedback
+- Confidence: A number from 0-100 reflecting your certainty in the sentiment
+- Summary format:
+  - Use categories: shipping, quality, service, product, pricing, usability, staff, support, website, other
+  - Format as "category descriptor" or "category descriptor adjective" (lowercase, no punctuation)
+  - Prioritize the most prominent issue; ensure consistent summaries for similar issues
+- Examples:
+  - Feedback: "The product arrived in 2 days, super fast!"  
+    Output: {"sentiment":"positive","confidence":95,"summary":"shipping speed"}
+  - Feedback: "The app is okay but crashes often."  
+    Output: {"sentiment":"negative","confidence":70,"summary":"usability crashes frequent"}
 
-REQUIRED JSON FORMAT:
+Task:
+Generate a JSON object based on the feedback. Ensure valid JSON syntax with no trailing commas or errors.
+
+Format:
 {
   "sentiment": "positive" | "neutral" | "negative" | "unknown",
   "confidence": number,
   "summary": string
 }
 
-FIELD SPECIFICATIONS:
-
-sentiment (required):
-- "positive": Clear praise, satisfaction, compliments, recommendations
-- "negative": Clear complaints, dissatisfaction, problems, criticism
-- "neutral": Mixed feedback, balanced pros/cons, factual statements
-- "unknown": Unclear, insufficient, or incomprehensible feedback
-
-confidence (required):
-- Integer from 0-100 representing certainty level
-- 90-100: Very clear sentiment indicators
-- 70-89: Clear but with some ambiguity
-- 50-69: Moderate confidence, mixed signals
-- 30-49: Low confidence, unclear context
-- 0-29: Very uncertain, insufficient information
-
-summary (required - CRITICAL FOR GROUPING):
-- Format: "category descriptor" or "category descriptor adjective"
-- Always lowercase, no punctuation
-- Use ONLY these categories: shipping, quality, service, product, pricing, usability, staff, support, website, other
-- Examples of good summaries:
-  * "shipping speed" (category + descriptor)
-  * "product quality poor" (category + descriptor + adjective)
-  * "service response slow" (category + descriptor + adjective)
-  * "pricing value" (category + descriptor)
-  * "staff behavior rude" (category + descriptor + adjective)
-- Be consistent: same issues should have identical summaries
-- Prioritize the most prominent issue mentioned
-
-VALIDATION CHECKLIST:
-✓ Output is pure JSON only
-✓ All three fields present and correctly typed
-✓ Summary follows exact format requirements
-✓ No syntax errors or trailing commas
-
-Customer Feedback: """${feedback}"""`;
+Output only the JSON object. Do not include explanatory text, markdown, comments, or additional fields.`;
 }
