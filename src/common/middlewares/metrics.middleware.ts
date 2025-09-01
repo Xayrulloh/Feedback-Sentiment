@@ -1,7 +1,6 @@
 import { Injectable, type NestMiddleware } from '@nestjs/common';
 import { MonitoringService } from 'src/modules/monitoring/monitoring.service';
 
-// Give proper Scopes to inject
 @Injectable()
 export class MetricsMiddleware implements NestMiddleware {
   constructor(private readonly monitoringService: MonitoringService) {}

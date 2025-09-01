@@ -8,7 +8,6 @@ import { Reflector } from '@nestjs/core';
 import { ROLES_KEY } from 'src/common/decorators/roles.decorator';
 import type { UserRoleEnum } from 'src/utils/zod.schemas';
 
-// Give proper Scopes to inject
 @Injectable()
 export class RolesGuard implements CanActivate {
   constructor(private reflector: Reflector) {}

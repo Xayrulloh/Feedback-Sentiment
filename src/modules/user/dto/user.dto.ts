@@ -4,7 +4,6 @@ import * as z from 'zod';
 
 // ==================== Query ====================
 
-//User Query schema
 const UserQuerySchema = z
   .object({
     limit: z.coerce
@@ -23,7 +22,6 @@ const UserQuerySchema = z
   })
   .describe('User Query schema');
 
-//Request user search email data
 const UserSearchQuerySchema = z
   .object({
     email: z.string().trim().min(3).describe('Email substring to search for'),
@@ -32,7 +30,6 @@ const UserSearchQuerySchema = z
 
 // ==================== Response ====================
 
-//Users response data with pagination
 const UserResponseSchema = z
   .object({
     users: UserSchema.array().describe('List of users'),
@@ -42,7 +39,6 @@ const UserResponseSchema = z
   })
   .describe('Users response data with pagination');
 
-//List of users matching search criteria
 const UserSearchResponseSchema = UserSchema.array().describe(
   'List of users matching search criteria',
 );

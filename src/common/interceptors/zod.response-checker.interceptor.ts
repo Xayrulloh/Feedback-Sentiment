@@ -17,7 +17,6 @@ const createZodSerializationException = (error: ZodError) => {
   return new ZodSerializationException(error);
 };
 
-// Give proper Scopes to inject
 @Injectable()
 export class ZodSerializerInterceptorCustom implements NestInterceptor {
   constructor(@Inject(Reflector) protected readonly reflector: Reflector) {}

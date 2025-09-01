@@ -6,8 +6,8 @@ import {
   Logger,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
+import { createBaseErrorResponse } from 'src/helpers/create-base-error-response.helper';
 import { MonitoringService } from 'src/modules/monitoring/monitoring.service';
-import { createBaseErrorResponse } from 'src/helpers/base-error-response.helper';
 import type { ErrorDetailsSchemaType } from 'src/utils/zod.schemas';
 import type { ZodIssue } from 'zod';
 

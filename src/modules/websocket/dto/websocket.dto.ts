@@ -1,3 +1,4 @@
+import { createZodDto } from 'nestjs-zod';
 import { RateLimitEventSchema } from 'src/utils/zod.schemas';
 import { z } from 'zod';
 
@@ -10,6 +11,6 @@ const WebSocketEventSchema = z
     'The event payload, either a rate limit event or a non-negative number',
   );
 
-type WebSocketEventSchemaType = z.infer<typeof WebSocketEventSchema>;
+class WebSocketEventSchemaDto extends createZodDto(WebSocketEventSchema) {}
 
-export { WebSocketEventSchema, type WebSocketEventSchemaType };
+export { WebSocketEventSchema, WebSocketEventSchemaDto };

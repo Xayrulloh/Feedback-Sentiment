@@ -4,7 +4,6 @@ import * as z from 'zod';
 
 // ==================== Query ====================
 
-//File Query Request schema
 const FileQuerySchema = z
   .object({
     limit: z.coerce
@@ -25,7 +24,6 @@ const FileQuerySchema = z
 
 // ==================== Response ====================
 
-//File response data with files and pagination data
 const FileResponseSchema = z
   .object({
     files: FileSchema.array().describe('List of files'),

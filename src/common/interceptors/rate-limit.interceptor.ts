@@ -22,7 +22,6 @@ import {
   UserRoleEnum,
 } from 'src/utils/zod.schemas';
 
-// Give proper Scopes to inject
 @Injectable()
 export class RateLimitInterceptor implements NestInterceptor {
   constructor(

@@ -10,26 +10,22 @@ import z from 'zod';
 
 // ==================== Admin ====================
 
-//Response schema for admin disable/suspend operations
 const AdminDisableSuspendResponseSchema = UserSchema.describe(
   'Response schema for admin disable/suspend operations',
 );
 
 // ==================== Rate Limiter ====================
 
-// rate limit upsert data from request
 const RateLimitUpsertSchema = RateLimitSchema.describe(
   'Rrate limit upsert data from request',
 );
 
-// rate limit get schema as an array
 const RateLimitGetSchema = RateLimitSchema.array().describe(
   'rate limit get schema as an array',
 );
 
 // ==================== Monitoring ====================
 
-//App metrics data
 const MetricsSchema = z
   .object({
     uploads: z.number().int().nonnegative().describe('Total uploads count'),
@@ -56,7 +52,6 @@ const MetricsSchema = z
 
 // ==================== Suspicious Activities ====================
 
-//List of suspicious activities
 const SuspiciousActivityResponseSchema = z
   .object({
     userId: z.string().uuid().nullable(),

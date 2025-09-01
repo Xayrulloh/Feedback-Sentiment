@@ -25,8 +25,8 @@ import { ZodSerializerDto, ZodValidationPipe } from 'nestjs-zod';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { UserStatusGuard } from 'src/common/guards/user-status.guard';
-import type { AuthenticatedRequest } from 'src/shared/types/request-with-user';
 import { createBaseResponseDto } from 'src/helpers/create-base-response.helper';
+import type { AuthenticatedRequest } from 'src/shared/types/request-with-user';
 import { UserRoleEnum } from 'src/utils/zod.schemas';
 import { Roles } from '../../common/decorators/roles.decorator';
 import {

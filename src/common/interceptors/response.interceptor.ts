@@ -9,7 +9,6 @@ import type { Request, Response } from 'express';
 import type { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
-// Give proper Scopes to inject
 @Injectable()
 export class ResponseInterceptor<T> implements NestInterceptor<T, unknown> {
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {

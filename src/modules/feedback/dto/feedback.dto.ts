@@ -18,7 +18,6 @@ const SentimentEnum = z.enum([
 
 // ==================== REQUEST SCHEMAS ====================
 
-//Manual feedback submission payload
 const FeedbackManualRequestSchema = z
   .object({
     feedbacks: z
@@ -29,7 +28,6 @@ const FeedbackManualRequestSchema = z
   })
   .describe('Manual feedback submission payload');
 
-//Feedback query parameters with sentiment filter and pagination
 const FeedbackQuerySchema = z
   .object({
     sentiment: z
@@ -43,7 +41,6 @@ const FeedbackQuerySchema = z
   .merge(PaginationQuerySchema)
   .describe('Feedback query parameters with sentiment filter and pagination');
 
-//Query parameters for downloading feedback reports
 const ReportDownloadQuerySchema = z
   .object({
     format: z.enum(['pdf', 'csv']).describe('Download file format'),
@@ -55,17 +52,14 @@ const ReportDownloadQuerySchema = z
 
 // ==================== RESPONSE SCHEMAS ====================
 
-//Array of feedback items
 const FeedbackResponseSchema = FeedbackSchema.array().describe(
   'Array of feedback items',
 );
 
-//Single feedback item
 const FeedbackSingleResponseSchema = FeedbackSchema.describe(
   'Single feedback item',
 );
 
-//Summary of feedback sentiment analysis, including counts and percentages for each sentiment type
 const FeedbackSummaryResponseSchema = z
   .array(
     z.object({
@@ -85,7 +79,6 @@ const FeedbackSummaryResponseSchema = z
     'Summary of feedback sentiment analysis, including counts and percentages for each sentiment type',
   );
 
-//Filtered feedback response with pagination
 const FeedbackFilteredResponseSchema = z
   .object({
     feedbacks: FeedbackSchema.array().describe('Filtered feedback results'),
@@ -93,7 +86,6 @@ const FeedbackFilteredResponseSchema = z
   })
   .describe('Filtered feedback response with pagination');
 
-//Array of feedback items in this group
 const FeedbackGroupedResponseSchema = z
   .object({
     summary: z.string().describe('Summary of grouped feedback items'),
@@ -110,7 +102,6 @@ const FeedbackGroupedResponseSchema = z
   })
   .describe('Grouped feedback response');
 
-//Array of grouped feedbacks
 const FeedbackGroupedArrayResponseSchema =
   FeedbackGroupedResponseSchema.array().describe('Array of grouped feedbacks');
 

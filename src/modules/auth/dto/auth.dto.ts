@@ -12,7 +12,6 @@ type JWTPayloadType = {
 
 // ==================== Credentials ====================
 
-//Auth credentials data
 const AuthCredentialsSchema = UserSchema.pick({ email: true })
   .merge(
     z.object({
@@ -23,7 +22,6 @@ const AuthCredentialsSchema = UserSchema.pick({ email: true })
 
 // ==================== User Auth ====================
 
-//Response data after login or register
 const AuthUserResponseSchema = z
   .object({
     token: z.string().describe('JWT access token'),
@@ -34,7 +32,6 @@ const AuthUserResponseSchema = z
 
 // ==================== Admin Auth ====================
 
-//Response data after admin login or register
 const AuthAdminResponseSchema = z
   .object({
     token: z.string().describe('JWT access token'),

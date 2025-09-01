@@ -9,7 +9,6 @@ import { DrizzleAsyncProvider } from 'src/database/drizzle.provider';
 import * as schema from 'src/database/schema';
 import type { JWTPayloadType } from 'src/modules/auth/dto/auth.dto';
 
-// Give proper Scopes to inject
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   constructor(

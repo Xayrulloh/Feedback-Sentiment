@@ -6,7 +6,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
-import { createBaseErrorResponse } from 'src/helpers/base-error-response.helper';
+import { createBaseErrorResponse } from 'src/helpers/create-base-error-response.helper';
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
@@ -16,8 +16,8 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       host.switchToHttp().getResponse<Response>(),
     ];
 
-    let status = HttpStatus.INTERNAL_SERVER_ERROR;
-    let message = 'Internal server error';
+    const status = HttpStatus.INTERNAL_SERVER_ERROR;
+    const message = 'Internal server error';
 
     Logger.error(message, JSON.stringify(exception));
 

@@ -1,11 +1,5 @@
 import path from 'node:path';
-import {
-  BadRequestException,
-  Inject,
-  Injectable,
-  InternalServerErrorException,
-  Logger,
-} from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { and, count, desc, eq, inArray, sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { Response } from 'express';
@@ -27,7 +21,6 @@ import {
   FeedbackResponseDto,
   FeedbackSingleResponseDto,
   FeedbackSummaryResponseDto,
-  FeedbackSummaryResponseSchema,
   ReportDownloadQueryDto,
 } from './dto/feedback.dto';
 import { FileGeneratorService } from './file-generator.service';
@@ -264,8 +257,12 @@ export class FeedbackService {
 
     console.log('Generating report for data:', data);
 
-    const fileBuffer = await this.fileGeneratorService.generate(format, type, data);
-  
+    const fileBuffer = await this.fileGeneratorService.generate(
+      format,
+      type,
+      data,
+    );
+
     const fileName = `feedback-report-${type}-${Date.now()}.${format}`;
 
     res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);

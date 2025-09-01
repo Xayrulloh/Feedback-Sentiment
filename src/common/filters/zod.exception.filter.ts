@@ -6,7 +6,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
-import { createBaseErrorResponse } from 'src/helpers/base-error-response.helper';
+import { createBaseErrorResponse } from 'src/helpers/create-base-error-response.helper';
 import type {
   BaseErrorResponseSchemaType,
   ErrorDetailsSchemaType,

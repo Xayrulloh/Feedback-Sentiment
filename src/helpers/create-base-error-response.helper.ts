@@ -1,5 +1,5 @@
-import {
-  type BaseErrorResponseSchemaType,
+import type {
+  BaseErrorResponseSchemaType,
   ErrorDetailsSchemaType,
 } from 'src/utils/zod.schemas';
 
