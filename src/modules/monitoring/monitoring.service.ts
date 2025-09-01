@@ -1,48 +1,45 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import * as client from 'prom-client';
 
 @Injectable()
 export class MonitoringService {
-  private readonly registry: client.Registry;
   private readonly uploadCounter: client.Counter<string>;
   private readonly apiUsageCounter: client.Counter<string>;
   private readonly errorCounter: client.Counter<string>;
 
-  constructor() {
-    this.registry = client.register;
+  constructor(
+    @Inject('PROM_REGISTRY') private readonly registry: client.Registry,
+  ) {
+    this.uploadCounter = this.createCounter(
+      'uploads_total',
+      'Number of uploads',
+    );
 
-    this.uploadCounter =
-      (this.registry.getSingleMetric(
-        'uploads_total',
-      ) as client.Counter<string>) ||
-      new client.Counter({
-        name: 'uploads_total',
-        help: 'Number of uploads',
-      });
+    this.apiUsageCounter = this.createCounter(
+      'api_requests_total',
+      'Total API requests',
+      ['method', 'endpoint'],
+    );
 
-    this.apiUsageCounter =
-      (this.registry.getSingleMetric(
-        'api_requests_total',
-      ) as client.Counter<string>) ||
-      new client.Counter({
-        name: 'api_requests_total',
-        help: 'Total API requests',
-        labelNames: ['method', 'endpoint'],
-      });
+    this.errorCounter = this.createCounter(
+      'api_errors_total',
+      'Total API errors',
+      ['method', 'endpoint', 'error_message'],
+    );
+  }
 
-    this.errorCounter =
-      (this.registry.getSingleMetric(
-        'api_errors_total',
-      ) as client.Counter<string>) ||
-      new client.Counter({
-        name: 'api_errors_total',
-        help: 'Total API errors',
-        labelNames: ['method', 'endpoint', 'error_message'],
-      });
+  private createCounter(
+    name: string,
+    help: string,
+    labelNames: string[] = [],
+  ): client.Counter<string> {
+    let metric = this.registry.getSingleMetric(name) as client.Counter<string>;
+    if (!metric) {
+      metric = new client.Counter({ name, help, labelNames });
+      this.registry.registerMetric(metric);
+    }
 
-    this.registry.registerMetric(this.uploadCounter);
-    this.registry.registerMetric(this.apiUsageCounter);
-    this.registry.registerMetric(this.errorCounter);
+    return metric;
   }
 
   async getMetrics(): Promise<string> {
@@ -53,11 +50,15 @@ export class MonitoringService {
     this.uploadCounter.inc();
   }
 
-  incrementApiUsage(method: string, endpoint: string) {
-    this.apiUsageCounter.inc({ method, endpoint });
+  incrementApiUsage(labels: { method: string; endpoint: string }) {
+    this.apiUsageCounter.inc(labels);
   }
 
-  incrementError(method: string, endpoint: string, errorMessage: string) {
-    this.errorCounter.inc({ method, endpoint, error_message: errorMessage });
+  incrementError(labels: {
+    method: string;
+    endpoint: string;
+    error_message: string;
+  }) {
+    this.errorCounter.inc(labels);
   }
 }

@@ -36,5 +36,27 @@
         "organizeImports": "on"
       }
     }
-  }
+  },
+  "overrides": [
+    {
+      "includes": [
+        "src/**/*.service.ts",
+        "src/**/*.controller.ts",
+        "src/**/*.guard.ts",
+        "src/**/*.interceptor.ts",
+        "src/**/*.interceptor.ts",
+        "src/**/*.strategy.ts",
+        "src/**/*.middleware.ts",
+        "src/**/*.gateaway.ts",
+        "src/**/*.filter.ts"
+      ],
+      "linter": {
+        "rules": {
+          "style": {
+            "useImportType": "off"
+          }
+        }
+      }
+    }
+  ]
 }

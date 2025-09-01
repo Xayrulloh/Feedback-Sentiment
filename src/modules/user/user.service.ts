@@ -5,9 +5,9 @@ import { DrizzleAsyncProvider } from 'src/database/drizzle.provider';
 import * as schema from 'src/database/schema';
 import type {
   UserQueryDto,
-  UserResponseSchemaType,
+  UserResponseDto,
   UserSearchQueryDto,
-  UserSearchResponseSchemaType,
+  UserSearchResponseDto,
 } from './dto/user.dto';
 
 @Injectable()
@@ -17,7 +17,7 @@ export class UserService {
     private readonly db: NodePgDatabase<typeof schema>,
   ) {}
 
-  async getAllUsers(query: UserQueryDto): Promise<UserResponseSchemaType> {
+  async getAllUsers(query: UserQueryDto): Promise<UserResponseDto> {
     const { limit, page } = query;
 
     const totalResult = await this.db
@@ -28,15 +28,14 @@ export class UserService {
 
     const total = totalResult[0]?.count ?? 0;
 
-    const allUsers = await this.db
-      .select()
-      .from(schema.usersSchema)
-      .limit(limit)
-      .offset((page - 1) * limit)
-      .orderBy(desc(schema.usersSchema.createdAt));
+    const users = await this.db.query.usersSchema.findMany({
+      limit,
+      offset: (page - 1) * limit,
+      orderBy: desc(schema.usersSchema.createdAt),
+    });
 
     return {
-      users: allUsers,
+      users: users,
       pagination: {
         limit,
         page,
@@ -46,18 +45,15 @@ export class UserService {
     };
   }
 
-  async searchUsers(
-    query: UserSearchQueryDto,
-  ): Promise<UserSearchResponseSchemaType> {
+  async searchUsers(query: UserSearchQueryDto): Promise<UserSearchResponseDto> {
     const { email } = query;
     const searchTerm = `%${email.trim()}%`;
 
-    const users = await this.db
-      .select()
-      .from(schema.usersSchema)
-      .where(sql`email ILIKE ${searchTerm}`)
-      .limit(5)
-      .orderBy(desc(schema.usersSchema.createdAt));
+    const users = await this.db.query.usersSchema.findMany({
+      where: sql`email ILIKE ${searchTerm}`,
+      limit: 5,
+      orderBy: desc(schema.usersSchema.createdAt),
+    });
 
     return users;
   }

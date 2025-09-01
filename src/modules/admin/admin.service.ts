@@ -12,12 +12,11 @@ import type {
   RateLimitSchemaType,
   UserSchemaType,
 } from 'src/utils/zod.schemas';
-// biome-ignore lint/style/useImportType: Needed for DI
 import { RedisService } from '../redis/redis.service';
 import type {
-  RateLimitGetSchemaType,
+  RateLimitGetDto,
   RateLimitUpsertDto,
-  SuspiciousActivityResponseSchemaType,
+  SuspiciousActivityResponseDto,
 } from './dto/admin.dto';
 
 @Injectable()
@@ -29,10 +28,9 @@ export class AdminService {
   ) {}
 
   async adminDisable(userId: string): Promise<UserSchemaType> {
-    const [user] = await this.db
-      .select()
-      .from(schema.usersSchema)
-      .where(eq(schema.usersSchema.id, userId));
+    const user = await this.db.query.usersSchema.findFirst({
+      where: eq(schema.usersSchema.id, userId),
+    });
 
     if (!user) {
       throw new NotFoundException('User not found');
@@ -54,10 +52,9 @@ export class AdminService {
   }
 
   async adminSuspend(userId: string): Promise<UserSchemaType> {
-    const [user] = await this.db
-      .select()
-      .from(schema.usersSchema)
-      .where(eq(schema.usersSchema.id, userId));
+    const user = await this.db.query.usersSchema.findFirst({
+      where: eq(schema.usersSchema.id, userId),
+    });
 
     if (!user) {
       throw new NotFoundException('User not found');
@@ -98,11 +95,11 @@ export class AdminService {
     return upsertedRateLimit;
   }
 
-  async adminGetRateLimits(): Promise<RateLimitGetSchemaType> {
-    return this.db.select().from(schema.rateLimitsSchema);
+  async adminGetRateLimits(): Promise<RateLimitGetDto> {
+    return this.db.query.rateLimitsSchema.findMany();
   }
 
-  async adminGetSuspiciousActivities(): Promise<SuspiciousActivityResponseSchemaType> {
-    return this.db.select().from(schema.suspiciousActivitySchema);
+  async adminGetSuspiciousActivities(): Promise<SuspiciousActivityResponseDto> {
+    return this.db.query.suspiciousActivitySchema.findMany();
   }
 }

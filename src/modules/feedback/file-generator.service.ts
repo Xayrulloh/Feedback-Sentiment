@@ -17,6 +17,7 @@ export class FileGeneratorService {
     if (format === 'csv') {
       return this.generateCSV(data, type);
     }
+
     return this.generatePDF(data, type);
   }
 
@@ -24,8 +25,8 @@ export class FileGeneratorService {
     data: FeedbackSchemaType[] | FeedbackSummaryResponseDto,
     type: ReportDownloadQueryDto['type'],
   ): Promise<Buffer> {
-    const delimiter = '   ';
-    const quote = false;
+    const csvOptions = { delimiter: ';', quote: false };
+    const { delimiter, quote } = csvOptions;
 
     const toCSV = (rows: object[], fields: string[]) =>
       parse(rows, { fields, delimiter, quote });
@@ -38,14 +39,16 @@ export class FileGeneratorService {
         Sentiment: f.sentiment,
         Confidence: f.confidence,
       }));
+
       csv = toCSV(detailedData, ['Feedback', 'Sentiment', 'Confidence']);
     } else {
       const summaryArray = data as FeedbackSummaryResponseDto;
       const summaryData = summaryArray.map((f) => ({
         Sentiment: f.sentiment,
         Count: f.count,
-        Percentage: `${f.percentage.toFixed(1)}%`,
+        Percentage: `${Number(f.percentage).toFixed(1)}%`,
       }));
+
       csv = toCSV(summaryData, ['Sentiment', 'Count', 'Percentage']);
     }
 
@@ -61,22 +64,29 @@ export class FileGeneratorService {
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
     let yPos = 800;
-    const fontSizeTitle = 18;
-    const fontSizeHeader = 12;
-    const fontSizeRow = 10;
 
-    const drawText = (text: string, x: number, y: number, size = fontSizeRow) =>
-      page.drawText(text, { x, y, size, font, color: rgb(0, 0, 0) });
+    const fontSizes = {
+      title: 18,
+      header: 12,
+      row: 10,
+    };
+
+    const drawText = (
+      text: string,
+      x: number,
+      y: number,
+      size = fontSizes.row,
+    ) => page.drawText(text, { x, y, size, font, color: rgb(0, 0, 0) });
 
     // Title
-    drawText(`Feedback ${type} Report`, 50, yPos, fontSizeTitle);
+    drawText(`Feedback ${type} Report`, 50, yPos, fontSizes.title);
     yPos -= 30;
 
     if (type === 'detailed') {
       // Headers
-      drawText('Feedback', 50, yPos, fontSizeHeader);
-      drawText('Sentiment', 300, yPos, fontSizeHeader);
-      drawText('Confidence', 450, yPos, fontSizeHeader);
+      drawText('Feedback', 50, yPos, fontSizes.header);
+      drawText('Sentiment', 300, yPos, fontSizes.header);
+      drawText('Confidence', 450, yPos, fontSizes.header);
       yPos -= 20;
 
       // Rows
@@ -91,21 +101,22 @@ export class FileGeneratorService {
       const summaryArray = data as FeedbackSummaryResponseDto;
 
       // Headers
-      drawText('Sentiment', 50, yPos, fontSizeHeader);
-      drawText('Count', 200, yPos, fontSizeHeader);
-      drawText('Percentage', 300, yPos, fontSizeHeader);
+      drawText('Sentiment', 50, yPos, fontSizes.header);
+      drawText('Count', 200, yPos, fontSizes.header);
+      drawText('Percentage', 300, yPos, fontSizes.header);
       yPos -= 20;
 
       // Rows
       summaryArray.forEach((f) => {
         drawText(f.sentiment, 50, yPos);
         drawText(f.count.toString(), 200, yPos);
-        drawText(`${f.percentage.toFixed(1)}%`, 300, yPos);
+        drawText(`${Number(f.percentage).toFixed(1)}%`, 300, yPos);
         yPos -= 15;
       });
     }
 
     const pdfBytes = await pdfDoc.save();
+
     return Buffer.from(pdfBytes);
   }
 }

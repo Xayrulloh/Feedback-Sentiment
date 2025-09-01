@@ -2,42 +2,68 @@ import { createZodDto } from 'nestjs-zod';
 import {
   FeedbackSchema,
   FeedbackSentimentEnum,
-  PaginationSchema,
+  PaginationQuerySchema,
+  PaginationResponseSchema,
 } from 'src/utils/zod.schemas';
 import * as z from 'zod';
 
-// Request schemas
-const FeedbackManualRequestSchema = z.object({
-  feedbacks: z
-    .array(z.string().min(10, `Feedback must be at least 10 characters long`))
-    .max(100, 'Maximum of 100 feedback items allowed')
-    .nonempty('At least one feedback is required')
-    .describe('Array of feedback entries, each meeting the minimum length'),
-});
+// ==================== ENUMS ====================
 
-// feedback request params
-const FeedbackSingleParamSchema = z.object({
-  id: z.string().uuid(),
-});
+const SentimentEnum = z.enum([
+  FeedbackSentimentEnum.NEGATIVE,
+  FeedbackSentimentEnum.NEUTRAL,
+  FeedbackSentimentEnum.POSITIVE,
+  FeedbackSentimentEnum.UNKNOWN,
+]);
 
-type FeedbackSingleParamSchemaType = z.infer<typeof FeedbackSingleParamSchema>;
+// ==================== REQUEST SCHEMAS ====================
 
-// Response schemas
-const FeedbackResponseSchema = FeedbackSchema.array();
+const FeedbackManualRequestSchema = z
+  .object({
+    feedbacks: z
+      .array(z.string().min(10, `Feedback must be at least 10 characters long`))
+      .max(100, 'Maximum of 100 feedback items allowed')
+      .nonempty('At least one feedback is required')
+      .describe('Array of feedback entries, each meeting the minimum length'),
+  })
+  .describe('Manual feedback submission payload');
 
-const FeedbackSingleResponseSchema = FeedbackSchema;
+const FeedbackQuerySchema = z
+  .object({
+    sentiment: z
+      .union([SentimentEnum, z.array(SentimentEnum)])
+      .optional()
+      .transform((val) =>
+        val ? (Array.isArray(val) ? val : [val]) : undefined,
+      )
+      .describe('Filter feedback by one or more sentiments'),
+  })
+  .merge(PaginationQuerySchema)
+  .describe('Feedback query parameters with sentiment filter and pagination');
+
+const ReportDownloadQuerySchema = z
+  .object({
+    format: z.enum(['pdf', 'csv']).describe('Download file format'),
+    type: z
+      .enum(['summary', 'detailed'])
+      .describe('Type of report to generate'),
+  })
+  .describe('Query parameters for downloading feedback reports');
+
+// ==================== RESPONSE SCHEMAS ====================
+
+const FeedbackResponseSchema = FeedbackSchema.array().describe(
+  'Array of feedback items',
+);
+
+const FeedbackSingleResponseSchema = FeedbackSchema.describe(
+  'Single feedback item',
+);
 
 const FeedbackSummaryResponseSchema = z
   .array(
     z.object({
-      sentiment: z
-        .enum([
-          FeedbackSentimentEnum.POSITIVE,
-          FeedbackSentimentEnum.NEUTRAL,
-          FeedbackSentimentEnum.NEGATIVE,
-          FeedbackSentimentEnum.UNKNOWN,
-        ])
-        .describe('Sentiment type of the feedback'),
+      sentiment: SentimentEnum.describe('Sentiment type of the feedback'),
       count: z.coerce
         .number()
         .min(0)
@@ -53,126 +79,82 @@ const FeedbackSummaryResponseSchema = z
     'Summary of feedback sentiment analysis, including counts and percentages for each sentiment type',
   );
 
-type FeedbackSummaryResponseSchemaType = z.infer<
-  typeof FeedbackSummaryResponseSchema
->;
+const FeedbackFilteredResponseSchema = z
+  .object({
+    feedbacks: FeedbackSchema.array().describe('Filtered feedback results'),
+    pagination: PaginationResponseSchema.describe('Pagination metadata'),
+  })
+  .describe('Filtered feedback response with pagination');
 
-type FeedbackSingleResponseSchemaType = z.infer<
-  typeof FeedbackSingleResponseSchema
->;
+const FeedbackGroupedResponseSchema = z
+  .object({
+    summary: z.string().describe('Summary of grouped feedback items'),
+    count: z.number().describe('Number of feedback items in this group'),
+    items: z
+      .array(
+        FeedbackSchema.pick({
+          id: true,
+          content: true,
+          sentiment: true,
+        }),
+      )
+      .describe('Array of feedback items in this group'),
+  })
+  .describe('Grouped feedback response');
 
-// DTOs
+const FeedbackGroupedArrayResponseSchema =
+  FeedbackGroupedResponseSchema.array().describe('Array of grouped feedbacks');
+
+// ==================== DTO CLASSES ====================
+
+class FeedbackManualRequestDto extends createZodDto(
+  FeedbackManualRequestSchema,
+) {}
+
+class FeedbackResponseDto extends createZodDto(FeedbackResponseSchema) {}
 
 class FeedbackSingleResponseDto extends createZodDto(
   FeedbackSingleResponseSchema,
 ) {}
 
-class FeedbackSingleParamsRequestDto extends createZodDto(
-  FeedbackSingleParamSchema,
+class FeedbackSummaryResponseDto extends createZodDto(
+  FeedbackSummaryResponseSchema,
 ) {}
-class FeedbackManualRequestDto extends createZodDto(
-  FeedbackManualRequestSchema,
+
+class FeedbackFilteredResponseDto extends createZodDto(
+  FeedbackFilteredResponseSchema,
 ) {}
-class FeedbackResponseDto extends createZodDto(FeedbackResponseSchema) {}
-
-const SentimentEnum = z.enum([
-  FeedbackSentimentEnum.NEGATIVE,
-  FeedbackSentimentEnum.NEUTRAL,
-  FeedbackSentimentEnum.POSITIVE,
-  FeedbackSentimentEnum.UNKNOWN,
-]);
-
-const FeedbackQuerySchema = z.object({
-  sentiment: z
-    .union([SentimentEnum, z.array(SentimentEnum)])
-    .optional()
-    .transform((val) => {
-      if (!val) return undefined;
-      return Array.isArray(val) ? val : [val];
-    }),
-  limit: z.coerce.number().int().min(1).max(100).default(20),
-  page: z.coerce.number().int().min(1).default(1),
-});
-
-class FeedbackQuerySchemaDto extends createZodDto(FeedbackQuerySchema) {}
-
-const FeedbackFilteredResponseSchema = z.object({
-  feedbacks: FeedbackSchema.array(),
-  pagination: PaginationSchema,
-});
-
-type FeedbackFilteredResponseSchemaType = z.infer<
-  typeof FeedbackFilteredResponseSchema
->;
-
-const FeedbackGroupedResponseSchema = z.object({
-  summary: z.string().describe('Summary of grouped feedback items'),
-  count: z.number().describe('Number of feedback items in this group'),
-  items: z
-    .array(
-      FeedbackSchema.pick({
-        id: true,
-        content: true,
-        sentiment: true,
-      }),
-    )
-    .describe('Array of feedback items in this group'),
-});
-
-const FeedbackGroupedArrayResponseSchema =
-  FeedbackGroupedResponseSchema.array();
 
 class FeedbackGroupedResponseDto extends createZodDto(
   FeedbackGroupedResponseSchema,
 ) {}
 
-const ReportDownloadQuerySchema = z.object({
-  format: z.enum(['pdf', 'csv']),
-  type: z.enum(['summary', 'detailed']),
-});
-
-class ReportDownloadQueryDto extends createZodDto(ReportDownloadQuerySchema) {}
-
 class FeedbackGroupedArrayResponseDto extends createZodDto(
   FeedbackGroupedArrayResponseSchema,
 ) {}
 
-type FeedbackGroupedResponseType = z.infer<
-  typeof FeedbackGroupedResponseSchema
->;
-type FeedbackGroupedArrayResponseType = z.infer<
-  typeof FeedbackGroupedArrayResponseSchema
->;
+class FeedbackQueryDto extends createZodDto(FeedbackQuerySchema) {}
 
-class FeedbackSummaryResponseDto extends createZodDto(
-  FeedbackSummaryResponseSchema,
-) {}
+class ReportDownloadQueryDto extends createZodDto(ReportDownloadQuerySchema) {}
 
 export {
-  FeedbackSingleResponseSchema,
-  FeedbackSingleParamSchema,
-  type FeedbackSingleParamSchemaType,
-  FeedbackSingleParamsRequestDto,
-  FeedbackSingleResponseDto,
-  type FeedbackSingleResponseSchemaType,
-  ReportDownloadQuerySchema,
-  ReportDownloadQueryDto,
+  SentimentEnum,
   FeedbackManualRequestSchema,
-  FeedbackGroupedResponseDto,
-  FeedbackGroupedArrayResponseDto,
+  FeedbackResponseSchema,
+  FeedbackSingleResponseSchema,
+  FeedbackSummaryResponseSchema,
+  FeedbackFilteredResponseSchema,
   FeedbackGroupedResponseSchema,
   FeedbackGroupedArrayResponseSchema,
-  FeedbackResponseSchema,
-  type FeedbackGroupedResponseType,
-  type FeedbackGroupedArrayResponseType,
-  FeedbackSummaryResponseSchema,
+  FeedbackQuerySchema,
+  ReportDownloadQuerySchema,
   FeedbackManualRequestDto,
   FeedbackResponseDto,
+  FeedbackSingleResponseDto,
   FeedbackSummaryResponseDto,
-  type FeedbackFilteredResponseSchemaType,
-  FeedbackFilteredResponseSchema,
-  FeedbackQuerySchema,
-  FeedbackQuerySchemaDto,
-  SentimentEnum,
-  type FeedbackSummaryResponseSchemaType,
+  FeedbackFilteredResponseDto,
+  FeedbackGroupedResponseDto,
+  FeedbackGroupedArrayResponseDto,
+  FeedbackQueryDto,
+  ReportDownloadQueryDto,
 };

@@ -30,13 +30,12 @@ export class FileService {
 
     const total = totalResult[0]?.count ?? 0;
 
-    const userFiles = await this.db
-      .select()
-      .from(schema.filesSchema)
-      .where(and(...whereConditions))
-      .limit(limit)
-      .offset((page - 1) * limit)
-      .orderBy(desc(schema.filesSchema.createdAt));
+    const userFiles = await this.db.query.filesSchema.findMany({
+      where: and(...whereConditions),
+      limit,
+      offset: (page - 1) * limit,
+      orderBy: desc(schema.filesSchema.createdAt),
+    });
 
     return {
       files: userFiles,
@@ -50,16 +49,12 @@ export class FileService {
   }
 
   async fileDelete(fileId: string, user: UserSchemaType) {
-    const [file] = await this.db
-      .select()
-      .from(schema.filesSchema)
-      .where(
-        and(
-          eq(schema.filesSchema.id, fileId),
-          eq(schema.filesSchema.userId, user.id),
-        ),
-      )
-      .limit(1);
+    const file = await this.db.query.filesSchema.findFirst({
+      where: and(
+        eq(schema.filesSchema.id, fileId),
+        eq(schema.filesSchema.userId, user.id),
+      ),
+    });
 
     if (!file) {
       throw new NotFoundException('File not found');

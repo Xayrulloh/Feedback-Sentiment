@@ -12,8 +12,8 @@ import { RedisService } from './redis.service';
       inject: [ConfigService],
       useFactory: async (configService: ConfigService<EnvType>) => {
         const redisInstance = new Redis({
-          host: configService.getOrThrow('REDIS_HOST'),
-          port: configService.getOrThrow('REDIS_PORT', 6379),
+          host: configService.getOrThrow<EnvType['REDIS_HOST']>('REDIS_HOST'),
+          port: configService.getOrThrow<EnvType['REDIS_PORT']>('REDIS_PORT'),
         });
 
         redisInstance.on('connect', () => {

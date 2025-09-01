@@ -26,27 +26,25 @@ import {
 import { ZodSerializerDto } from 'nestjs-zod';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
+import { createBaseResponseDto } from 'src/helpers/create-base-response.helper';
 import {
-  createBaseResponseDto,
   RateLimitSchema,
   type RateLimitSchemaType,
   UserRoleEnum,
 } from 'src/utils/zod.schemas';
-import { Roles } from '../auth/decorators/roles.decorator';
-// biome-ignore lint/style/useImportType: Needed for DI
+import { Roles } from '../../common/decorators/roles.decorator';
 import { PrometheusService } from '../monitoring/prometheus.service';
-// biome-ignore lint/style/useImportType: Needed for DI
 import { AdminService } from './admin.service';
 import {
+  AdminDisableSuspendResponseDto,
   AdminDisableSuspendResponseSchema,
-  type AdminDisableSuspendResponseSchemaType,
+  MetricsDto,
   MetricsSchema,
-  type MetricsSchemaType,
+  RateLimitGetDto,
   RateLimitGetSchema,
-  type RateLimitGetSchemaType,
   RateLimitUpsertDto,
+  SuspiciousActivityResponseDto,
   SuspiciousActivityResponseSchema,
-  type SuspiciousActivityResponseSchemaType,
 } from './dto/admin.dto';
 
 @ApiTags('Admin')
@@ -117,7 +115,7 @@ export class AdminController {
         },
         timestamp: {
           type: 'string',
-          example: '2025-08-26T22:15:00.000Z',
+          example: new Date().toISOString(),
         },
       },
     },
@@ -137,7 +135,7 @@ export class AdminController {
   @ZodSerializerDto(AdminDisableSuspendResponseSchema)
   async adminDisable(
     @Param('userId', ParseUUIDPipe) userId: string,
-  ): Promise<AdminDisableSuspendResponseSchemaType> {
+  ): Promise<AdminDisableSuspendResponseDto> {
     return this.adminService.adminDisable(userId);
   }
 
@@ -164,7 +162,7 @@ export class AdminController {
         },
         timestamp: {
           type: 'string',
-          example: '2025-08-26T22:15:00.000Z',
+          example: new Date().toISOString(),
         },
       },
     },
@@ -184,7 +182,7 @@ export class AdminController {
   @ZodSerializerDto(AdminDisableSuspendResponseSchema)
   async adminSuspend(
     @Param('userId', ParseUUIDPipe) userId: string,
-  ): Promise<AdminDisableSuspendResponseSchemaType> {
+  ): Promise<AdminDisableSuspendResponseDto> {
     return this.adminService.adminSuspend(userId);
   }
 
@@ -193,7 +191,7 @@ export class AdminController {
     type: createBaseResponseDto(MetricsSchema, 'MetricsSchema'),
   })
   @ApiOperation({ summary: 'Get app metrics' })
-  async adminMetrics(): Promise<MetricsSchemaType> {
+  async adminMetrics(): Promise<MetricsDto> {
     return {
       uploads: await this.prometheusService.getUploadsPerDay(),
       apiUsage: await this.prometheusService.getApiUsage(),
@@ -228,7 +226,7 @@ export class AdminController {
         },
         timestamp: {
           type: 'string',
-          example: '2025-08-25T21:59:30.357Z',
+          example: new Date().toISOString(),
         },
         path: { type: 'string', example: '/api/admin/rate-limit' },
       },
@@ -249,7 +247,7 @@ export class AdminController {
   })
   @ApiOperation({ summary: 'Get rate limit rules' })
   @ZodSerializerDto(RateLimitGetSchema)
-  async adminGetRateLimits(): Promise<RateLimitGetSchemaType> {
+  async adminGetRateLimits(): Promise<RateLimitGetDto> {
     return this.adminService.adminGetRateLimits();
   }
 
@@ -263,7 +261,7 @@ export class AdminController {
   })
   @ApiOperation({ summary: 'Get suspicious activities' })
   @ZodSerializerDto(SuspiciousActivityResponseSchema)
-  async adminGetSuspiciousActivities(): Promise<SuspiciousActivityResponseSchemaType> {
+  async adminGetSuspiciousActivities(): Promise<SuspiciousActivityResponseDto> {
     return this.adminService.adminGetSuspiciousActivities();
   }
 }
