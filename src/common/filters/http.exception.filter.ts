@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { createBaseErrorResponse } from 'src/helpers/create-base-error-response.helper';
+import { normalizeEndpoint } from 'src/helpers/normalize-endpoint.helper';
 import { MonitoringService } from 'src/modules/monitoring/monitoring.service';
 import type { ErrorDetailsSchemaType } from 'src/utils/zod.schemas';
 import type { ZodIssue } from 'zod';
@@ -30,7 +31,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
     this.monitoringService.incrementError({
       method: request.method,
-      endpoint: request.path,
+      endpoint: normalizeEndpoint(request.path),
       error_message: exception.message,
     });
 

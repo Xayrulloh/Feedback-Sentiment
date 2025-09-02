@@ -32,31 +32,13 @@ import { UserService } from './user.service';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRoleEnum.ADMIN)
 @ApiForbiddenResponse({
-  description: 'Forbidden - user is suspended',
+  description: 'Forbidden resource',
   schema: {
     type: 'object',
     properties: {
       success: { type: 'boolean', example: false },
       statusCode: { type: 'number', example: 403 },
-      message: { type: 'string', example: 'User account is suspended' },
-      errors: {
-        type: 'array',
-        items: {
-          type: 'object',
-          properties: {
-            field: { type: 'string', example: 'user' },
-            message: { type: 'string', example: 'User is suspended' },
-            code: { type: 'string', example: 'USER_SUSPENDED' },
-          },
-        },
-        example: [
-          {
-            field: 'user',
-            message: 'User is suspended',
-            code: 'USER_SUSPENDED',
-          },
-        ],
-      },
+      message: { type: 'string', example: 'Forbidden resource' },
       timestamp: { type: 'string', example: new Date().toISOString() },
     },
   },
@@ -68,7 +50,7 @@ import { UserService } from './user.service';
     properties: {
       success: { type: 'boolean', example: false },
       statusCode: { type: 'number', example: 401 },
-      message: { type: 'string', example: 'Forbidden resource' },
+      message: { type: 'string', example: 'Unauthorized' },
       timestamp: { type: 'string', example: new Date().toISOString() },
     },
   },
@@ -125,8 +107,11 @@ export class UserController {
             type: 'object',
             properties: {
               field: { type: 'string', example: 'email' },
-              message: { type: 'string', example: 'Invalid email format' },
-              code: { type: 'string', example: 'INVALID_EMAIL' },
+              message: {
+                type: 'string',
+                example: 'String must contain at least 3 character(s)',
+              },
+              code: { type: 'string', example: 'TOO_SMALL' },
             },
           },
         },

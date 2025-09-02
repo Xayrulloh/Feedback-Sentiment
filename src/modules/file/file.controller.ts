@@ -106,7 +106,7 @@ export class FileController {
       example: {
         success: true,
         statusCode: 200,
-        message: 'File and related feedbacks deleted successfully',
+        message: 'OK',
         path: '/api/files/{fileId}',
       },
     },

@@ -38,7 +38,9 @@ export class SocketMiddleware {
   }
 
   private async authenticate(socket: Socket) {
-    const token = socket.handshake.headers.authorization?.split(' ')[1];
+    const token =
+      socket.handshake.auth?.token ??
+      socket.handshake.headers?.authorization?.split(' ')[1];
 
     if (!token) {
       throw new UnauthorizedException('No token provided');
