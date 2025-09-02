@@ -39,4 +39,7 @@ jobs:
             docker compose build
             docker compose up -d --wait --wait-timeout 180
 
+            echo "Clearing docker cache/unused things"
+            docker system prune -a --volumes -f
+
             echo "✨ Deployment successful"
