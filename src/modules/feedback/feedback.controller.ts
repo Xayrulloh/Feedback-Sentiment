@@ -98,7 +98,7 @@ import { FeedbackService } from './feedback.service';
     properties: {
       success: { type: 'boolean', example: false },
       statusCode: { type: 'number', example: 401 },
-      message: { type: 'string', example: 'Forbidden resource' },
+      message: { type: 'string', example: 'Unauthorized' },
       timestamp: { type: 'string', example: new Date().toISOString() },
     },
   },
