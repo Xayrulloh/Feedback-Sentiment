@@ -1,6 +1,6 @@
 {
-  "id": "1b080867-1569-4022-9f0a-8d1102e0c9bc",
-  "prevId": "4dc76e7a-c875-4de8-b999-1cd7c934ce22",
+  "id": "7d11c83e-4c14-4a1f-9b2d-1ad0752f0f92",
+  "prevId": "1b080867-1569-4022-9f0a-8d1102e0c9bc",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -308,6 +308,13 @@
       "name": "users_feedbacks",
       "schema": "",
       "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
         "user_id": {
           "name": "user_id",
           "type": "uuid",
@@ -335,6 +342,21 @@
         }
       },
       "indexes": {
+        "idx_users_feedbacks_user_id": {
+          "name": "idx_users_feedbacks_user_id",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "idx_users_feedbacks_feedback_id": {
           "name": "idx_users_feedbacks_feedback_id",
           "columns": [
@@ -362,12 +384,7 @@
           "onUpdate": "no action"
         }
       },
-      "compositePrimaryKeys": {
-        "pk_users_feedbacks": {
-          "name": "pk_users_feedbacks",
-          "columns": ["user_id", "feedback_id"]
-        }
-      },
+      "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
