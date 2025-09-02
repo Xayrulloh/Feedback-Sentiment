@@ -2,7 +2,7 @@
 set -e
 
 echo "📦 Running database migrations..."
-pnpm drizzle:push -y
+pnpm drizzle:push
 
 echo "🚀 Starting app..."
 exec pnpm start
