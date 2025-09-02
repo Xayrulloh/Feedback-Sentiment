@@ -186,7 +186,7 @@ export class AdminController {
     return this.adminService.adminSuspend(userId);
   }
 
-  @Get('monitoring')
+  @Get('metrics')
   @ApiOkResponse({
     type: createBaseResponseDto(MetricsSchema, 'MetricsSchema'),
   })
@@ -200,7 +200,7 @@ export class AdminController {
   }
 
   @Patch('rate-limit')
-  @HttpCode(200)
+  @HttpCode(HttpStatus.OK)
   @ApiOkResponse({
     type: createBaseResponseDto(RateLimitSchema, 'RateLimitSchema'),
   })
@@ -241,7 +241,7 @@ export class AdminController {
   }
 
   @Get('rate-limit')
-  @HttpCode(200)
+  @HttpCode(HttpStatus.OK)
   @ApiOkResponse({
     type: createBaseResponseDto(RateLimitGetSchema, 'RateLimitGetSchema'),
   })
@@ -252,7 +252,7 @@ export class AdminController {
   }
 
   @Get('suspicious-activities')
-  @HttpCode(200)
+  @HttpCode(HttpStatus.OK)
   @ApiOkResponse({
     type: createBaseResponseDto(
       SuspiciousActivityResponseSchema,

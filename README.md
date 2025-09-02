@@ -15,16 +15,17 @@ An AI-powered dashboard to analyze customer feedback sentiment, group themes, an
 
 ### **Tools**
 
-- **Validation**: Zod
+- **Validation**: Zod + NestJS-Zod
 - **API Docs**: Swagger
 - **Testing**: Jest + Supertest
 - **Linting/Formatting**: Biome
-- **Queueing**: BullMQ (optional for async tasks)
-- **Monitoring**: Prometheus + Grafana
+- **File Processing**: Multer (uploads), PapaParse (CSV)
+- **Monitoring**: Prometheus + Grafana + Loki
 - **Deployment**: Docker + Docker Compose
-- **Type Checking and Linting**: Biome
 - **CI/CD**: GitHub Actions
-- **File**: PDF-lib and json2csv
+- **PDF Generation:** PDF-lib
+- **CSV Export:** JSON2CSV
+- **Real-time:** Socket.IO
 
 ---
 
@@ -43,7 +44,7 @@ DATABASE_URL='postgresql://<user>:<password>@localhost:5432/<database>'
 PORT=XXXX
 
 # JWT
-JWT_SECRET
+JWT_SECRET=
 
 # AI
 OPENAI_API_KEY
@@ -53,6 +54,10 @@ POSTGRES_USER
 POSTGRES_PASSWORD
 POSTGRES_DB
 POSTGRES_PORT
+
+# Redis
+REDIS_HOST
+REDIS_PORT
 ```
 
 ### 3. Run Database
@@ -77,15 +82,21 @@ pnpm run start:dev
 
 ### 1. Feedback Ingestion:
 
-- CSV/text input → Validated → Stored in PostgreSQL.
+- CSV/text feedbacks input → AI Processing → Stored in PostgreSQL.
 
 ### 2. AI Processing:
 
-- Mistral API tags sentiment → Groups similar feedback via NLP.
+- Mistral API tags sentiment → Groups similar feedback via NLP -> Tells confidence
 
 ### 3. Dashboard:
 
-- Filter by sentiment, view trends, download reports.
+- Filter by sentiment, group themes, download reports, bar charts.
+
+### 4. Admin Dashboard:
+
+- Get users -> Disable users -> Suspend users ->
+- Get suspicious activity (Registration/Upload/Download/API)
+- Rate limit (API/Upload/Download/Login)
 
 ## 🌐 Endpoints
 
@@ -94,263 +105,112 @@ pnpm run start:dev
 #### **1. User Registration**
 
 **Path**: `POST /auth/(register|login)`  
-**Flow Register**:
+**Flow Register/Login**:
 
 ```mermaid
 sequenceDiagram
     Frontend->>+Backend: POST /auth/register {email, password}
-    Backend->>+DB: Check if email exists
-    alt Email exists
-        DB-->>-Backend: Error "Email already in use"
-        Backend-->>-Frontend: 409 Conflict
+    Backend->>+UserStatusGuard: Check suspended/disabled
+    Backend->>+RateLimitGuard: Check user rate limits and increment (create activity in suspicious table)
+    RateLimitGuard->>+Websocket: Send admins if user hits limits
+    Backend->>+MetricsMiddleware: (Api Usage, Error Rates, Uploads)
+    Backend->>+Websocket: Active users
+    Backend->>+Backend: Zod Validation
+    Backend->>+DB: Checking email and password
+    alt Not valid
+        DB-->>-Backend: Error (Incorrect password or Email exist)
+        Backend-->>-Frontend: 409 | 401
     else Valid
         Backend->>DB: Hash password, save user (role=user)
-        Backend->>Frontend: 201 Created + JWT
+        Backend->>Frontend: 201 + JWT
     end
 ```
 
-**Flow Login**:
+#### **2. Admin Registration**
+
+**Path**: `POST /auth/(register|login)/admin`  
+**Flow Register/Login**:
 
 ```mermaid
 sequenceDiagram
-    Frontend->>+Backend: POST /auth/login {email, password}
-    Backend->>+DB: Validate credentials
-    alt Invalid
-        Backend->>Redis: Log failed attempt
-        Backend->>Admin: Alert if >3 fails
-        DB-->>-Backend: Error "Incorrect password"
-        Backend-->>-Frontend: 401 Unauthorized
+    Frontend->>+Backend: POST /auth/register {email, password}
+    Backend->>+MetricsMiddleware: (Api Usage, Error Rates, Uploads)
+    Backend->>+Websocket: Active users
+    Backend->>+Backend: Zod Validation
+    Backend->>+DB: Checking email and password
+    alt Not valid
+        DB-->>-Backend: Error (Incorrect password or Email exist)
+        Backend-->>-Frontend: 409 | 401
     else Valid
-        Backend->>Frontend: 200 OK + JWT
+        Backend->>DB: Hash password, save user (role=user)
+        Backend->>Frontend: 201 + JWT
     end
 ```
 
-**Request Body**:
-
-```json
-{
-  "email": "rYBmM@example.com",
-  "password": "password123"
-}
-```
-
-**Response (200/201)**:
-
-```json
-{
-  "token": "eyJhbGciOi...",
-  "role": "user",
-  "redirectTo": "/dashboard"
-}
-```
-
-**Error Response**:
-
-- **409 Conflict:**
-
-```json
-{ "error": "Email already in use" }
-```
-
-- **400 Bad Request:**
-
-```json
-{ "error": "Password must be 8+ characters" }
-```
-
-- **401 Unauthorized:**
-
-```json
-{ "error": "Incorrect password" }
-```
-
-**JWT Token Structure:**
-
-```json
-{
-  "sub": "123",
-  "email": "user@example.com",
-  "role": "user",
-  "iat": 1734020000,
-  "exp": 1734023600
-}
-```
-
-**Security**
-
-- **Password Hashing**: Bcrypt
-- **Session Management**: Redis
-- **Rate Limiting**: _5 attempts/hour_ per IP
-- **Authorization**: JWT
-- **Tokens expire in _1 hour_**
-
 ### 📥 Feedback Endpoints
 
-#### **1. Upload Feedback via CSV**
+#### **1. Feedback Manual**
+
+**Path**: `POST /feedback/manual`
+**Flow**:
+
+```mermaid
+sequenceDiagram
+    Frontend->>+Backend: POST /feedback/manual (array of feedbacks)
+    Backend->>+UserStatusGuard: Check suspended/disabled
+    Backend->>+RateLimitGuard: Check user rate limits and increment (create activity in suspicious table)
+    RateLimitGuard->>+Websocket: Send admins if user hits limits
+    Backend->>+MetricsMiddleware: (Api Usage, Error Rates, Uploads)
+    Backend->>Backend: Zod Validation
+    Backend->>DB: Check whether it's already exist or not
+    alt Exist
+        DB-->>-Backend: Get that feedbacks
+        Backend-->>-Frontend: 201
+    else Create
+        Backend->>+AIService: Analyze (confidence/sentiment/group)
+        AIService->>+DB: Create new one and return
+        DB-->>-AIService: Success
+        AIService-->>-Backend: Processed
+        Backend-->>-Frontend: 201
+    end
+```
+
+#### **2. Upload Feedback via CSV**
 
 **Path**: `POST /feedback/upload`  
 **Flow**:
 
 ```mermaid
 sequenceDiagram
-    Frontend->>+Backend: POST /feedback/upload (CSV)
-    Backend->>+Backend: Zod Validation
-    alt Validation Failed
-        Backend-->>-Frontend: 400 (Error Details)
-    else Valid
-        Backend->>DB: Store {id, text, status:pending}
-        Backend->>BullMQ: Add to Queue
-        BullMQ-->>Backend: Job Accepted
-        Backend-->>-Frontend: 202 (Processing)
-    end
-
-    Note right of BullMQ: Async AI Processing
-    BullMQ->>+Mistral AI: Sentiment Analysis
-    Mistral AI-->>-BullMQ: Labels + Confidence
-    BullMQ->>DB: Update {sentiment, confidence, status:finished}
-    BullMQ->>Frontend: SSE/Webhook Update
+    Frontend->>+Backend: POST /feedback/upload (file which has array of feedbacks)
+    Backend->>+UserStatusGuard: Check if user suspended/disabled
+    Backend->>+RateLimitGuard: Check user rate limits and increment (create activity in suspicious table)
+    RateLimitGuard->>+Websocket: Send admins if user hits limits
+    Backend->>+MetricsMiddleware: (Api Usage, Error Rates, Uploads)
+    Backend->>Backend: Parsing and Zod Validation
+    Backend->>+FeedbackManual: Same happens with manual with the rest
+    Backend-->>-Frontend: 201 Created with results
 ```
 
-**Request Body**:
+#### **3. Get Feedback by ID**
 
-```json
-curl -X POST -H "Authorization: Bearer {token}" -F "file=@feedback.csv" http://localhost:3000/feedback/upload
-```
-
-**Response (202)**:
-
-```json
-{
-  "jobId": "550e8400-e29b-41d4-a716-446655440000",
-  "status": "pending",
-  "estimatedWait": 30
-}
-```
-
-**Error Response**:
-
-```json
-{
-  "error": "Invalid CSV structure",
-  "details": "Missing required 'feedback' column"
-}
-```
-
-#### **2. Manual Feedback Entry**
-
-**Path**: `POST /feedback/manual`  
+**Path**: `GET /feedback/:id`  
 **Flow**:
 
 ```mermaid
-flowchart TD
-    A[Frontend] -->|POST JSON Array| B[Zod Validation]
-    B -->|Invalid| C[400 Error]
-    B -->|Valid| D[Store in DB\nstatus:pending]
-    D --> E[Queue AI Job]
-    E --> F[202 Accepted]
-```
-
-**Request Body**:
-
-```json
-[
-  {
-    "entries": ["Love this product!", "Shipping took too long"]
-  }
-]
-```
-
-**Response (202)**:
-
-```json
-{
-  "jobId": "550e8400-e29b-41d4-a716-446655440001",
-  "status": "pending",
-  "itemCount": 2
-}
-```
-
-**Error Response**:
-
-```json
-{
-  "error": "Validation failed",
-  "invalidEntries": [""]
-}
-```
-
-#### **🤖 Internal AI Processing**
-
-**BullMQ Job Handler:**
-
-```mermaid
-flowchart LR
-    A[Queue] --> B[Get Next Job]
-    B --> C[Construct AI Prompt]
-    C --> D[Mistral API Call]
-    D --> E{Success?}
-    E -->|Yes| F[Update DB]
-    E -->|No| G[Mark as Unknown]
-    F --> H[Notify Frontend]
-```
-
-**Mistral AI Prompt Example:**
-
-```text
-Analyze sentiment for this customer feedback:
-"{feedback_text}"
-
-Respond ONLY with JSON format:
-{
-  "sentiment": "positive|neutral|negative",
-  "confidence": 0-100
-}
-```
-
-### **🧪 Try with Sample Data**
-
-**Path**: `POST /feedback/sample`
-
-```mermaid
 sequenceDiagram
-    Frontend->>+Backend: POST /feedback/sample
-    Backend->>Backend: Load Predefined CSV
-    Backend->>BullMQ: Add AI Job (No DB Storage)
-    BullMQ-->>Backend: Job Accepted
-    Backend-->>-Frontend: 202 (Processing)
-
-    Note right of BullMQ: Same Async Pipeline
-    BullMQ->>+Mistral AI: Analyze Sample
-    Mistral AI-->>-BullMQ: Results
-    BullMQ->>Frontend: Stream Results via SSE
+    Frontend->>+Backend: GET /feedback/:id
+    Backend->>+UserStatusGuard: Check if user suspended/disabled
+    Backend->>+RateLimitGuard: Check user rate limits and increment (create activity in suspicious table)
+    RateLimitGuard->>+Websocket: Send admins if user hits limits
+    Backend->>+MetricsMiddleware: (Api Usage, Error Rates, Uploads)
+    Backend->>Backend: Zod Validation
+    Backend->>+DB: Get feedback by id
+    DB-->>-Backend: Feedback
+    Backend-->>-Frontend: 200
 ```
 
-**Request Body**:
-
-```json
-curl -X POST -H "Authorization: Bearer {token}" http://localhost:3000/feedback/sample
-```
-
-**Response (202)**:
-
-```json
-{
-  "jobId": "sample-123e4567",
-  "status": "processing",
-  "note": "Data will not be saved"
-}
-```
-
-**Error Response**:
-
-```json
-{
-  "error": "Validation failed",
-  "invalidEntries": [""]
-}
-```
-
-### 🔍 Filter Feedback by Sentiment
+#### **4. Filter Feedback by Sentiment**
 
 **Path**: `GET /feedback`  
 **Flow**:
@@ -358,111 +218,65 @@ curl -X POST -H "Authorization: Bearer {token}" http://localhost:3000/feedback/s
 ```mermaid
 sequenceDiagram
     Frontend->>+Backend: GET /feedback?sentiment=positive,negative
+    Backend->>+UserStatusGuard: Check if user suspended/disabled
+    Backend->>+RateLimitGuard: Check user rate limits and increment (create activity in suspicious table)
+    RateLimitGuard->>+Websocket: Send admins if user hits limits
+    Backend->>+MetricsMiddleware: (Api Usage, Error Rates, Uploads)
+    Backend->>Backend: Zod Validation
     Backend->>+DB: Query with Sentiment Filters
     DB-->>-Backend: Filtered Results
     Backend-->>-Frontend: 200 (Paginated Data)
 ```
 
-**Request**:
+#### **5. Get Feedback Summary**
 
-```bash
-curl -X GET -H "Authorization: Bearer {token}" \
-  "http://localhost:3000/feedback?sentiment=positive,neutral&limit=10"
-```
-
-**Query Params**:
-| Param | Type | Required | Description |
-| --- | --- | --- | --- |
-| sentiment | CSV list | No | Values: positive, neutral, negative, unknown |
-| limit | integer | No | Items per page (default: 20) |
-| page | integer | No | Pagination offset (default: 1) |
-
-**Response (200)**:
-
-```json
-{
-  "data": [
-    {
-      "id": "123",
-      "text": "Great product!",
-      "sentiment": "positive",
-      "confidence": 92,
-      "createdAt": "2024-03-20T12:00:00Z"
-    }
-  ],
-  "meta": {
-    "totalItems": 42,
-    "totalPages": 5,
-    "currentPage": 1
-  }
-}
-```
-
-### 📊 Sentiment Summary
-
-**Path**: `GET /feedback/summary`  
+**Path**: `GET /feedback/sentiment-summary`  
 **Flow**:
 
 ```mermaid
 sequenceDiagram
-    Frontend->>+Backend: GET /feedback/summary
-    Backend->>+DB: Aggregate Sentiment Counts
-    DB-->>-Backend: Raw counts per sentiment
-    Backend->>Backend: Calculate Percentages
-    Backend-->>-Frontend: 200 (Summary Data)
+    Frontend->>+Backend: GET /feedback/sentiment-summary
+    Backend->>+UserStatusGuard: Check if user suspended/disabled
+    Backend->>+RateLimitGuard: Check user rate limits and increment (create activity in suspicious table)
+    RateLimitGuard->>+Websocket: Send admins if user hits limits
+    Backend->>+MetricsMiddleware: (Api Usage, Error Rates, Uploads)
+    Backend->>Backend: Zod Validation
+    Backend->>+DB: Query with userId
+    DB-->>-Backend: Grouped Results
+    Backend-->>-Frontend: 200
 ```
 
-**Request**:
+#### **6. Get Feedback Grouped**
 
-```bash
-curl -X GET -H "Authorization: Bearer {token}" \
-  http://localhost:3000/feedback/summary
-```
-
-**Response (200)**:
-
-```json
-{
-  "summary": {
-    "positive": {
-      "count": 42,
-      "percentage": 52.5
-    },
-    "neutral": {
-      "count": 20,
-      "percentage": 25.0
-    },
-    "negative": {
-      "count": 15,
-      "percentage": 18.75
-    },
-    "unknown": {
-      "count": 3,
-      "percentage": 3.75
-    }
-  },
-  "total": 80
-}
-```
-
-**Real Time Updates**:
-_Frontend can poll or use SSE to refresh when new data arrives (response will be same):_
-
-```bash
-# SSE channel for updates
-GET /feedback/updates
-```
-
-### 📥 Download Sentiment Report (Backend)
-
-- **1. Detailed Report (All Entries)**
-
-**Path**: `GET /feedback/report/detailed?format=csv|pdf`  
+**Path**: `GET /feedback/grouped`
 **Flow**:
 
 ```mermaid
 sequenceDiagram
-    Frontend->>+Backend: GET /feedback/report/detailed?format=pdf
+    Frontend->>+Backend: GET /feedback/grouped
+    Backend->>+UserStatusGuard: Check if user suspended/disabled
+    Backend->>+RateLimitGuard: Check user rate limits and increment (create activity in suspicious table)
+    RateLimitGuard->>+Websocket: Send admins if user hits limits
+    Backend->>+MetricsMiddleware: (Api Usage, Error Rates, Uploads)
+    Backend->>Backend: Zod Validation
+    Backend->>+DB: Query with userId
+    DB-->>-Backend: Grouped by summary 
+    Backend-->>-Frontend: 200
+```
+
+#### **7. Get Feedback Report file (CSV/PDF)**
+
+**Path**: `GET /feedback/report`
+**Flow**:
+
+```mermaid
+sequenceDiagram
+    Frontend->>+Backend: GET /feedback/report
+    Backend->>+UserStatusGuard: Check if user suspended/disabled
+    Backend->>+RateLimitGuard: Check user rate limits and increment (create activity in suspicious table)
+    RateLimitGuard->>+Websocket: Send admins if user hits limits
+    Backend->>+MetricsMiddleware: (Api Usage, Error Rates, Uploads)
+    Backend->>Backend: Zod Validation
     Backend->>+DB: Fetch all feedback
     DB-->>-Backend: Raw data
     alt PDF Format
@@ -475,106 +289,346 @@ sequenceDiagram
     Backend-->>-Frontend: File download
 ```
 
-- **2. Summary Report (Aggregated)**
+### 📁 File Endpoints
 
-**Path**: `GET /feedback/report/summary?format=csv|pdf`  
+#### **1. Get Files**
+
+**Path**: `GET /files`  
 **Flow**:
 
 ```mermaid
 sequenceDiagram
-    Frontend->>+Backend: GET /feedback/report/summary?format=csv
-    Backend->>+DB: Fetch aggregates
-    DB-->>-Backend: Counts/percentages
-    alt PDF Format
-        Backend->>+PDF-lib: Create summary PDF
-        PDF-lib-->>-Backend: PDF buffer
-    else CSV Format
-        Backend->>+json2csv: Flatten data
-        json2csv-->>-Backend: CSV string
-    end
+    Frontend->>+Backend: GET /files
+    Backend->>+UserStatusGuard: Check if user suspended/disabled
+    Backend->>+RateLimitGuard: Check user rate limits and increment (create activity in suspicious table)
+    RateLimitGuard->>+Websocket: Send admins if user hits limits
+    Backend->>+MetricsMiddleware: (Api Usage, Error Rates, Uploads)
+    Backend->>Backend: Zod Validation
+    Backend->>+DB: Fetch all user files (Paginated)
+    DB-->>-Backend: Files
+    Backend-->>-Frontend: 200
+```
+
+
+#### **2. Delete File**
+
+**Path**: `DELETE /files/:id`  
+**Flow**:
+
+```mermaid
+sequenceDiagram
+    Frontend->>+Backend: DELETE /files/:id
+    Backend->>+UserStatusGuard: Check if user suspended/disabled
+    Backend->>+RateLimitGuard: Check user rate limits and increment (create activity in suspicious table)
+    RateLimitGuard->>+Websocket: Send admins if user hits limits
+    Backend->>+MetricsMiddleware: (Api Usage, Error Rates, Uploads)
+    Backend->>Backend: Zod Validation
+    Backend->>+DB: Delete file
+    DB-->>-Backend: Deleted
+    Backend-->>-Frontend: 200
+```
+
+### 🤨 User Endpoints
+
+#### **1. Get Users**
+
+**Path**: `GET /users`  
+**Flow**:
+
+```mermaid
+sequenceDiagram
+    Frontend->>+Backend: GET /users
+    Backend->>+UserStatusGuard: Check if user suspended/disabled
+    Backend->>+RateLimitGuard: Check user rate limits and increment (create activity in suspicious table)
+    RateLimitGuard->>+Websocket: Send admins if user hits limits
+    Backend->>+MetricsMiddleware: (Api Usage, Error Rates, Uploads)
+    Backend->>Backend: Zod Validation
+    Backend->>+DB: Fetch all users (Paginated)
+    DB-->>-Backend: Users
+    Backend-->>-Frontend: 200
+```
+
+#### **2. Search Users**
+
+**Path**: `GET /users/search`  
+**Flow**:
+
+```mermaid
+sequenceDiagram
+    Frontend->>+Backend: GET /users/search?email=example
+    Backend->>+UserStatusGuard: Check if user suspended/disabled
+    Backend->>+RateLimitGuard: Check user rate limits and increment (create activity in suspicious table)
+    RateLimitGuard->>+Websocket: Send admins if user hits limits
+    Backend->>+MetricsMiddleware: (Api Usage, Error Rates, Uploads)
+    Backend->>Backend: Zod Validation
+    Backend->>+DB: Search users by email
+    DB-->>-Backend: Users (limit 5)
+    Backend-->>-Frontend: 200
+```
+
+### 🔒 Admin Endpoints
+
+#### **1. Disable User**
+
+**Path**: `POST /admin/disable/:userId`
+**Flow**:
+
+```mermaid
+sequenceDiagram
+    Frontend->>+Backend: POST /admin/disable/:userId
+    Backend->>+Backend: Check the user is admin
+    Backend->>+DB: Disable user
+    DB-->>-Backend: Disabled
+    Backend-->>-Frontend: 200
+```
+
+#### **2. Suspend User**
+
+**Path**: `POST /admin/suspend/:userId`
+**Flow**:
+
+```mermaid
+sequenceDiagram
+    Frontend->>+Backend: POST /admin/suspend/:userId
+    Backend->>+Backend: Check the user is admin
+    Backend->>+DB: Suspend user | Enable user
+    DB-->>-Backend: Suspended | Enabled 
+    Backend-->>-Frontend: 200
+```
+
+#### **3. Metrics**
+
+**Path**: `GET /admin/metrics`
+**Flow**:
+
+```mermaid
+sequenceDiagram
+    Frontend->>+Backend: GET /admin/metrics
+    Backend->>+Backend: Check the user is admin
+    Backend->>+DB: Take metrics (uploads, api usage, error rates)
+    DB-->>-Backend: Metrics
+    Backend-->>-Frontend: 200
+```
+
+#### **4. Rate Limit**
+
+**Path**: `GET /admin/rate-limit`
+**Flow**:
+
+```mermaid
+sequenceDiagram
+    Frontend->>+Backend: GET /admin/rate-limit
+    Backend->>+Backend: Check the user is admin
+    Backend->>+DB: Take rate limits (api, upload, download, login)
+    DB-->>-Backend: RateLimits
+    Backend-->>-Frontend: 200
+```
+
+#### **5. Rate Limit**
+
+**Path**: `PATCH /admin/rate-limit`
+**Flow**:
+
+```mermaid
+sequenceDiagram
+    Frontend->>+Backend: PATCH /admin/rate-limit
+    Backend->>+Backend: Check the user is admin
+    Backend->>+DB: Path rate limits (api, upload, download, login)
+    DB-->>-Backend: RateLimits
+    Backend-->>-Frontend: 200
+```
+
+#### **6. Suspicious Activity**
+
+**Path**: `GET /admin/suspicious-activities`
+**Flow**:
+
+```mermaid
+sequenceDiagram
+    Frontend->>+Backend: GET /admin/suspicious-activities
+    Backend->>+Backend: Check the user is admin
+    Backend->>+DB: Take suspicious activities
+    DB-->>-Backend: SuspiciousActivities
+    Backend-->>-Frontend: 200
+```
+
+### 📜 Sample Feedback Endpoints
+
+#### **1 Sample. Feedback Manual**
+
+**Path**: `POST /sample/feedback/manual`
+**Flow**:
+
+```mermaid
+sequenceDiagram
+    Frontend->>+Backend: POST /sample/feedback-manual (array of feedbacks)
+    Backend->>+UserStatusGuard: Check suspended/disabled
+    Backend->>+RateLimitGuard: Check user rate limits and increment (create activity in suspicious table)
+    RateLimitGuard->>+Websocket: Send admins if user hits limits
+    Backend->>+MetricsMiddleware: (Api Usage, Error Rates, Uploads)
+    Backend->>Backend: Zod Validation
+    Backend->>MockData: Mock feedbacks
+    Backend-->>-Frontend: 201
+```
+
+#### **2. Sample Get Feedback by ID**
+
+**Path**: `GET /sample/feedback/:id`  
+**Flow**:
+
+```mermaid
+sequenceDiagram
+    Frontend->>+Backend: GET /sample/feedback-:id
+    Backend->>+UserStatusGuard: Check if user suspended/disabled
+    Backend->>+RateLimitGuard: Check user rate limits and increment (create activity in suspicious table)
+    RateLimitGuard->>+Websocket: Send admins if user hits limits
+    Backend->>+MetricsMiddleware: (Api Usage, Error Rates, Uploads)
+    Backend->>Backend: Zod Validation
+    Backend->>+MockData: Mock Feedback
+    Backend-->>-Frontend: 200
+```
+
+#### **4. Sample Filter Feedback by Sentiment**
+
+**Path**: `GET /feedback`  
+**Flow**:
+
+```mermaid
+sequenceDiagram
+    Frontend->>+Backend: GET /feedback?sentiment=positive,negative
+    Backend->>+UserStatusGuard: Check if user suspended/disabled
+    Backend->>+RateLimitGuard: Check user rate limits and increment (create activity in suspicious table)
+    RateLimitGuard->>+Websocket: Send admins if user hits limits
+    Backend->>+MetricsMiddleware: (Api Usage, Error Rates, Uploads)
+    Backend->>Backend: Zod Validation
+    Backend->>+MockData: Mock Feedback
+    Backend-->>-Frontend: 200 (Paginated Data)
+```
+
+#### **5. Sample Get Feedback Summary**
+
+**Path**: `GET /sample/feedback-sentiment-summary`  
+**Flow**:
+
+```mermaid
+sequenceDiagram
+    Frontend->>+Backend: GET /sample/feedback-sentiment-summary
+    Backend->>+UserStatusGuard: Check if user suspended/disabled
+    Backend->>+RateLimitGuard: Check user rate limits and increment (create activity in suspicious table)
+    RateLimitGuard->>+Websocket: Send admins if user hits limits
+    Backend->>+MetricsMiddleware: (Api Usage, Error Rates, Uploads)
+    Backend->>Backend: Zod Validation
+    Backend->>+MockData: Mock Feedback
+    Backend-->>-Frontend: 200
+```
+
+#### **6. Sample Get Feedback Grouped**
+
+**Path**: `GET /sample/feedback-grouped`
+**Flow**:
+
+```mermaid
+sequenceDiagram
+    Frontend->>+Backend: GET /sample/feedback-grouped
+    Backend->>+UserStatusGuard: Check if user suspended/disabled
+    Backend->>+RateLimitGuard: Check user rate limits and increment (create activity in suspicious table)
+    RateLimitGuard->>+Websocket: Send admins if user hits limits
+    Backend->>+MetricsMiddleware: (Api Usage, Error Rates, Uploads)
+    Backend->>Backend: Zod Validation
+    Backend->>+MockData: Mock Feedback
+    Backend-->>-Frontend: 200
+```
+
+#### **7. Sample Get Feedback Report file (CSV/PDF)**
+
+**Path**: `GET /sample/feedback-report`
+**Flow**:
+
+```mermaid
+sequenceDiagram
+    Frontend->>+Backend: GET /sample/feedback-report
+    Backend->>+UserStatusGuard: Check if user suspended/disabled
+    Backend->>+RateLimitGuard: Check user rate limits and increment (create activity in suspicious table)
+    RateLimitGuard->>+Websocket: Send admins if user hits limits
+    Backend->>+MetricsMiddleware: (Api Usage, Error Rates, Uploads)
+    Backend->>Backend: Zod Validation
+    Backend->>+MockData: Mock Feedback
     Backend-->>-Frontend: File download
 ```
-
-**Request**:
-
-```bash
-# Detailed PDF Report
-curl -X GET -H "Authorization: Bearer {token}" \
-  "http://localhost:3000/feedback/report/detailed?format=pdf" \
-  --output report.pdf
-
-# Summary CSV Report
-curl -X GET -H "Authorization: Bearer {token}" \
-  "http://localhost:3000/feedback/report/summary?format=csv" \
-  --output summary.csv
-```
-
-**Response (200) Headers**:
-
-_For PDF file_
-
-```http
-Content-Type: application/pdf
-Content-Disposition: attachment; filename="report_20240820.pdf"
-```
-
-_For CSV file_
-
-```http
-Content-Type: text/csv
-Content-Disposition: attachment; filename="summary_20240820.csv"
-```
-
-**Data structure**:
-
-_Detailed Report (CSV Example):_
-
-```csv
-feedback,sentiment,confidence,group
-"Great product!",positive,92%,Product Satisfaction
-"Late delivery",negative,85%,Shipping Issues
-```
-
-_Summary Report (PDF Content):_
-
-```text
-SENTIMENT SUMMARY REPORT
-────────────────────────
-Positive: 42 (52.5%)
-Neutral: 20 (25.0%)
-Negative: 15 (18.75%)
-Unknown: 3 (3.75%)
-
-Most Common Groups:
-1. Shipping Issues (12)
-2. Product Quality (8)
-```
-
-<!-- ### 👨‍💼 Admin Dashboard (Security) FIXME: will be implemented in future -->
 
 ## 🗃️ Database Schema
 
 ```mermaid
 erDiagram
-    users ||--o{ feedback : "1:N"
+    users ||--o{ users_feedbacks : "1:N"
+    users ||--o{ files : "1:N"
+    users ||--o{ suspicious_activity : "1:N"
+    feedbacks ||--o{ users_feedbacks : "1:N"
+    files ||--o{ users_feedbacks : "1:N"
 
     users {
         string id PK "uuid"
         string email "unique"
         string password_hash
-        string role "user|admin"
+        enum role "user|admin"
+        boolean is_suspended
         timestamp created_at
+        timestamp updated_at
         timestamp deleted_at "nullable"
     }
 
-    feedback {
+    feedbacks {
+        string id PK "uuid"
+        string content_hash "unique, sha256"
+        text content
+        enum sentiment "positive|neutral|negative|unknown"
+        integer confidence "0-100"
+        text summary "AI-generated"
+        timestamp created_at
+        timestamp updated_at
+        timestamp deleted_at "nullable"
+    }
+
+    users_feedbacks {
+        string user_id FK,PK
+        string feedback_id FK,PK
+        string file_id FK "nullable"
+        timestamp created_at
+    }
+
+    files {
         string id PK "uuid"
         string user_id FK
-        text content
-        string sentiment "positive|neutral|negative|unknown"
-        integer confidence "0-100"
-        string status "pending|processed"
+        string name
+        string mime_type
+        bigint size "bytes"
+        integer row_count "nullable"
+        string extension
         timestamp created_at
+        timestamp updated_at
+        timestamp deleted_at "nullable"
+    }
+
+    rate_limits {
+        string id PK "uuid"
+        enum target "api|upload|download|login"
+        integer limit
+        timestamp created_at
+        timestamp updated_at
+        timestamp deleted_at "nullable"
+    }
+
+    suspicious_activity {
+        string id PK "uuid"
+        string user_id FK "nullable"
+        string email "nullable"
+        string ip "nullable"
+        enum action "api|upload|download|login"
+        enum error "too_many_*"
+        text details "nullable"
+        timestamp created_at
+        timestamp updated_at
         timestamp deleted_at "nullable"
     }
 ```
+
