@@ -15,6 +15,7 @@ export class PrometheusService {
       return res.data.data.result;
     } catch (error) {
       this.logger.error(`Prometheus query failed: ${query}`, error.stack);
+
       throw new Error('Failed to fetch data from Prometheus');
     }
   }

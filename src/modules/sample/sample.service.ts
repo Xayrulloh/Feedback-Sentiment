@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import type {
-  FeedbackFilteredResponseSchemaType,
-  FeedbackGroupedArrayResponseType,
-  FeedbackQuerySchemaDto,
-  FeedbackSummaryResponseSchemaType,
+  FeedbackFilteredResponseDto,
+  FeedbackGroupedArrayResponseDto,
+  FeedbackQueryDto,
+  FeedbackSummaryResponseDto,
 } from '../feedback/dto/feedback.dto';
 import {
   feedbackData,
@@ -13,9 +13,7 @@ import {
 
 @Injectable()
 export class SampleService {
-  sampleFeedbackFiltered(
-    query: FeedbackQuerySchemaDto,
-  ): FeedbackFilteredResponseSchemaType {
+  sampleFeedbackFiltered(query: FeedbackQueryDto): FeedbackFilteredResponseDto {
     const { sentiment, limit, page } = query;
     let result = feedbackData;
 
@@ -34,11 +32,11 @@ export class SampleService {
     };
   }
 
-  sampleFeedbackGrouped(): FeedbackGroupedArrayResponseType {
+  sampleFeedbackGrouped(): FeedbackGroupedArrayResponseDto {
     return feedbackGroupedData;
   }
 
-  sampleFeedbackSentimentSummary(): FeedbackSummaryResponseSchemaType {
+  sampleFeedbackSentimentSummary(): FeedbackSummaryResponseDto {
     return feedbackSummaryData;
   }
 }

@@ -1,6 +1,5 @@
 import { Controller, Get, Res } from '@nestjs/common';
 import type { Response } from 'express';
-// biome-ignore lint/style/useImportType: Needed for DI
 import { MonitoringService } from './monitoring.service';
 
 @Controller('metrics')

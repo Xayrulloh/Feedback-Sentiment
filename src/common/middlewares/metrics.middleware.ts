@@ -1,5 +1,5 @@
 import { Injectable, type NestMiddleware } from '@nestjs/common';
-// biome-ignore lint/style/useImportType: Needed for DI
+import { normalizeEndpoint } from 'src/helpers/normalize-endpoint.helper';
 import { MonitoringService } from 'src/modules/monitoring/monitoring.service';
 
 @Injectable()
@@ -8,13 +8,17 @@ export class MetricsMiddleware implements NestMiddleware {
 
   use(req: Request, _res: Response, next: () => void) {
     const path = req.url.split('?')[0];
+    const normalizedPath = normalizeEndpoint(path);
 
-    this.monitoringService.incrementApiUsage(req.method, path);
+    this.monitoringService.incrementApiUsage({
+      method: req.method,
+      endpoint: normalizedPath,
+    });
 
-    if (path.startsWith('/feedback/upload')) {
+    if (path.startsWith('/api/feedback/upload')) {
       this.monitoringService.incrementUploads();
     }
 
-    next();
+    return next();
   }
 }

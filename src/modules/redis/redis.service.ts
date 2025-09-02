@@ -11,6 +11,7 @@ export class RedisService implements OnModuleDestroy {
 
   async get(key: string): Promise<string | null> {
     const value = await this.redisClient.get(key);
+
     return value;
   }
 
@@ -32,6 +33,7 @@ export class RedisService implements OnModuleDestroy {
 
   async keys(pattern: string): Promise<string[]> {
     const keys = await this.redisClient.keys(pattern);
+
     return keys;
   }
 

@@ -1,45 +1,53 @@
+import { createZodDto } from 'nestjs-zod';
 import { FeedbackManualRequestSchema } from 'src/modules/feedback/dto/feedback.dto';
 import { FeedbackSchema } from 'src/utils/zod.schemas';
 import { z } from 'zod';
 
-const AIRequestSchema = FeedbackManualRequestSchema;
+// Feedbacks request data for ai
+const AIRequestSchema = FeedbackManualRequestSchema.describe(
+  'Feedbacks request data for ai',
+);
 
-const MistralResponseSchema = z.object({
-  choices: z
-    .array(
-      z.object({
-        message: z.object({
-          content: z.string(),
+//Response coming from Mistrak Ai
+const MistralResponseSchema = z
+  .object({
+    choices: z
+      .array(
+        z.object({
+          message: z.object({
+            content: z.string(),
+          }),
         }),
-      }),
-    )
-    .min(1),
-});
+      )
+      .min(1),
+  })
+  .describe('Response coming from Mistral Ai');
 
+// Structured response data coming from ai
 const AIResponseSchema = FeedbackSchema.pick({
   sentiment: true,
   confidence: true,
   summary: true,
   content: true,
-});
+}).describe('Structured response data coming from ai');
 
-const PromptResponseSchema = AIResponseSchema.omit({ content: true });
+// Response data from prompt
+const PromptResponseSchema = AIResponseSchema.omit({ content: true }).describe(
+  'Response data from prompt',
+);
 
-type AIRequestSchemaDto = z.infer<typeof AIRequestSchema>;
-type MistralResponse = z.infer<typeof MistralResponseSchema>;
-type AIResponseSchemaType = z.infer<typeof AIResponseSchema>;
-type PromptResponseSchemaType = z.infer<typeof PromptResponseSchema>;
+class AIRequestDto extends createZodDto(AIRequestSchema) {}
+class MistralResponseDto extends createZodDto(MistralResponseSchema) {}
+class AIResponseDto extends createZodDto(AIResponseSchema) {}
+class PromptResponseDto extends createZodDto(PromptResponseSchema) {}
 
 export {
   AIRequestSchema,
   AIResponseSchema,
   MistralResponseSchema,
   PromptResponseSchema,
-};
-
-export type {
-  AIRequestSchemaDto,
-  MistralResponse,
-  AIResponseSchemaType,
-  PromptResponseSchemaType,
+  AIRequestDto,
+  MistralResponseDto,
+  AIResponseDto,
+  PromptResponseDto,
 };

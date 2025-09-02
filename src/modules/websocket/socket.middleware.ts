@@ -1,7 +1,5 @@
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
-// biome-ignore lint/style/useImportType: Needed for DI
 import { ConfigService } from '@nestjs/config';
-// biome-ignore lint/style/useImportType: Needed for DI
 import { JwtService } from '@nestjs/jwt';
 import { eq } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
@@ -40,7 +38,9 @@ export class SocketMiddleware {
   }
 
   private async authenticate(socket: Socket) {
-    const token = socket.handshake.headers.authorization?.split(' ')[1];
+    const token =
+      socket.handshake.auth?.token ??
+      socket.handshake.headers?.authorization?.split(' ')[1];
 
     if (!token) {
       throw new UnauthorizedException('No token provided');

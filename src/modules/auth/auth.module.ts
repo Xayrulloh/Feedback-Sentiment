@@ -17,7 +17,9 @@ import { AuthService } from './auth.service';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: async (configService: ConfigService<EnvType>) => ({
-        secret: configService.getOrThrow('JWT_SECRET'),
+        secret: configService.getOrThrow<EnvType['JWT_SECRET']>(
+          'JWT_SECRET',
+        ) as string,
         signOptions: {
           expiresIn: '1d',
         },
