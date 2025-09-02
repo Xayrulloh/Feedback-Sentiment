@@ -1,14 +1,12 @@
 import {
-  type CallHandler,
-  type ExecutionContext,
+  CanActivate,
+  ExecutionContext,
   HttpException,
   HttpStatus,
   Inject,
   Injectable,
-  type NestInterceptor,
 } from '@nestjs/common';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import type { Observable } from 'rxjs';
 import { DrizzleAsyncProvider } from 'src/database/drizzle.provider';
 import * as schema from 'src/database/schema';
 import { RedisService } from 'src/modules/redis/redis.service';
@@ -23,7 +21,7 @@ import {
 } from 'src/utils/zod.schemas';
 
 @Injectable()
-export class RateLimitInterceptor implements NestInterceptor {
+export class RateLimitGuard implements CanActivate {
   constructor(
     private readonly redisService: RedisService,
     private readonly gateaway: SocketGateway,
@@ -31,10 +29,7 @@ export class RateLimitInterceptor implements NestInterceptor {
     private db: NodePgDatabase<typeof schema>,
   ) {}
 
-  async intercept(
-    context: ExecutionContext,
-    next: CallHandler,
-  ): Promise<Observable<unknown>> {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const ctx = context.switchToHttp();
 
     const [request, response] = [
@@ -45,7 +40,7 @@ export class RateLimitInterceptor implements NestInterceptor {
     const { user, ip } = request;
 
     if (user?.role === UserRoleEnum.ADMIN || request.method === 'GET') {
-      return next.handle();
+      return true;
     }
 
     let action: RateLimitTargetEnum = RateLimitTargetEnum.API;
@@ -70,7 +65,7 @@ export class RateLimitInterceptor implements NestInterceptor {
     const rateLimit = rateLimitRaw ? JSON.parse(rateLimitRaw) : null;
 
     if (!rateLimit) {
-      return next.handle();
+      return true;
     }
 
     const remaining = Math.max(rateLimit.limit - userCount, 0);
@@ -115,6 +110,6 @@ export class RateLimitInterceptor implements NestInterceptor {
       await this.redisService.set(redisKey, String(userCount + 1));
     }
 
-    return next.handle();
+    return true;
   }
 }
