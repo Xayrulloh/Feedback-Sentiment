@@ -67,7 +67,9 @@ export const usersSchema = pgTable('users', {
 });
 
 export const filesSchema = pgTable('files', {
-  userId: uuid('user_id').notNull().references(() => usersSchema.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id')
+    .notNull()
+    .references(() => usersSchema.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
   mimeType: varchar('mime_type', { length: 255 }).notNull(),
   size: bigint('size', { mode: 'number' }).notNull(),
@@ -94,9 +96,9 @@ export const usersFeedbacksSchema = pgTable(
     feedbackId: uuid('feedback_id')
       .notNull()
       .references(() => feedbacksSchema.id, { onDelete: 'cascade' }),
-    fileId: uuid('file_id')
-      .notNull()
-      .references(() => filesSchema.id, { onDelete: 'cascade' }),
+    fileId: uuid('file_id').references(() => filesSchema.id, {
+      onDelete: 'cascade',
+    }),
     createdAt: timestamp('created_at', { mode: 'date', withTimezone: true })
       .defaultNow()
       .notNull(),
@@ -104,15 +106,16 @@ export const usersFeedbacksSchema = pgTable(
   (table) => {
     return {
       pk: primaryKey({
-        columns: [table.userId, table.fileId, table.feedbackId],
+        columns: [table.userId, table.feedbackId],
         name: 'pk_users_feedbacks',
       }),
-      feedbackIdIdx: index('idx_users_feedbacks_feedback_id').on(table.feedbackId),
+      feedbackIdIdx: index('idx_users_feedbacks_feedback_id').on(
+        table.feedbackId,
+      ),
       fileIdIdx: index('idx_users_feedbacks_file_id').on(table.fileId),
     };
-  }
+  },
 );
-
 
 export const rateLimitsSchema = pgTable('rate_limits', {
   target: DrizzleRateLimitTargetEnum('target').unique().notNull(),
@@ -157,20 +160,23 @@ export const feedbacksRelations = relations(feedbacksSchema, ({ many }) => ({
   }),
 }));
 
-export const usersFeedbacksRelations = relations(usersFeedbacksSchema, ({ one }) => ({
-  user: one(usersSchema, {
-    fields: [usersFeedbacksSchema.userId],
-    references: [usersSchema.id],
-    relationName: 'users_feedbacks_user_id_users_id_fk',
+export const usersFeedbacksRelations = relations(
+  usersFeedbacksSchema,
+  ({ one }) => ({
+    user: one(usersSchema, {
+      fields: [usersFeedbacksSchema.userId],
+      references: [usersSchema.id],
+      relationName: 'users_feedbacks_user_id_users_id_fk',
+    }),
+    feedback: one(feedbacksSchema, {
+      fields: [usersFeedbacksSchema.feedbackId],
+      references: [feedbacksSchema.id],
+      relationName: 'users_feedbacks_feedback_id_feedbacks_id_fk',
+    }),
+    file: one(filesSchema, {
+      fields: [usersFeedbacksSchema.fileId],
+      references: [filesSchema.id],
+      relationName: 'users_feedbacks_file_id_files_id_fk',
+    }),
   }),
-  feedback: one(feedbacksSchema, {
-    fields: [usersFeedbacksSchema.feedbackId],
-    references: [feedbacksSchema.id],
-    relationName: 'users_feedbacks_feedback_id_feedbacks_id_fk',
-  }),
-  file: one(filesSchema, {
-    fields: [usersFeedbacksSchema.fileId],
-    references: [filesSchema.id],
-    relationName: 'users_feedbacks_file_id_files_id_fk',
-  }),
-}));
+);

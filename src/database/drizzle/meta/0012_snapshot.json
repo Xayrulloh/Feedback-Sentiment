@@ -1,6 +1,6 @@
 {
-  "id": "813f797d-22b8-48a6-bea7-197162712be6",
-  "prevId": "b78b4b51-94c4-407a-bacb-72d11ae18ff0",
+  "id": "284b41cf-c662-4f54-8622-e321284707b8",
+  "prevId": "1682cacf-a0ee-4cbb-92be-b5cf8301e02b",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -334,7 +334,7 @@
           "name": "file_id",
           "type": "uuid",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "created_at": {
           "name": "created_at",
@@ -408,7 +408,7 @@
       "compositePrimaryKeys": {
         "pk_users_feedbacks": {
           "name": "pk_users_feedbacks",
-          "columns": ["user_id", "file_id", "feedback_id"]
+          "columns": ["user_id", "feedback_id"]
         }
       },
       "uniqueConstraints": {},

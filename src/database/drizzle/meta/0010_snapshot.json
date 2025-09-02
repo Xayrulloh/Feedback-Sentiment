@@ -1,6 +1,6 @@
 {
-  "id": "813f797d-22b8-48a6-bea7-197162712be6",
-  "prevId": "b78b4b51-94c4-407a-bacb-72d11ae18ff0",
+  "id": "93174296-426f-4999-9e11-7ae9698669ab",
+  "prevId": "813f797d-22b8-48a6-bea7-197162712be6",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -334,7 +334,7 @@
           "name": "file_id",
           "type": "uuid",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "created_at": {
           "name": "created_at",
