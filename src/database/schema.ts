@@ -6,7 +6,6 @@ import {
   integer,
   pgEnum,
   pgTable,
-  primaryKey,
   text,
   timestamp,
   uuid,
@@ -88,6 +87,7 @@ export const feedbacksSchema = pgTable('feedbacks', {
 export const usersFeedbacksSchema = pgTable(
   'users_feedbacks',
   {
+    id: uuid('id').defaultRandom().primaryKey(),
     userId: uuid('user_id').notNull(),
     feedbackId: uuid('feedback_id').notNull(),
     fileId: uuid('file_id').references(() => filesSchema.id, {
@@ -98,10 +98,7 @@ export const usersFeedbacksSchema = pgTable(
       .notNull(),
   },
   (table) => [
-    primaryKey({
-      columns: [table.userId, table.feedbackId],
-      name: 'pk_users_feedbacks',
-    }),
+    index('idx_users_feedbacks_user_id').on(table.userId),
     index('idx_users_feedbacks_feedback_id').on(table.feedbackId),
   ],
 );

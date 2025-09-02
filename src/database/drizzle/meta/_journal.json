@@ -78,6 +78,13 @@
       "when": 1756822387075,
       "tag": "0010_classy_metal_master",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1756825659448,
+      "tag": "0011_woozy_callisto",
+      "breakpoints": true
     }
   ]
 }
