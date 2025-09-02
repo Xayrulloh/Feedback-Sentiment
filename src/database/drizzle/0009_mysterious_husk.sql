@@ -1,9 +1,9 @@
 CREATE TABLE "users_feedbacks" (
 	"user_id" uuid NOT NULL,
 	"feedback_id" uuid NOT NULL,
-	"file_id" uuid NOT NULL,
+	"file_id" uuid,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "pk_users_feedbacks" PRIMARY KEY("user_id","file_id","feedback_id")
+	CONSTRAINT "pk_users_feedbacks" PRIMARY KEY("user_id","feedback_id")
 );
 --> statement-breakpoint
 ALTER TABLE "feedbacks" DROP CONSTRAINT "feedbacks_file_id_files_id_fk";

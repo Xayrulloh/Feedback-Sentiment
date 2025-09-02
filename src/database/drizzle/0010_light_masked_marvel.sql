@@ -1,1 +1,0 @@
-ALTER TABLE "users_feedbacks" ALTER COLUMN "file_id" DROP NOT NULL;
