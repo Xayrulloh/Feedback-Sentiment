@@ -366,7 +366,10 @@ export class FeedbackController {
     ),
   })
   @ZodSerializerDto(FeedbackSingleResponseSchema)
-  async getFeedbackById(@Param('id', ParseUUIDPipe) id: string) {
-    return this.feedbackService.getFeedbackById(id);
+  async getFeedbackById(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.feedbackService.getFeedbackById(id, req.user.id);
   }
 }
