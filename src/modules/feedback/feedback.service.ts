@@ -1,7 +1,15 @@
 import * as crypto from 'node:crypto';
 import path from 'node:path';
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
-import { and, count, desc, eq, inArray, sql } from 'drizzle-orm';
+import {
+  and,
+  count,
+  desc,
+  eq,
+  getTableColumns,
+  inArray,
+  sql,
+} from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { Response } from 'express';
 import * as Papa from 'papaparse';
@@ -40,38 +48,44 @@ export class FeedbackService {
     user: UserSchemaType,
     fileId: string | null = null,
   ): Promise<FeedbackResponseDto> {
-    const normalized = input.feedbacks.map((f) => f.toLowerCase().trim());
-    const hashes = normalized.map((f) =>
-      crypto.createHash('sha256').update(f).digest('hex'),
+    const processedFeedbacks = await Promise.all(
+      input.feedbacks.map((f) => {
+        const normalized = f.toLowerCase().trim();
+        const hash = crypto
+          .createHash('sha256')
+          .update(normalized)
+          .digest('hex');
+
+        return { normalized, hash };
+      }),
     );
 
     const existing = await this.db.query.feedbacksSchema.findMany({
-      where: inArray(schema.feedbacksSchema.contentHash, hashes),
+      where: inArray(
+        schema.feedbacksSchema.contentHash,
+        processedFeedbacks.map((p) => p.hash),
+      ),
     });
-
     const existingMap = new Map(existing.map((f) => [f.contentHash, f]));
+    const feedbacks = await Promise.all(
+      processedFeedbacks.map(async ({ normalized, hash }) => {
+        let feedback = existingMap.get(hash);
 
-    const results = await Promise.allSettled(
-      normalized.map(async (content, i) => {
-        const hash = hashes[i];
-        let feedbackRecord = existingMap.get(hash);
-
-        if (!feedbackRecord) {
-          const aiResult = await this.aiService.analyzeOne(content);
+        if (!feedback) {
+          const aiResult = await this.aiService.analyzeOne(normalized);
 
           const [inserted] = await this.db
             .insert(schema.feedbacksSchema)
             .values({
               contentHash: hash,
-              content,
+              content: normalized,
               sentiment: aiResult.sentiment,
               confidence: Math.round(aiResult.confidence),
               summary: aiResult.summary,
             })
             .returning();
 
-          feedbackRecord = inserted;
-          existingMap.set(hash, inserted);
+          feedback = inserted;
         }
 
         await this.db
@@ -79,31 +93,19 @@ export class FeedbackService {
           .values({
             userId: user.id,
             fileId,
-            feedbackId: feedbackRecord.id,
+            feedbackId: feedback.id,
           })
           .onConflictDoNothing();
 
         return {
-          id: feedbackRecord.id,
-          content: feedbackRecord.content,
-          sentiment: feedbackRecord.sentiment,
-          confidence: feedbackRecord.confidence,
-          summary: feedbackRecord.summary,
+          ...feedback,
           userId: user.id,
           fileId,
-          createdAt: feedbackRecord.createdAt,
-          updatedAt: feedbackRecord.updatedAt,
-          deletedAt: feedbackRecord.deletedAt,
         } as FeedbackSchemaType;
       }),
     );
 
-    return results
-      .filter(
-        (r): r is PromiseFulfilledResult<FeedbackSchemaType> =>
-          r.status === 'fulfilled' && r.value !== null,
-      )
-      .map((r) => r.value) as FeedbackResponseDto;
+    return feedbacks;
   }
 
   async feedbackUpload(
@@ -217,14 +219,7 @@ export class FeedbackService {
 
     const feedbacks = await this.db
       .select({
-        id: schema.feedbacksSchema.id,
-        content: schema.feedbacksSchema.content,
-        sentiment: schema.feedbacksSchema.sentiment,
-        confidence: schema.feedbacksSchema.confidence,
-        summary: schema.feedbacksSchema.summary,
-        createdAt: schema.feedbacksSchema.createdAt,
-        updatedAt: schema.feedbacksSchema.updatedAt,
-        deletedAt: schema.feedbacksSchema.deletedAt,
+        ...getTableColumns(schema.feedbacksSchema),
         userId: schema.usersFeedbacksSchema.userId,
         fileId: schema.usersFeedbacksSchema.fileId,
       })
@@ -302,16 +297,9 @@ export class FeedbackService {
   async getAllFeedback(user: UserSchemaType): Promise<FeedbackSchemaType[]> {
     return this.db
       .select({
-        id: schema.feedbacksSchema.id,
-        content: schema.feedbacksSchema.content,
-        sentiment: schema.feedbacksSchema.sentiment,
-        confidence: schema.feedbacksSchema.confidence,
-        summary: schema.feedbacksSchema.summary,
+        ...getTableColumns(schema.feedbacksSchema),
         userId: schema.usersFeedbacksSchema.userId,
         fileId: schema.usersFeedbacksSchema.fileId,
-        createdAt: schema.feedbacksSchema.createdAt,
-        updatedAt: schema.feedbacksSchema.updatedAt,
-        deletedAt: schema.feedbacksSchema.deletedAt,
       })
       .from(schema.feedbacksSchema)
       .innerJoin(
@@ -360,16 +348,9 @@ export class FeedbackService {
   ): Promise<FeedbackSingleResponseDto> {
     const feedback = await this.db
       .select({
-        id: schema.feedbacksSchema.id,
-        content: schema.feedbacksSchema.content,
-        sentiment: schema.feedbacksSchema.sentiment,
-        confidence: schema.feedbacksSchema.confidence,
-        summary: schema.feedbacksSchema.summary,
+        ...getTableColumns(schema.feedbacksSchema),
         userId: schema.usersFeedbacksSchema.userId,
         fileId: schema.usersFeedbacksSchema.fileId,
-        createdAt: schema.feedbacksSchema.createdAt,
-        updatedAt: schema.feedbacksSchema.updatedAt,
-        deletedAt: schema.feedbacksSchema.deletedAt,
       })
       .from(schema.feedbacksSchema)
       .innerJoin(

@@ -67,9 +67,7 @@ export const usersSchema = pgTable('users', {
 });
 
 export const filesSchema = pgTable('files', {
-  userId: uuid('user_id')
-    .notNull()
-    .references(() => usersSchema.id, { onDelete: 'cascade' }),
+  userId: uuid('user_id').notNull(),
   name: text('name').notNull(),
   mimeType: varchar('mime_type', { length: 255 }).notNull(),
   size: bigint('size', { mode: 'number' }).notNull(),
@@ -90,12 +88,8 @@ export const feedbacksSchema = pgTable('feedbacks', {
 export const usersFeedbacksSchema = pgTable(
   'users_feedbacks',
   {
-    userId: uuid('user_id')
-      .notNull()
-      .references(() => usersSchema.id, { onDelete: 'cascade' }),
-    feedbackId: uuid('feedback_id')
-      .notNull()
-      .references(() => feedbacksSchema.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id').notNull(),
+    feedbackId: uuid('feedback_id').notNull(),
     fileId: uuid('file_id').references(() => filesSchema.id, {
       onDelete: 'cascade',
     }),
@@ -103,18 +97,13 @@ export const usersFeedbacksSchema = pgTable(
       .defaultNow()
       .notNull(),
   },
-  (table) => {
-    return {
-      pk: primaryKey({
-        columns: [table.userId, table.feedbackId],
-        name: 'pk_users_feedbacks',
-      }),
-      feedbackIdIdx: index('idx_users_feedbacks_feedback_id').on(
-        table.feedbackId,
-      ),
-      fileIdIdx: index('idx_users_feedbacks_file_id').on(table.fileId),
-    };
-  },
+  (table) => [
+    primaryKey({
+      columns: [table.userId, table.feedbackId],
+      name: 'pk_users_feedbacks',
+    }),
+    index('idx_users_feedbacks_feedback_id').on(table.feedbackId),
+  ],
 );
 
 export const rateLimitsSchema = pgTable('rate_limits', {
@@ -151,12 +140,6 @@ export const filesRelations = relations(filesSchema, ({ many, one }) => ({
     fields: [filesSchema.userId],
     references: [usersSchema.id],
     relationName: 'files_user_id_users_id_fk',
-  }),
-}));
-
-export const feedbacksRelations = relations(feedbacksSchema, ({ many }) => ({
-  usersFeedbacks: many(usersFeedbacksSchema, {
-    relationName: 'users_feedbacks_feedback_id_feedbacks_id_fk',
   }),
 }));
 
