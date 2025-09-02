@@ -6,7 +6,10 @@ export class MetricsMiddleware implements NestMiddleware {
   constructor(private readonly monitoringService: MonitoringService) {}
 
   private normalizeEndpoint(path: string): string {
-    return path.replace(/\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi, '/:id');
+    return path.replace(
+      /\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi,
+      '/:id',
+    );
   }
 
   use(req: Request, _res: Response, next: () => void) {
