@@ -4,13 +4,12 @@ import {
   type NestModule,
   RequestMethod,
 } from '@nestjs/common';
-import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
+import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import { PrometheusModule } from '@willsoto/nestjs-prometheus';
 import { ZodValidationPipe } from 'nestjs-zod';
 import { AppController } from './app.controller';
 import { DrizzleExceptionFilter } from './common/filters/drizzle.exception.filter';
 import { HttpExceptionFilter } from './common/filters/http.exception.filter';
-import { RateLimitGuard } from './common/guards/rate-limit.guard';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { ZodSerializerInterceptorCustom } from './common/interceptors/zod.response-checker.interceptor';
 import { MetricsMiddleware } from './common/middlewares/metrics.middleware';
@@ -47,7 +46,6 @@ import { WebsocketModule } from './modules/websocket/websocket.module';
   controllers: [AppController],
   providers: [
     { provide: APP_PIPE, useClass: ZodValidationPipe },
-    { provide: APP_GUARD, useClass: RateLimitGuard },
     { provide: APP_INTERCEPTOR, useClass: ResponseInterceptor },
     { provide: APP_INTERCEPTOR, useClass: ZodSerializerInterceptorCustom },
     { provide: APP_FILTER, useClass: HttpExceptionFilter },

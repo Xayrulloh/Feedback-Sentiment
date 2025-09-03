@@ -25,6 +25,7 @@ import {
 } from '@nestjs/swagger';
 import { ZodSerializerDto } from 'nestjs-zod';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
+import { RateLimitGuard } from 'src/common/guards/rate-limit.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { createBaseResponseDto } from 'src/helpers/create-base-response.helper';
 import {
@@ -51,7 +52,7 @@ import {
 @ApiBearerAuth()
 @Controller('admin')
 @Roles(UserRoleEnum.ADMIN)
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, RateLimitGuard)
 @ApiForbiddenResponse({
   description: 'Forbidden resource',
   schema: {

@@ -16,6 +16,7 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { ZodSerializerDto } from 'nestjs-zod';
+import { RateLimitGuard } from 'src/common/guards/rate-limit.guard';
 import { UserStatusGuard } from 'src/common/guards/user-status.guard';
 import { createBaseResponseDto } from 'src/helpers/create-base-response.helper';
 import { AuthService } from './auth.service';
@@ -29,7 +30,7 @@ import {
 
 @ApiTags('Auth')
 @Controller('auth')
-@UseGuards(UserStatusGuard)
+@UseGuards(UserStatusGuard, RateLimitGuard)
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
