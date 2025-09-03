@@ -12,6 +12,7 @@ const envSchema = z.object({
   POSTGRES_PORT: z.string().min(1),
   REDIS_HOST: z.string().min(1),
   REDIS_PORT: z.string().length(4).transform(Number),
+  REDIS_TTL: z.string().min(1).transform(Number),
 });
 
 type EnvType = z.infer<typeof envSchema>;

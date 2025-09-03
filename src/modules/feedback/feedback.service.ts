@@ -1,6 +1,7 @@
 import * as crypto from 'node:crypto';
 import path from 'node:path';
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import {
   and,
   count,
@@ -13,6 +14,7 @@ import {
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { Response } from 'express';
 import * as Papa from 'papaparse';
+import { EnvType } from 'src/config/env/env-validation';
 import { DrizzleAsyncProvider } from 'src/database/drizzle.provider';
 import * as schema from 'src/database/schema';
 import type {
@@ -37,13 +39,20 @@ import { FileGeneratorService } from './file-generator.service';
 
 @Injectable()
 export class FeedbackService {
+  protected cacheTTL: number;
+
   constructor(
     private readonly aiService: AIService,
     private readonly fileGeneratorService: FileGeneratorService,
     @Inject(DrizzleAsyncProvider)
     private readonly db: NodePgDatabase<typeof schema>,
+    protected configService: ConfigService,
     private readonly redisService: RedisService,
-  ) {}
+  ) {
+    this.cacheTTL = this.configService.get<EnvType['REDIS_TTL']>(
+      'REDIS_TTL',
+    ) as number;
+  }
 
   async feedbackManual(
     input: FeedbackManualRequestDto,
@@ -253,7 +262,7 @@ export class FeedbackService {
   ): Promise<FeedbackGroupedArrayResponseDto> {
     const cacheKey = `feedback:grouped:${userId}`;
     const cached = await this.redisService.get(cacheKey);
-    
+
     if (cached) {
       return JSON.parse(cached);
     }
@@ -289,7 +298,7 @@ export class FeedbackService {
     await this.redisService.setWithExpiry(
       cacheKey,
       JSON.stringify(grouped),
-      120,
+      this.cacheTTL,
     );
 
     return grouped;
@@ -298,7 +307,7 @@ export class FeedbackService {
   async feedbackSummary(userId: string): Promise<FeedbackSummaryResponseDto> {
     const cacheKey = `feedback:sentiment-summary:${userId}`;
     const cached = await this.redisService.get(cacheKey);
-    
+
     if (cached) {
       return JSON.parse(cached);
     }
@@ -322,7 +331,7 @@ export class FeedbackService {
     await this.redisService.setWithExpiry(
       cacheKey,
       JSON.stringify(summary),
-      60,
+      this.cacheTTL,
     );
     return summary;
   }
@@ -372,7 +381,7 @@ export class FeedbackService {
     await this.redisService.setWithExpiry(
       cacheKey,
       fileBuffer.toString('base64'),
-      300,
+      this.cacheTTL,
     );
 
     this.sendFileResponse(res, fileBuffer, format, type);
