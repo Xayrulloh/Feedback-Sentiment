@@ -253,6 +253,7 @@ export class FeedbackService {
   ): Promise<FeedbackGroupedArrayResponseDto> {
     const cacheKey = `feedback:grouped:${userId}`;
     const cached = await this.redisService.get(cacheKey);
+    
     if (cached) {
       return JSON.parse(cached);
     }
@@ -297,6 +298,7 @@ export class FeedbackService {
   async feedbackSummary(userId: string): Promise<FeedbackSummaryResponseDto> {
     const cacheKey = `feedback:sentiment-summary:${userId}`;
     const cached = await this.redisService.get(cacheKey);
+    
     if (cached) {
       return JSON.parse(cached);
     }
@@ -348,7 +350,6 @@ export class FeedbackService {
   ) {
     const { format, type } = query;
     const cacheKey = `feedback:report:${user.id}:${type}:${format}`;
-
     const cached = await this.redisService.get(cacheKey);
 
     if (cached) {
