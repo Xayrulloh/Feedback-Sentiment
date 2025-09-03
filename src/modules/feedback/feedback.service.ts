@@ -114,7 +114,10 @@ export class FeedbackService {
     const userFeedbacks = await Promise.all(
       input.feedbacks.map(async (f) => {
         const existingFeedback = existingMap.get(
-          crypto.createHash('sha256').update(f).digest('hex'),
+          crypto
+            .createHash('sha256')
+            .update(f.toLowerCase().trim())
+            .digest('hex'),
         );
 
         if (!existingFeedback) {
