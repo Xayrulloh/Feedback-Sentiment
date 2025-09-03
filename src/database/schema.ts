@@ -86,6 +86,7 @@ export const feedbacksSchema = pgTable('feedbacks', {
   ...baseSchema,
 },  (table) => [
     index('idx_feedbacks_sentiment').on(table.sentiment),
+    index('idx_feedbacks_summary').on(table.summary)
   ],);
 
 export const usersFeedbacksSchema = pgTable(
@@ -124,10 +125,7 @@ export const suspiciousActivitySchema = pgTable('suspicious_activity', {
   error: DrizzleRateLimitErrorEnum('error').notNull(),
   details: text('details'),
   ...baseSchema,
-},  (table) => [
-    index('idx_suspicious_activity_user_id').on(table.userId),
-    index('idx_suspicious_activity_email').on(table.email),
-  ],);
+});
 
 // relations
 export const usersRelations = relations(usersSchema, ({ many }) => ({
