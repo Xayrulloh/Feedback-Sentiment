@@ -92,15 +92,12 @@ export const feedbacksSchema = pgTable('feedbacks', {
 export const usersFeedbacksSchema = pgTable(
   'users_feedbacks',
   {
-    id: uuid('id').defaultRandom().primaryKey(),
     userId: uuid('user_id').notNull(),
     feedbackId: uuid('feedback_id').notNull(),
     fileId: uuid('file_id').references(() => filesSchema.id, {
       onDelete: 'cascade',
     }),
-    createdAt: timestamp('created_at', { mode: 'date', withTimezone: true })
-      .defaultNow()
-      .notNull(),
+    ...baseSchema,
   },
   (table) => [
     index('idx_users_feedbacks_user_id').on(table.userId),

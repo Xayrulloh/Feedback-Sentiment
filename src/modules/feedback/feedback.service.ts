@@ -7,7 +7,6 @@ import {
   count,
   desc,
   eq,
-  getTableColumns,
   inArray,
   sql,
 } from 'drizzle-orm';
@@ -59,7 +58,7 @@ export class FeedbackService {
     user: UserSchemaType,
     fileId: string | null = null,
   ): Promise<FeedbackResponseDto> {
-    const processedFeedbacks = await Promise.all(
+    const hashedInputFeedbacks = await Promise.all(
       input.feedbacks.map((f) => {
         const normalized = f.toLowerCase().trim();
         const hash = crypto
@@ -71,21 +70,23 @@ export class FeedbackService {
       }),
     );
 
-    const existing = await this.db.query.feedbacksSchema.findMany({
+    const existingFeedbacks = await this.db.query.feedbacksSchema.findMany({
       where: inArray(
         schema.feedbacksSchema.contentHash,
-        processedFeedbacks.map((p) => p.hash),
+        hashedInputFeedbacks.map((p) => p.hash),
       ),
     });
-    const existingMap = new Map(existing.map((f) => [f.contentHash, f]));
+
+    const existingFeedbacksMap = new Map(existingFeedbacks.map((f) => [f.contentHash, f]));
+
     const feedbacks = await Promise.all(
-      processedFeedbacks.map(async ({ normalized, hash }) => {
-        let feedback = existingMap.get(hash);
+      hashedInputFeedbacks.map(async ({ normalized, hash }) => {
+        let feedback = existingFeedbacksMap.get(hash);
 
         if (!feedback) {
           const aiResult = await this.aiService.analyzeOne(normalized);
 
-          const [inserted] = await this.db
+          const [insertedFeedback] = await this.db
             .insert(schema.feedbacksSchema)
             .values({
               contentHash: hash,
@@ -94,25 +95,39 @@ export class FeedbackService {
               confidence: Math.round(aiResult.confidence),
               summary: aiResult.summary,
             })
-            .returning();
+            .returning()
+            .onConflictDoNothing();
 
-          feedback = inserted;
+          if (!insertedFeedback) {
+            feedback = await this.db.query.feedbacksSchema.findFirst({
+              where: eq(schema.feedbacksSchema.contentHash, hash),
+            });
+
+            if (!feedback) {
+              throw new Error(
+                'Failed to retrieve feedback after insertion conflict.',
+              );
+            }
+          } else {
+            feedback = insertedFeedback;
+          }
         }
 
-        await this.db
+        const [userFeedback] = await this.db
           .insert(schema.usersFeedbacksSchema)
           .values({
             userId: user.id,
             fileId,
             feedbackId: feedback.id,
           })
-          .onConflictDoNothing();
+          .returning();
 
         return {
           ...feedback,
+          id: userFeedback.id,
           userId: user.id,
           fileId,
-        } as FeedbackSchemaType;
+        };
       }),
     );
 
@@ -221,10 +236,10 @@ export class FeedbackService {
       .select({
         count: sql<number>`count(*)`,
       })
-      .from(schema.feedbacksSchema)
+      .from(schema.usersFeedbacksSchema)
       .innerJoin(
-        schema.usersFeedbacksSchema,
-        eq(schema.usersFeedbacksSchema.feedbackId, schema.feedbacksSchema.id),
+        schema.feedbacksSchema,
+        eq(schema.feedbacksSchema.id, schema.usersFeedbacksSchema.feedbackId),
       )
       .where(and(...whereConditions));
 
@@ -232,14 +247,21 @@ export class FeedbackService {
 
     const feedbacks = await this.db
       .select({
-        ...getTableColumns(schema.feedbacksSchema),
-        userId: schema.usersFeedbacksSchema.userId,
+        id: schema.usersFeedbacksSchema.id,
         fileId: schema.usersFeedbacksSchema.fileId,
+        userId: schema.usersFeedbacksSchema.userId,
+        createdAt: schema.usersFeedbacksSchema.createdAt,
+        updatedAt: schema.usersFeedbacksSchema.updatedAt,
+        deletedAt: schema.usersFeedbacksSchema.deletedAt,
+        content: schema.feedbacksSchema.content,
+        sentiment: schema.feedbacksSchema.sentiment,
+        confidence: schema.feedbacksSchema.confidence,
+        summary: schema.feedbacksSchema.summary,
       })
-      .from(schema.feedbacksSchema)
+      .from(schema.usersFeedbacksSchema)
       .innerJoin(
-        schema.usersFeedbacksSchema,
-        eq(schema.usersFeedbacksSchema.feedbackId, schema.feedbacksSchema.id),
+        schema.feedbacksSchema,
+        eq(schema.feedbacksSchema.id, schema.usersFeedbacksSchema.feedbackId),
       )
       .where(and(...whereConditions))
       .orderBy(desc(schema.feedbacksSchema.createdAt))
@@ -285,10 +307,10 @@ export class FeedbackService {
           ) ORDER BY ${schema.feedbacksSchema.createdAt} DESC
         )`,
       })
-      .from(schema.feedbacksSchema)
+      .from(schema.usersFeedbacksSchema)
       .innerJoin(
-        schema.usersFeedbacksSchema,
-        eq(schema.usersFeedbacksSchema.feedbackId, schema.feedbacksSchema.id),
+        schema.feedbacksSchema,
+        eq(schema.feedbacksSchema.id, schema.usersFeedbacksSchema.feedbackId),
       )
       .where(eq(schema.usersFeedbacksSchema.userId, userId))
       .groupBy(schema.feedbacksSchema.summary)
@@ -320,10 +342,10 @@ export class FeedbackService {
           CAST(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER () AS DECIMAL(5,2))
         `,
       })
-      .from(schema.feedbacksSchema)
+      .from(schema.usersFeedbacksSchema)
       .innerJoin(
-        schema.usersFeedbacksSchema,
-        eq(schema.usersFeedbacksSchema.feedbackId, schema.feedbacksSchema.id),
+        schema.feedbacksSchema,
+        eq(schema.feedbacksSchema.id, schema.usersFeedbacksSchema.feedbackId),
       )
       .where(eq(schema.usersFeedbacksSchema.userId, userId))
       .groupBy(schema.feedbacksSchema.sentiment);
@@ -333,23 +355,31 @@ export class FeedbackService {
       JSON.stringify(summary),
       this.cacheTTL,
     );
+
     return summary;
   }
 
   async getAllFeedback(user: UserSchemaType): Promise<FeedbackSchemaType[]> {
     return this.db
-      .select({
-        ...getTableColumns(schema.feedbacksSchema),
-        userId: schema.usersFeedbacksSchema.userId,
-        fileId: schema.usersFeedbacksSchema.fileId,
-      })
-      .from(schema.feedbacksSchema)
-      .innerJoin(
-        schema.usersFeedbacksSchema,
-        eq(schema.usersFeedbacksSchema.feedbackId, schema.feedbacksSchema.id),
-      )
-      .where(eq(schema.usersFeedbacksSchema.userId, user.id))
-      .orderBy(desc(schema.feedbacksSchema.createdAt));
+    .select({
+      id: schema.usersFeedbacksSchema.id,
+      fileId: schema.usersFeedbacksSchema.fileId,
+      userId: schema.usersFeedbacksSchema.userId,
+      createdAt: schema.usersFeedbacksSchema.createdAt,
+      updatedAt: schema.usersFeedbacksSchema.updatedAt,
+      deletedAt: schema.usersFeedbacksSchema.deletedAt,
+      content: schema.feedbacksSchema.content,
+      sentiment: schema.feedbacksSchema.sentiment,
+      confidence: schema.feedbacksSchema.confidence,
+      summary: schema.feedbacksSchema.summary,
+    })
+    .from(schema.usersFeedbacksSchema)
+    .innerJoin(
+      schema.feedbacksSchema,
+      eq(schema.feedbacksSchema.id, schema.usersFeedbacksSchema.feedbackId),
+    )
+    .where(eq(schema.usersFeedbacksSchema.userId, user.id))
+    .orderBy(desc(schema.feedbacksSchema.createdAt));
   }
 
   async feedbackReportDownload(
@@ -406,29 +436,32 @@ export class FeedbackService {
     id: string,
     userId: string,
   ): Promise<FeedbackSingleResponseDto> {
-    const feedback = await this.db
-      .select({
-        ...getTableColumns(schema.feedbacksSchema),
-        userId: schema.usersFeedbacksSchema.userId,
-        fileId: schema.usersFeedbacksSchema.fileId,
-      })
-      .from(schema.feedbacksSchema)
-      .innerJoin(
-        schema.usersFeedbacksSchema,
-        eq(schema.usersFeedbacksSchema.feedbackId, schema.feedbacksSchema.id),
-      )
-      .where(
-        and(
-          eq(schema.feedbacksSchema.id, id),
-          eq(schema.usersFeedbacksSchema.userId, userId),
-        ),
-      )
-      .limit(1);
+    const userFeedback = await this.db.query.usersFeedbacksSchema.findFirst({
+      where: and(
+        eq(schema.usersFeedbacksSchema.id, id),
+        eq(schema.usersFeedbacksSchema.userId, userId),
+      ),
+      with: {
+        feedback: true,
+      },
+    })
 
-    if (!feedback[0]) {
+    if (!userFeedback) {
       throw new BadRequestException(`Feedback with id ${id} not found`);
     }
 
-    return feedback[0];
+
+    return {
+      id: userFeedback.id,
+      fileId: userFeedback.fileId,
+      userId: userFeedback.userId,
+      createdAt: userFeedback.createdAt,
+      updatedAt: userFeedback.updatedAt,
+      deletedAt: userFeedback.deletedAt,
+      content: userFeedback.feedback.content,
+      sentiment: userFeedback.feedback.sentiment,
+      confidence: userFeedback.feedback.confidence,
+      summary: userFeedback.feedback.summary,
+    }
   }
 }
