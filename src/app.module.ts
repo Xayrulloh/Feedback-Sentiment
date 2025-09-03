@@ -10,7 +10,6 @@ import { ZodValidationPipe } from 'nestjs-zod';
 import { AppController } from './app.controller';
 import { DrizzleExceptionFilter } from './common/filters/drizzle.exception.filter';
 import { HttpExceptionFilter } from './common/filters/http.exception.filter';
-import { RateLimitInterceptor } from './common/interceptors/rate-limit.interceptor';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { ZodSerializerInterceptorCustom } from './common/interceptors/zod.response-checker.interceptor';
 import { MetricsMiddleware } from './common/middlewares/metrics.middleware';
@@ -47,7 +46,6 @@ import { WebsocketModule } from './modules/websocket/websocket.module';
   controllers: [AppController],
   providers: [
     { provide: APP_PIPE, useClass: ZodValidationPipe },
-    { provide: APP_INTERCEPTOR, useClass: RateLimitInterceptor },
     { provide: APP_INTERCEPTOR, useClass: ResponseInterceptor },
     { provide: APP_INTERCEPTOR, useClass: ZodSerializerInterceptorCustom },
     { provide: APP_FILTER, useClass: HttpExceptionFilter },
