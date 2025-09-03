@@ -1,6 +1,7 @@
 import * as crypto from 'node:crypto';
 import path from 'node:path';
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import {
   and,
   count,
@@ -13,6 +14,7 @@ import {
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { Response } from 'express';
 import * as Papa from 'papaparse';
+import { EnvType } from 'src/config/env/env-validation';
 import { DrizzleAsyncProvider } from 'src/database/drizzle.provider';
 import * as schema from 'src/database/schema';
 import type {
@@ -21,6 +23,7 @@ import type {
   UserSchemaType,
 } from 'src/utils/zod.schemas';
 import { AIService } from '../AI/AI.service';
+import { RedisService } from '../redis/redis.service';
 import {
   FeedbackFilteredResponseDto,
   FeedbackGroupedArrayResponseDto,
@@ -36,12 +39,20 @@ import { FileGeneratorService } from './file-generator.service';
 
 @Injectable()
 export class FeedbackService {
+  protected cacheTTL: number;
+
   constructor(
     private readonly aiService: AIService,
     private readonly fileGeneratorService: FileGeneratorService,
     @Inject(DrizzleAsyncProvider)
     private readonly db: NodePgDatabase<typeof schema>,
-  ) {}
+    protected configService: ConfigService,
+    private readonly redisService: RedisService,
+  ) {
+    this.cacheTTL = this.configService.get<EnvType['REDIS_TTL']>(
+      'REDIS_TTL',
+    ) as number;
+  }
 
   async feedbackManual(
     input: FeedbackManualRequestDto,
@@ -104,6 +115,8 @@ export class FeedbackService {
         } as FeedbackSchemaType;
       }),
     );
+
+    await this.redisService.clearUserCache(user.id);
 
     return feedbacks;
   }
@@ -247,7 +260,14 @@ export class FeedbackService {
   async feedbackGrouped(
     userId: string,
   ): Promise<FeedbackGroupedArrayResponseDto> {
-    return this.db
+    const cacheKey = `feedback:grouped:${userId}`;
+    const cached = await this.redisService.get(cacheKey);
+
+    if (cached) {
+      return JSON.parse(cached);
+    }
+
+    const grouped = await this.db
       .select({
         summary: schema.feedbacksSchema.summary,
         count: count(schema.feedbacksSchema.id),
@@ -274,10 +294,25 @@ export class FeedbackService {
       .groupBy(schema.feedbacksSchema.summary)
       .orderBy(desc(count(schema.feedbacksSchema.id)))
       .limit(20);
+
+    await this.redisService.setWithExpiry(
+      cacheKey,
+      JSON.stringify(grouped),
+      this.cacheTTL,
+    );
+
+    return grouped;
   }
 
   async feedbackSummary(userId: string): Promise<FeedbackSummaryResponseDto> {
-    return this.db
+    const cacheKey = `feedback:sentiment-summary:${userId}`;
+    const cached = await this.redisService.get(cacheKey);
+
+    if (cached) {
+      return JSON.parse(cached);
+    }
+
+    const summary = await this.db
       .select({
         sentiment: schema.feedbacksSchema.sentiment,
         count: sql<number>`CAST(COUNT(*) AS INTEGER)`,
@@ -292,6 +327,13 @@ export class FeedbackService {
       )
       .where(eq(schema.usersFeedbacksSchema.userId, userId))
       .groupBy(schema.feedbacksSchema.sentiment);
+
+    await this.redisService.setWithExpiry(
+      cacheKey,
+      JSON.stringify(summary),
+      this.cacheTTL,
+    );
+    return summary;
   }
 
   async getAllFeedback(user: UserSchemaType): Promise<FeedbackSchemaType[]> {
@@ -316,14 +358,19 @@ export class FeedbackService {
     res: Response,
   ) {
     const { format, type } = query;
+    const cacheKey = `feedback:report:${user.id}:${type}:${format}`;
+    const cached = await this.redisService.get(cacheKey);
 
-    let data: FeedbackSchemaType[] | FeedbackSummaryResponseDto;
-
-    if (type === 'detailed') {
-      data = await this.getAllFeedback(user);
-    } else {
-      data = await this.feedbackSummary(user.id);
+    if (cached) {
+      const buffer = Buffer.from(cached, 'base64');
+      this.sendFileResponse(res, buffer, format, type);
+      return;
     }
+
+    const data =
+      type === 'detailed'
+        ? await this.getAllFeedback(user)
+        : await this.feedbackSummary(user.id);
 
     const fileBuffer = await this.fileGeneratorService.generate(
       format,
@@ -331,15 +378,28 @@ export class FeedbackService {
       data,
     );
 
-    const fileName = `feedback-report-${type}-${Date.now()}.${format}`;
+    await this.redisService.setWithExpiry(
+      cacheKey,
+      fileBuffer.toString('base64'),
+      this.cacheTTL,
+    );
 
+    this.sendFileResponse(res, fileBuffer, format, type);
+  }
+
+  private sendFileResponse(
+    res: Response,
+    buffer: Buffer,
+    format: string,
+    type: string,
+  ) {
+    const fileName = `feedback-report-${type}-${Date.now()}.${format}`;
     res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
     res.setHeader(
       'Content-Type',
       format === 'csv' ? 'text/csv' : 'application/pdf',
     );
-
-    res.send(fileBuffer);
+    res.send(buffer);
   }
 
   async getFeedbackById(
