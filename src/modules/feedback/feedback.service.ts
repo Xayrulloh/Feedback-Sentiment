@@ -21,6 +21,7 @@ import type {
   UserSchemaType,
 } from 'src/utils/zod.schemas';
 import { AIService } from '../AI/AI.service';
+import { RedisService } from '../redis/redis.service';
 import {
   FeedbackFilteredResponseDto,
   FeedbackGroupedArrayResponseDto,
@@ -41,6 +42,7 @@ export class FeedbackService {
     private readonly fileGeneratorService: FileGeneratorService,
     @Inject(DrizzleAsyncProvider)
     private readonly db: NodePgDatabase<typeof schema>,
+    private readonly redisService: RedisService,
   ) {}
 
   async feedbackManual(
@@ -104,6 +106,8 @@ export class FeedbackService {
         } as FeedbackSchemaType;
       }),
     );
+
+    await this.redisService.clearUserCache(user.id);
 
     return feedbacks;
   }
@@ -247,7 +251,13 @@ export class FeedbackService {
   async feedbackGrouped(
     userId: string,
   ): Promise<FeedbackGroupedArrayResponseDto> {
-    return this.db
+    const cacheKey = `feedback:grouped:${userId}`;
+    const cached = await this.redisService.get(cacheKey);
+    if (cached) {
+      return JSON.parse(cached);
+    }
+
+    const grouped = await this.db
       .select({
         summary: schema.feedbacksSchema.summary,
         count: count(schema.feedbacksSchema.id),
@@ -274,10 +284,24 @@ export class FeedbackService {
       .groupBy(schema.feedbacksSchema.summary)
       .orderBy(desc(count(schema.feedbacksSchema.id)))
       .limit(20);
+
+    await this.redisService.setWithExpiry(
+      cacheKey,
+      JSON.stringify(grouped),
+      120,
+    );
+
+    return grouped;
   }
 
   async feedbackSummary(userId: string): Promise<FeedbackSummaryResponseDto> {
-    return this.db
+    const cacheKey = `feedback:sentiment-summary:${userId}`;
+    const cached = await this.redisService.get(cacheKey);
+    if (cached) {
+      return JSON.parse(cached);
+    }
+
+    const summary = await this.db
       .select({
         sentiment: schema.feedbacksSchema.sentiment,
         count: sql<number>`CAST(COUNT(*) AS INTEGER)`,
@@ -292,6 +316,13 @@ export class FeedbackService {
       )
       .where(eq(schema.usersFeedbacksSchema.userId, userId))
       .groupBy(schema.feedbacksSchema.sentiment);
+
+    await this.redisService.setWithExpiry(
+      cacheKey,
+      JSON.stringify(summary),
+      60,
+    );
+    return summary;
   }
 
   async getAllFeedback(user: UserSchemaType): Promise<FeedbackSchemaType[]> {
@@ -316,14 +347,20 @@ export class FeedbackService {
     res: Response,
   ) {
     const { format, type } = query;
+    const cacheKey = `feedback:report:${user.id}:${type}:${format}`;
 
-    let data: FeedbackSchemaType[] | FeedbackSummaryResponseDto;
+    const cached = await this.redisService.get(cacheKey);
 
-    if (type === 'detailed') {
-      data = await this.getAllFeedback(user);
-    } else {
-      data = await this.feedbackSummary(user.id);
+    if (cached) {
+      const buffer = Buffer.from(cached, 'base64');
+      this.sendFileResponse(res, buffer, format, type);
+      return;
     }
+
+    const data =
+      type === 'detailed'
+        ? await this.getAllFeedback(user)
+        : await this.feedbackSummary(user.id);
 
     const fileBuffer = await this.fileGeneratorService.generate(
       format,
@@ -331,15 +368,28 @@ export class FeedbackService {
       data,
     );
 
-    const fileName = `feedback-report-${type}-${Date.now()}.${format}`;
+    await this.redisService.setWithExpiry(
+      cacheKey,
+      fileBuffer.toString('base64'),
+      300,
+    );
 
+    this.sendFileResponse(res, fileBuffer, format, type);
+  }
+
+  private sendFileResponse(
+    res: Response,
+    buffer: Buffer,
+    format: string,
+    type: string,
+  ) {
+    const fileName = `feedback-report-${type}-${Date.now()}.${format}`;
     res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
     res.setHeader(
       'Content-Type',
       format === 'csv' ? 'text/csv' : 'application/pdf',
     );
-
-    res.send(fileBuffer);
+    res.send(buffer);
   }
 
   async getFeedbackById(

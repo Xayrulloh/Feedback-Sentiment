@@ -42,4 +42,19 @@ export class RedisService implements OnModuleDestroy {
 
     return ttl;
   }
+
+  async clearUserCache(userId: string): Promise<void> {
+    const keys = [
+      `feedback:sentiment-summary:${userId}`,
+      `feedback:grouped:${userId}`,
+      `feedback:report:${userId}:detailed:csv`,
+      `feedback:report:${userId}:detailed:pdf`,
+      `feedback:report:${userId}:summary:csv`,
+      `feedback:report:${userId}:summary:pdf`,
+    ];
+
+    if (keys.length > 0) {
+      await this.redisClient.del(...keys);
+    }
+  }
 }
