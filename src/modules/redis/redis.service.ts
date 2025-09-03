@@ -53,8 +53,6 @@ export class RedisService implements OnModuleDestroy {
       `feedback:report:${userId}:summary:pdf`,
     ];
 
-    if (keys.length > 0) {
-      await this.redisClient.del(...keys);
-    }
+    await this.redisClient.del(...keys);
   }
 }
