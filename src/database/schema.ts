@@ -2,6 +2,7 @@ import { relations } from 'drizzle-orm';
 import {
   bigint,
   boolean,
+  index,
   integer,
   pgEnum,
   pgTable,
@@ -72,19 +73,41 @@ export const filesSchema = pgTable('files', {
   rowCount: integer('row_count'),
   extension: varchar('extension', { length: 50 }).notNull(),
   ...baseSchema,
-});
+}, (table) => [
+  index('idx_files_user_id').on(table.userId),
+]);
 
 export const feedbacksSchema = pgTable('feedbacks', {
-  userId: uuid('user_id').notNull(),
-  fileId: uuid('file_id').references(() => filesSchema.id, {
-    onDelete: 'cascade',
-  }),
+  contentHash: varchar('content_hash', { length: 64 }).notNull().unique(),
   content: text('content').notNull(),
   sentiment: DrizzleFeedbackSentimentEnum('sentiment').notNull(),
   confidence: integer('confidence').notNull(),
   summary: text('summary').notNull(),
   ...baseSchema,
-});
+},  (table) => [
+    index('idx_feedbacks_sentiment').on(table.sentiment),
+    index('idx_feedbacks_summary').on(table.summary)
+  ],);
+
+export const usersFeedbacksSchema = pgTable(
+  'users_feedbacks',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    userId: uuid('user_id').notNull(),
+    feedbackId: uuid('feedback_id').notNull(),
+    fileId: uuid('file_id').references(() => filesSchema.id, {
+      onDelete: 'cascade',
+    }),
+    createdAt: timestamp('created_at', { mode: 'date', withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index('idx_users_feedbacks_user_id').on(table.userId),
+    index('idx_users_feedbacks_feedback_id').on(table.feedbackId),
+    index('idx_users_feedbacks_file_id').on(table.fileId),
+  ],
+);
 
 export const rateLimitsSchema = pgTable('rate_limits', {
   target: DrizzleRateLimitTargetEnum('target').unique().notNull(),
@@ -106,15 +129,15 @@ export const suspiciousActivitySchema = pgTable('suspicious_activity', {
 
 // relations
 export const usersRelations = relations(usersSchema, ({ many }) => ({
-  feedbacks: many(feedbacksSchema, {
-    relationName: 'feedbacks_user_id_users_id_fk',
+  usersFeedbacks: many(usersFeedbacksSchema, {
+    relationName: 'users_feedbacks_user_id_users_id_fk',
   }),
   files: many(filesSchema, { relationName: 'files_user_id_users_id_fk' }),
 }));
 
 export const filesRelations = relations(filesSchema, ({ many, one }) => ({
-  feedbacks: many(feedbacksSchema, {
-    relationName: 'feedbacks_file_id_files_id_fk',
+  usersFeedbacks: many(usersFeedbacksSchema, {
+    relationName: 'users_feedbacks_file_id_files_id_fk',
   }),
   user: one(usersSchema, {
     fields: [filesSchema.userId],
@@ -123,15 +146,23 @@ export const filesRelations = relations(filesSchema, ({ many, one }) => ({
   }),
 }));
 
-export const feedbacksRelations = relations(feedbacksSchema, ({ one }) => ({
-  file: one(filesSchema, {
-    fields: [feedbacksSchema.fileId],
-    references: [filesSchema.id],
-    relationName: 'feedbacks_file_id_files_id_fk',
+export const usersFeedbacksRelations = relations(
+  usersFeedbacksSchema,
+  ({ one }) => ({
+    user: one(usersSchema, {
+      fields: [usersFeedbacksSchema.userId],
+      references: [usersSchema.id],
+      relationName: 'users_feedbacks_user_id_users_id_fk',
+    }),
+    feedback: one(feedbacksSchema, {
+      fields: [usersFeedbacksSchema.feedbackId],
+      references: [feedbacksSchema.id],
+      relationName: 'users_feedbacks_feedback_id_feedbacks_id_fk',
+    }),
+    file: one(filesSchema, {
+      fields: [usersFeedbacksSchema.fileId],
+      references: [filesSchema.id],
+      relationName: 'users_feedbacks_file_id_files_id_fk',
+    }),
   }),
-  user: one(usersSchema, {
-    fields: [feedbacksSchema.userId],
-    references: [usersSchema.id],
-    relationName: 'feedbacks_user_id_users_id_fk',
-  }),
-}));
+);

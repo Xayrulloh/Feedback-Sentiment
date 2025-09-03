@@ -72,10 +72,10 @@ export class SampleController {
     summary: 'Filter feedback by sentiment',
   })
   @ZodSerializerDto(FeedbackFilteredResponseSchema)
-  sampleFeedbackFiltered(
+  async sampleFeedbackFiltered(
     @Query(new ZodValidationPipe(FeedbackQueryDto))
     query: FeedbackQueryDto,
-  ): FeedbackFilteredResponseDto {
+  ): Promise<FeedbackFilteredResponseDto> {
     return this.sampleService.sampleFeedbackFiltered(query);
   }
 
@@ -90,7 +90,7 @@ export class SampleController {
     ),
   })
   @ZodSerializerDto(FeedbackGroupedArrayResponseSchema)
-  sampleFeedbackGrouped(): FeedbackGroupedArrayResponseDto {
+  async sampleFeedbackGrouped(): Promise<FeedbackGroupedArrayResponseDto> {
     return this.sampleService.sampleFeedbackGrouped();
   }
 
@@ -103,7 +103,7 @@ export class SampleController {
     ),
   })
   @ZodSerializerDto(FeedbackSummaryResponseDto)
-  sampleFeedbackSentimentSummary(): FeedbackSummaryResponseDto {
+  async sampleFeedbackSentimentSummary(): Promise<FeedbackSummaryResponseDto> {
     return this.sampleService.sampleFeedbackSentimentSummary();
   }
 }

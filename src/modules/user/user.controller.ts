@@ -13,6 +13,7 @@ import {
 } from '@nestjs/swagger';
 import { ZodSerializerDto, ZodValidationPipe } from 'nestjs-zod';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
+import { RateLimitGuard } from 'src/common/guards/rate-limit.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { createBaseResponseDto } from 'src/helpers/create-base-response.helper';
 import { UserRoleEnum } from 'src/utils/zod.schemas';
@@ -29,7 +30,7 @@ import { UserService } from './user.service';
 
 @ApiTags('Users')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, RateLimitGuard)
 @Roles(UserRoleEnum.ADMIN)
 @ApiForbiddenResponse({
   description: 'Forbidden resource',

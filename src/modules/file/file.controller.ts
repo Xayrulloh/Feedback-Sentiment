@@ -23,6 +23,7 @@ import {
 } from '@nestjs/swagger';
 import { ZodSerializerDto, ZodValidationPipe } from 'nestjs-zod';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
+import { RateLimitGuard } from 'src/common/guards/rate-limit.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { UserStatusGuard } from 'src/common/guards/user-status.guard';
 import { createBaseResponseDto } from 'src/helpers/create-base-response.helper';
@@ -38,7 +39,7 @@ import { FileService } from './file.service';
 
 @ApiTags('Files')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard, RolesGuard, UserStatusGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, UserStatusGuard, RateLimitGuard)
 @Roles(UserRoleEnum.ADMIN, UserRoleEnum.USER)
 @ApiForbiddenResponse({
   description: 'Forbidden - user is suspended',

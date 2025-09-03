@@ -1,9 +1,20 @@
+import * as crypto from 'node:crypto';
 import path from 'node:path';
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
-import { and, count, desc, eq, inArray, sql } from 'drizzle-orm';
+import { ConfigService } from '@nestjs/config';
+import {
+  and,
+  count,
+  desc,
+  eq,
+  getTableColumns,
+  inArray,
+  sql,
+} from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { Response } from 'express';
 import * as Papa from 'papaparse';
+import { EnvType } from 'src/config/env/env-validation';
 import { DrizzleAsyncProvider } from 'src/database/drizzle.provider';
 import * as schema from 'src/database/schema';
 import type {
@@ -12,6 +23,7 @@ import type {
   UserSchemaType,
 } from 'src/utils/zod.schemas';
 import { AIService } from '../AI/AI.service';
+import { RedisService } from '../redis/redis.service';
 import {
   FeedbackFilteredResponseDto,
   FeedbackGroupedArrayResponseDto,
@@ -27,46 +39,86 @@ import { FileGeneratorService } from './file-generator.service';
 
 @Injectable()
 export class FeedbackService {
+  protected cacheTTL: number;
+
   constructor(
     private readonly aiService: AIService,
     private readonly fileGeneratorService: FileGeneratorService,
     @Inject(DrizzleAsyncProvider)
     private readonly db: NodePgDatabase<typeof schema>,
-  ) {}
+    protected configService: ConfigService,
+    private readonly redisService: RedisService,
+  ) {
+    this.cacheTTL = this.configService.get<EnvType['REDIS_TTL']>(
+      'REDIS_TTL',
+    ) as number;
+  }
 
   async feedbackManual(
     input: FeedbackManualRequestDto,
     user: UserSchemaType,
     fileId: string | null = null,
   ): Promise<FeedbackResponseDto> {
-    const results = await Promise.allSettled(
-      input.feedbacks.map(async (feedback) => {
-        const aiResult = await this.aiService.analyzeOne(feedback);
+    const processedFeedbacks = await Promise.all(
+      input.feedbacks.map((f) => {
+        const normalized = f.toLowerCase().trim();
+        const hash = crypto
+          .createHash('sha256')
+          .update(normalized)
+          .digest('hex');
 
-        const [newFeedback] = await this.db
-          .insert(schema.feedbacksSchema)
-          .values({
-            content: feedback,
-            userId: user.id,
-            fileId,
-            sentiment: aiResult.sentiment,
-            confidence: Math.round(aiResult.confidence),
-            summary: aiResult.summary,
-          })
-          .returning();
-
-        return newFeedback;
+        return { normalized, hash };
       }),
     );
 
-    const validFeedbacks = results
-      .filter(
-        (r): r is PromiseFulfilledResult<FeedbackSchemaType> =>
-          r.status === 'fulfilled' && r.value !== null,
-      )
-      .map((r) => r.value);
+    const existing = await this.db.query.feedbacksSchema.findMany({
+      where: inArray(
+        schema.feedbacksSchema.contentHash,
+        processedFeedbacks.map((p) => p.hash),
+      ),
+    });
+    const existingMap = new Map(existing.map((f) => [f.contentHash, f]));
+    const feedbacks = await Promise.all(
+      processedFeedbacks.map(async ({ normalized, hash }) => {
+        let feedback = existingMap.get(hash);
 
-    return validFeedbacks;
+        if (!feedback) {
+          const aiResult = await this.aiService.analyzeOne(normalized);
+
+          const [inserted] = await this.db
+            .insert(schema.feedbacksSchema)
+            .values({
+              contentHash: hash,
+              content: normalized,
+              sentiment: aiResult.sentiment,
+              confidence: Math.round(aiResult.confidence),
+              summary: aiResult.summary,
+            })
+            .returning();
+
+          feedback = inserted;
+        }
+
+        await this.db
+          .insert(schema.usersFeedbacksSchema)
+          .values({
+            userId: user.id,
+            fileId,
+            feedbackId: feedback.id,
+          })
+          .onConflictDoNothing();
+
+        return {
+          ...feedback,
+          userId: user.id,
+          fileId,
+        } as FeedbackSchemaType;
+      }),
+    );
+
+    await this.redisService.clearUserCache(user.id);
+
+    return feedbacks;
   }
 
   async feedbackUpload(
@@ -157,8 +209,7 @@ export class FeedbackService {
     user: UserSchemaType,
   ): Promise<FeedbackFilteredResponseDto> {
     const { sentiment, limit, page } = query;
-
-    const whereConditions = [eq(schema.feedbacksSchema.userId, user.id)];
+    const whereConditions = [eq(schema.usersFeedbacksSchema.userId, user.id)];
 
     if (sentiment && sentiment.length > 0) {
       whereConditions.push(
@@ -171,16 +222,29 @@ export class FeedbackService {
         count: sql<number>`count(*)`,
       })
       .from(schema.feedbacksSchema)
+      .innerJoin(
+        schema.usersFeedbacksSchema,
+        eq(schema.usersFeedbacksSchema.feedbackId, schema.feedbacksSchema.id),
+      )
       .where(and(...whereConditions));
 
     const total = totalResult[0]?.count ?? 0;
 
-    const feedbacks = await this.db.query.feedbacksSchema.findMany({
-      where: and(...whereConditions),
-      orderBy: [desc(schema.feedbacksSchema.createdAt)],
-      limit,
-      offset: (page - 1) * limit,
-    });
+    const feedbacks = await this.db
+      .select({
+        ...getTableColumns(schema.feedbacksSchema),
+        userId: schema.usersFeedbacksSchema.userId,
+        fileId: schema.usersFeedbacksSchema.fileId,
+      })
+      .from(schema.feedbacksSchema)
+      .innerJoin(
+        schema.usersFeedbacksSchema,
+        eq(schema.usersFeedbacksSchema.feedbackId, schema.feedbacksSchema.id),
+      )
+      .where(and(...whereConditions))
+      .orderBy(desc(schema.feedbacksSchema.createdAt))
+      .limit(limit)
+      .offset((page - 1) * limit);
 
     return {
       feedbacks,
@@ -196,7 +260,14 @@ export class FeedbackService {
   async feedbackGrouped(
     userId: string,
   ): Promise<FeedbackGroupedArrayResponseDto> {
-    return await this.db
+    const cacheKey = `feedback:grouped:${userId}`;
+    const cached = await this.redisService.get(cacheKey);
+
+    if (cached) {
+      return JSON.parse(cached);
+    }
+
+    const grouped = await this.db
       .select({
         summary: schema.feedbacksSchema.summary,
         count: count(schema.feedbacksSchema.id),
@@ -215,29 +286,70 @@ export class FeedbackService {
         )`,
       })
       .from(schema.feedbacksSchema)
-      .where(eq(schema.feedbacksSchema.userId, userId))
+      .innerJoin(
+        schema.usersFeedbacksSchema,
+        eq(schema.usersFeedbacksSchema.feedbackId, schema.feedbacksSchema.id),
+      )
+      .where(eq(schema.usersFeedbacksSchema.userId, userId))
       .groupBy(schema.feedbacksSchema.summary)
       .orderBy(desc(count(schema.feedbacksSchema.id)))
       .limit(20);
+
+    await this.redisService.setWithExpiry(
+      cacheKey,
+      JSON.stringify(grouped),
+      this.cacheTTL,
+    );
+
+    return grouped;
   }
 
   async feedbackSummary(userId: string): Promise<FeedbackSummaryResponseDto> {
-    return this.db
+    const cacheKey = `feedback:sentiment-summary:${userId}`;
+    const cached = await this.redisService.get(cacheKey);
+
+    if (cached) {
+      return JSON.parse(cached);
+    }
+
+    const summary = await this.db
       .select({
         sentiment: schema.feedbacksSchema.sentiment,
         count: sql<number>`CAST(COUNT(*) AS INTEGER)`,
-        percentage: sql<number>`CAST(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER () AS DECIMAL(5,2))`,
+        percentage: sql<number>`
+          CAST(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER () AS DECIMAL(5,2))
+        `,
       })
       .from(schema.feedbacksSchema)
-      .where(eq(schema.feedbacksSchema.userId, userId))
+      .innerJoin(
+        schema.usersFeedbacksSchema,
+        eq(schema.usersFeedbacksSchema.feedbackId, schema.feedbacksSchema.id),
+      )
+      .where(eq(schema.usersFeedbacksSchema.userId, userId))
       .groupBy(schema.feedbacksSchema.sentiment);
+
+    await this.redisService.setWithExpiry(
+      cacheKey,
+      JSON.stringify(summary),
+      this.cacheTTL,
+    );
+    return summary;
   }
 
   async getAllFeedback(user: UserSchemaType): Promise<FeedbackSchemaType[]> {
-    return this.db.query.feedbacksSchema.findMany({
-      where: eq(schema.feedbacksSchema.userId, user.id),
-      orderBy: desc(schema.feedbacksSchema.createdAt),
-    });
+    return this.db
+      .select({
+        ...getTableColumns(schema.feedbacksSchema),
+        userId: schema.usersFeedbacksSchema.userId,
+        fileId: schema.usersFeedbacksSchema.fileId,
+      })
+      .from(schema.feedbacksSchema)
+      .innerJoin(
+        schema.usersFeedbacksSchema,
+        eq(schema.usersFeedbacksSchema.feedbackId, schema.feedbacksSchema.id),
+      )
+      .where(eq(schema.usersFeedbacksSchema.userId, user.id))
+      .orderBy(desc(schema.feedbacksSchema.createdAt));
   }
 
   async feedbackReportDownload(
@@ -246,14 +358,19 @@ export class FeedbackService {
     res: Response,
   ) {
     const { format, type } = query;
+    const cacheKey = `feedback:report:${user.id}:${type}:${format}`;
+    const cached = await this.redisService.get(cacheKey);
 
-    let data: FeedbackSchemaType[] | FeedbackSummaryResponseDto;
-
-    if (type === 'detailed') {
-      data = await this.getAllFeedback(user);
-    } else {
-      data = await this.feedbackSummary(user.id);
+    if (cached) {
+      const buffer = Buffer.from(cached, 'base64');
+      this.sendFileResponse(res, buffer, format, type);
+      return;
     }
+
+    const data =
+      type === 'detailed'
+        ? await this.getAllFeedback(user)
+        : await this.feedbackSummary(user.id);
 
     const fileBuffer = await this.fileGeneratorService.generate(
       format,
@@ -261,26 +378,57 @@ export class FeedbackService {
       data,
     );
 
-    const fileName = `feedback-report-${type}-${Date.now()}.${format}`;
+    await this.redisService.setWithExpiry(
+      cacheKey,
+      fileBuffer.toString('base64'),
+      this.cacheTTL,
+    );
 
+    this.sendFileResponse(res, fileBuffer, format, type);
+  }
+
+  private sendFileResponse(
+    res: Response,
+    buffer: Buffer,
+    format: string,
+    type: string,
+  ) {
+    const fileName = `feedback-report-${type}-${Date.now()}.${format}`;
     res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
     res.setHeader(
       'Content-Type',
       format === 'csv' ? 'text/csv' : 'application/pdf',
     );
-
-    res.send(fileBuffer);
+    res.send(buffer);
   }
 
-  async getFeedbackById(id: string): Promise<FeedbackSingleResponseDto> {
-    const feedback = await this.db.query.feedbacksSchema.findFirst({
-      where: eq(schema.feedbacksSchema.id, id),
-    });
+  async getFeedbackById(
+    id: string,
+    userId: string,
+  ): Promise<FeedbackSingleResponseDto> {
+    const feedback = await this.db
+      .select({
+        ...getTableColumns(schema.feedbacksSchema),
+        userId: schema.usersFeedbacksSchema.userId,
+        fileId: schema.usersFeedbacksSchema.fileId,
+      })
+      .from(schema.feedbacksSchema)
+      .innerJoin(
+        schema.usersFeedbacksSchema,
+        eq(schema.usersFeedbacksSchema.feedbackId, schema.feedbacksSchema.id),
+      )
+      .where(
+        and(
+          eq(schema.feedbacksSchema.id, id),
+          eq(schema.usersFeedbacksSchema.userId, userId),
+        ),
+      )
+      .limit(1);
 
-    if (!feedback) {
+    if (!feedback[0]) {
       throw new BadRequestException(`Feedback with id ${id} not found`);
     }
 
-    return feedback;
+    return feedback[0];
   }
 }

@@ -95,7 +95,33 @@ services:
         start_period: 30s
       volumes:
       - grafana_data:/var/lib/grafana
-
+  loki:
+    image: grafana/loki:2.9.0
+    container_name: feedback-sentiment-loki
+    command: -config.file=/etc/loki/local-config.yaml
+    ports:
+      - "3100:3100"
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:3100/ready || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+  
+  promtail:
+    image: grafana/promtail:2.9.0
+    container_name: feedback-sentiment-promtail
+    volumes:
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./promtail-config.yml:/etc/promtail/config.yml
+    command: -config.file=/etc/promtail/config.yml
+    networks:
+      - backend
+    depends_on:
+      - loki
 
 networks:
   backend:
