@@ -39,7 +39,11 @@ export class RateLimitGuard implements CanActivate {
 
     const { user, ip } = request;
 
-    if (user?.role === UserRoleEnum.ADMIN || request.method === 'GET') {
+    if (
+      user?.role === UserRoleEnum.ADMIN ||
+      (request.method === 'GET' &&
+        !request.path.startsWith('/api/feedback/report'))
+    ) {
       return true;
     }
 

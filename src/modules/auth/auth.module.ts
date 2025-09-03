@@ -5,6 +5,8 @@ import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { JwtStrategy } from 'src/common/strategies/jwt.strategy';
 import type { EnvType } from 'src/config/env/env-validation';
 import { DrizzleModule } from 'src/database/drizzle.module';
+import { RedisModule } from '../redis/redis.module';
+import { WebsocketModule } from '../websocket/websocket.module';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 
@@ -12,6 +14,8 @@ import { AuthService } from './auth.service';
   imports: [
     ConfigModule,
     DrizzleModule,
+    WebsocketModule,
+    RedisModule,
     JwtModule.registerAsync({
       global: true,
       imports: [ConfigModule],
