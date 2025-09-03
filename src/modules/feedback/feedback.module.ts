@@ -4,6 +4,7 @@ import multer from 'multer';
 import { DrizzleModule } from 'src/database/drizzle.module';
 import { AIService } from '../AI/AI.service';
 import { RedisModule } from '../redis/redis.module';
+import { WebsocketModule } from '../websocket/websocket.module';
 import { FeedbackController } from './feedback.controller';
 import { FeedbackService } from './feedback.service';
 import { FileGeneratorService } from './file-generator.service';
@@ -12,6 +13,7 @@ import { FileGeneratorService } from './file-generator.service';
   imports: [
     DrizzleModule,
     RedisModule,
+    WebsocketModule,
     MulterModule.register({
       storage: multer.memoryStorage(),
     }),
