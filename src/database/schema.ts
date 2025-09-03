@@ -73,7 +73,9 @@ export const filesSchema = pgTable('files', {
   rowCount: integer('row_count'),
   extension: varchar('extension', { length: 50 }).notNull(),
   ...baseSchema,
-});
+}, (table) => [
+  index('idx_files_user_id').on(table.userId),
+]);
 
 export const feedbacksSchema = pgTable('feedbacks', {
   contentHash: varchar('content_hash', { length: 64 }).notNull().unique(),
@@ -82,7 +84,10 @@ export const feedbacksSchema = pgTable('feedbacks', {
   confidence: integer('confidence').notNull(),
   summary: text('summary').notNull(),
   ...baseSchema,
-});
+},  (table) => [
+    index('idx_feedbacks_sentiment').on(table.sentiment),
+    index('idx_feedbacks_summary').on(table.summary)
+  ],);
 
 export const usersFeedbacksSchema = pgTable(
   'users_feedbacks',
@@ -100,6 +105,7 @@ export const usersFeedbacksSchema = pgTable(
   (table) => [
     index('idx_users_feedbacks_user_id').on(table.userId),
     index('idx_users_feedbacks_feedback_id').on(table.feedbackId),
+    index('idx_users_feedbacks_file_id').on(table.fileId),
   ],
 );
 
