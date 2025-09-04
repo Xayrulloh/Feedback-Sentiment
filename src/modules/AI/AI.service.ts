@@ -13,7 +13,7 @@ import {
   PromptResponseDto,
   PromptResponseSchema,
 } from './dto/AI.dto';
-import { generateSentimentPrompt } from './prompts/sentiment.prompt';
+import { SENTIMENT_SYSTEM_PROMPT } from './prompts/sentiment.prompt';
 
 @Injectable()
 export class AIService {
@@ -25,7 +25,7 @@ export class AIService {
   }
 
   private async sendPrompt(
-    prompt: string,
+    feedback: string,
     model: string = 'mistralai/mistral-7b-instruct',
   ): Promise<PromptResponseDto> {
     const { data } = await axios
@@ -33,7 +33,10 @@ export class AIService {
         'https://openrouter.ai/api/v1/chat/completions',
         {
           model,
-          messages: [{ role: 'user', content: prompt }],
+          messages: [
+            { role: 'system', content: SENTIMENT_SYSTEM_PROMPT },
+            { role: 'user', content: feedback },
+          ],
           response_format: { type: 'json_object' },
         },
         {
@@ -75,9 +78,7 @@ export class AIService {
   }
 
   async analyzeOne(feedback: string): Promise<AIResponseDto> {
-    const prompt = generateSentimentPrompt(feedback);
-    const jsonResponse = await this.sendPrompt(prompt);
-
+    const jsonResponse = await this.sendPrompt(feedback);
     const parsed = PromptResponseSchema.safeParse(jsonResponse);
 
     if (!parsed.success) {
