@@ -105,9 +105,7 @@
         "feedbacks_content_hash_unique": {
           "name": "feedbacks_content_hash_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "content_hash"
-          ]
+          "columns": ["content_hash"]
         }
       },
       "policies": {},
@@ -258,9 +256,7 @@
         "rate_limits_target_unique": {
           "name": "rate_limits_target_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "target"
-          ]
+          "columns": ["target"]
         }
       },
       "policies": {},
@@ -343,12 +339,8 @@
           "name": "suspicious_activity_user_id_users_id_fk",
           "tableFrom": "suspicious_activity",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -461,12 +453,8 @@
           "name": "users_feedbacks_file_id_files_id_fk",
           "tableFrom": "users_feedbacks",
           "tableTo": "files",
-          "columnsFrom": [
-            "file_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["file_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -542,9 +530,7 @@
         "users_email_unique": {
           "name": "users_email_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "email"
-          ]
+          "columns": ["email"]
         }
       },
       "policies": {},
@@ -556,12 +542,7 @@
     "public.sentiment": {
       "name": "sentiment",
       "schema": "public",
-      "values": [
-        "negative",
-        "neutral",
-        "positive",
-        "unknown"
-      ]
+      "values": ["negative", "neutral", "positive", "unknown"]
     },
     "public.rate_limit_error": {
       "name": "rate_limit_error",
@@ -576,20 +557,12 @@
     "public.rate_limit_target": {
       "name": "rate_limit_target",
       "schema": "public",
-      "values": [
-        "API",
-        "UPLOAD",
-        "DOWNLOAD",
-        "LOGIN"
-      ]
+      "values": ["API", "UPLOAD", "DOWNLOAD", "LOGIN"]
     },
     "public.user_role": {
       "name": "user_role",
       "schema": "public",
-      "values": [
-        "USER",
-        "ADMIN"
-      ]
+      "values": ["USER", "ADMIN"]
     }
   },
   "schemas": {},

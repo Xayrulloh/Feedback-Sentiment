@@ -65,29 +65,35 @@ export const usersSchema = pgTable('users', {
   ...baseSchema,
 });
 
-export const filesSchema = pgTable('files', {
-  userId: uuid('user_id').notNull(),
-  name: text('name').notNull(),
-  mimeType: varchar('mime_type', { length: 255 }).notNull(),
-  size: bigint('size', { mode: 'number' }).notNull(),
-  rowCount: integer('row_count'),
-  extension: varchar('extension', { length: 50 }).notNull(),
-  ...baseSchema,
-}, (table) => [
-  index('idx_files_user_id').on(table.userId),
-]);
+export const filesSchema = pgTable(
+  'files',
+  {
+    userId: uuid('user_id').notNull(),
+    name: text('name').notNull(),
+    mimeType: varchar('mime_type', { length: 255 }).notNull(),
+    size: bigint('size', { mode: 'number' }).notNull(),
+    rowCount: integer('row_count'),
+    extension: varchar('extension', { length: 50 }).notNull(),
+    ...baseSchema,
+  },
+  (table) => [index('idx_files_user_id').on(table.userId)],
+);
 
-export const feedbacksSchema = pgTable('feedbacks', {
-  contentHash: varchar('content_hash', { length: 64 }).notNull().unique(),
-  content: text('content').notNull(),
-  sentiment: DrizzleFeedbackSentimentEnum('sentiment').notNull(),
-  confidence: integer('confidence').notNull(),
-  summary: text('summary').notNull(),
-  ...baseSchema,
-},  (table) => [
+export const feedbacksSchema = pgTable(
+  'feedbacks',
+  {
+    contentHash: varchar('content_hash', { length: 64 }).notNull().unique(),
+    content: text('content').notNull(),
+    sentiment: DrizzleFeedbackSentimentEnum('sentiment').notNull(),
+    confidence: integer('confidence').notNull(),
+    summary: text('summary').notNull(),
+    ...baseSchema,
+  },
+  (table) => [
     index('idx_feedbacks_sentiment').on(table.sentiment),
-    index('idx_feedbacks_summary').on(table.summary)
-  ],);
+    index('idx_feedbacks_summary').on(table.summary),
+  ],
+);
 
 export const usersFeedbacksSchema = pgTable(
   'users_feedbacks',
