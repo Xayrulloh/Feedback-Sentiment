@@ -60,7 +60,7 @@ export class FileGeneratorService {
     type: ReportDownloadQueryDto['type'],
   ): Promise<Buffer> {
     const pdfDoc = await PDFDocument.create();
-    const page = pdfDoc.addPage([595, 842]); // A4
+    const page = pdfDoc.addPage([595, 842]);
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
     let yPos = 800;
@@ -78,18 +78,15 @@ export class FileGeneratorService {
       size = fontSizes.row,
     ) => page.drawText(text, { x, y, size, font, color: rgb(0, 0, 0) });
 
-    // Title
     drawText(`Feedback ${type} Report`, 50, yPos, fontSizes.title);
     yPos -= 30;
 
     if (type === 'detailed') {
-      // Headers
       drawText('Feedback', 50, yPos, fontSizes.header);
       drawText('Sentiment', 300, yPos, fontSizes.header);
       drawText('Confidence', 450, yPos, fontSizes.header);
       yPos -= 20;
 
-      // Rows
       data.forEach((f) => {
         drawText(f.content.slice(0, 40), 50, yPos);
         drawText(f.sentiment, 300, yPos);
@@ -97,16 +94,13 @@ export class FileGeneratorService {
         yPos -= 15;
       });
     } else if (type === 'summary') {
-      // Summary case
       const summaryArray = data as FeedbackSummaryResponseDto;
 
-      // Headers
       drawText('Sentiment', 50, yPos, fontSizes.header);
       drawText('Count', 200, yPos, fontSizes.header);
       drawText('Percentage', 300, yPos, fontSizes.header);
       yPos -= 20;
 
-      // Rows
       summaryArray.forEach((f) => {
         drawText(f.sentiment, 50, yPos);
         drawText(f.count.toString(), 200, yPos);
