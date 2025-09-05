@@ -1,7 +1,9 @@
 import { Controller, Get, Res } from '@nestjs/common';
+import { ApiExcludeController } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { MonitoringService } from './monitoring.service';
 
+@ApiExcludeController()
 @Controller('metrics')
 export class MonitoringController {
   constructor(private readonly monitoringService: MonitoringService) {}
