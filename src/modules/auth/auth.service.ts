@@ -115,14 +115,16 @@ export class AuthService {
         token,
         role: user.role,
         redirectTo: '/admin',
-      } as T; //TODO: as
+      } as T; //we use as T here because we are returning a generic type based on runtime conditions, and TypeScript can’t infer which of the two
+      //  (AuthUserResponseDto | AuthAdminResponseDto) applies without the assertion.
     }
 
     return {
       token,
       role: user.role,
       redirectTo: '/dashboard',
-    } as T; //TODO: as
+    } as T; //we use as T here because we are returning a generic type based on runtime conditions, and TypeScript can’t infer which of the two
+      //  (AuthUserResponseDto | AuthAdminResponseDto) applies without the assertion.
   }
 
   async getUser(email: string) {

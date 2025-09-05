@@ -34,7 +34,8 @@ export class FileGeneratorService {
     let csv: string;
 
     if (type === 'detailed') {
-      const detailedData = (data as FeedbackSchemaType[]).map((f) => ({  //TODO: as
+      const detailedData = (data as FeedbackSchemaType[]).map((f) => ({  //The union type prevents TypeScript from knowing the actual type
+      //  at this point; we’ve checked type to determine the shape, so the assertion is safe.
         Feedback: f.content,
         Sentiment: f.sentiment,
         Confidence: f.confidence,
@@ -42,7 +43,8 @@ export class FileGeneratorService {
 
       csv = toCSV(detailedData, ['Feedback', 'Sentiment', 'Confidence']);
     } else {
-      const summaryArray = data as FeedbackSummaryResponseDto; //TODO: as
+      const summaryArray = data as FeedbackSummaryResponseDto; //The union type prevents TypeScript from knowing the actual type
+      //  at this point; we’ve checked type to determine the shape, so the assertion is safe.
       const summaryData = summaryArray.map((f) => ({
         Sentiment: f.sentiment,
         Count: f.count,
@@ -98,7 +100,8 @@ export class FileGeneratorService {
       });
     } else if (type === 'summary') {
       // Summary case
-      const summaryArray = data as FeedbackSummaryResponseDto; //TODO: as
+      const summaryArray = data as FeedbackSummaryResponseDto; //The union type prevents TypeScript from knowing the actual
+      //  type at this point; we’ve checked type to determine the shape, so the assertion is safe.
 
       // Headers
       drawText('Sentiment', 50, yPos, fontSizes.header);
