@@ -35,8 +35,6 @@ export class FileGeneratorService {
 
     if (type === 'detailed') {
       const detailedData = (data as FeedbackSchemaType[]).map((f) => ({
-        //The union type prevents TypeScript from knowing the actual type
-        //  at this point; we’ve checked type to determine the shape, so the assertion is safe.
         Feedback: f.content,
         Sentiment: f.sentiment,
         Confidence: f.confidence,
@@ -44,8 +42,7 @@ export class FileGeneratorService {
 
       csv = toCSV(detailedData, ['Feedback', 'Sentiment', 'Confidence']);
     } else {
-      const summaryArray = data as FeedbackSummaryResponseDto; //The union type prevents TypeScript from knowing the actual type
-      //  at this point; we’ve checked type to determine the shape, so the assertion is safe.
+      const summaryArray = data as FeedbackSummaryResponseDto;
       const summaryData = summaryArray.map((f) => ({
         Sentiment: f.sentiment,
         Count: f.count,
@@ -63,7 +60,7 @@ export class FileGeneratorService {
     type: ReportDownloadQueryDto['type'],
   ): Promise<Buffer> {
     const pdfDoc = await PDFDocument.create();
-    const page = pdfDoc.addPage([595, 842]); // A4
+    const page = pdfDoc.addPage([595, 842]);
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
     let yPos = 800;
@@ -81,18 +78,15 @@ export class FileGeneratorService {
       size = fontSizes.row,
     ) => page.drawText(text, { x, y, size, font, color: rgb(0, 0, 0) });
 
-    // Title
     drawText(`Feedback ${type} Report`, 50, yPos, fontSizes.title);
     yPos -= 30;
 
     if (type === 'detailed') {
-      // Headers
       drawText('Feedback', 50, yPos, fontSizes.header);
       drawText('Sentiment', 300, yPos, fontSizes.header);
       drawText('Confidence', 450, yPos, fontSizes.header);
       yPos -= 20;
 
-      // Rows
       data.forEach((f) => {
         drawText(f.content.slice(0, 40), 50, yPos);
         drawText(f.sentiment, 300, yPos);
@@ -100,17 +94,13 @@ export class FileGeneratorService {
         yPos -= 15;
       });
     } else if (type === 'summary') {
-      // Summary case
-      const summaryArray = data as FeedbackSummaryResponseDto; //The union type prevents TypeScript from knowing the actual
-      //  type at this point; we’ve checked type to determine the shape, so the assertion is safe.
+      const summaryArray = data as FeedbackSummaryResponseDto;
 
-      // Headers
       drawText('Sentiment', 50, yPos, fontSizes.header);
       drawText('Count', 200, yPos, fontSizes.header);
       drawText('Percentage', 300, yPos, fontSizes.header);
       yPos -= 20;
 
-      // Rows
       summaryArray.forEach((f) => {
         drawText(f.sentiment, 50, yPos);
         drawText(f.count.toString(), 200, yPos);
