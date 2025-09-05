@@ -16,8 +16,10 @@ export class ZodExceptionFilter implements ExceptionFilter {
       stack: exception.stack,
     });
 
-    const response = host.switchToHttp().getResponse();
-    const request = host.switchToHttp().getRequest();
+    const [request, response] = [
+      host.switchToHttp().getRequest(),
+      host.switchToHttp().getResponse(),
+    ];
 
     const issues = exception.issues.map((issue) => ({
       field: issue.path.length ? issue.path.join('.') : 'root',
