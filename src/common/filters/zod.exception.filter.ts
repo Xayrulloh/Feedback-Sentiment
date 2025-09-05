@@ -25,9 +25,9 @@ export class ZodExceptionFilter implements ExceptionFilter {
       code: issue.code.toUpperCase(),
     }));
 
-    response.status(HttpStatus.BAD_REQUEST).json({
+    response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
       success: false,
-      statusCode: HttpStatus.BAD_REQUEST,
+      statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
       errors: issues,
       timestamp: new Date().toISOString(),
       path: request.url,
