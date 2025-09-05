@@ -33,7 +33,7 @@ export class MonitoringService {
     help: string,
     labelNames: string[] = [],
   ): client.Counter<string> {
-    let metric = this.registry.getSingleMetric(name) as client.Counter<string>;
+    let metric = this.registry.getSingleMetric(name) as client.Counter<string>; //TODO: as 
     if (!metric) {
       metric = new client.Counter({ name, help, labelNames });
       this.registry.registerMetric(metric);

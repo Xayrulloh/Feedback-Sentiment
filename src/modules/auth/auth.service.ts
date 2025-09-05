@@ -115,14 +115,14 @@ export class AuthService {
         token,
         role: user.role,
         redirectTo: '/admin',
-      } as T;
+      } as T; //TODO: as
     }
 
     return {
       token,
       role: user.role,
       redirectTo: '/dashboard',
-    } as T;
+    } as T; //TODO: as
   }
 
   async getUser(email: string) {

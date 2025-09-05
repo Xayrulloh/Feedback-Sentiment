@@ -22,7 +22,7 @@ export class DrizzleExceptionFilter implements ExceptionFilter {
     let message = 'Database error occurred';
     let errors: ErrorDetailsSchemaType[] | null = null;
 
-    switch (exception.code as string) {
+    switch (String(exception.code)) {
       case '23505':
         statusCode = HttpStatus.CONFLICT;
         message = 'Resource already exists';

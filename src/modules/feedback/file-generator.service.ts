@@ -34,7 +34,7 @@ export class FileGeneratorService {
     let csv: string;
 
     if (type === 'detailed') {
-      const detailedData = (data as FeedbackSchemaType[]).map((f) => ({
+      const detailedData = (data as FeedbackSchemaType[]).map((f) => ({  //TODO: as
         Feedback: f.content,
         Sentiment: f.sentiment,
         Confidence: f.confidence,
@@ -42,7 +42,7 @@ export class FileGeneratorService {
 
       csv = toCSV(detailedData, ['Feedback', 'Sentiment', 'Confidence']);
     } else {
-      const summaryArray = data as FeedbackSummaryResponseDto;
+      const summaryArray = data as FeedbackSummaryResponseDto; //TODO: as
       const summaryData = summaryArray.map((f) => ({
         Sentiment: f.sentiment,
         Count: f.count,
@@ -98,7 +98,7 @@ export class FileGeneratorService {
       });
     } else if (type === 'summary') {
       // Summary case
-      const summaryArray = data as FeedbackSummaryResponseDto;
+      const summaryArray = data as FeedbackSummaryResponseDto; //TODO: as
 
       // Headers
       drawText('Sentiment', 50, yPos, fontSizes.header);

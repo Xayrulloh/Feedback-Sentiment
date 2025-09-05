@@ -48,7 +48,7 @@ export class FeedbackService {
   ) {
     this.cacheTTL = this.configService.get<EnvType['REDIS_TTL']>(
       'REDIS_TTL',
-    ) as number;
+    ) ?? 300; 
   }
 
   async feedbackManual(
