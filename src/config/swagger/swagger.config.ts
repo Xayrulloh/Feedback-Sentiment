@@ -26,7 +26,7 @@ export function setupSwagger(app: INestApplication): void {
 
   const document = SwaggerModule.createDocument(app, config);
 
-   document.paths = Object.fromEntries(
+  document.paths = Object.fromEntries(
     Object.entries(document.paths).filter(([path]) => path !== '/api/metrics'),
   );
 

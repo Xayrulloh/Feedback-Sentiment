@@ -10,6 +10,7 @@ import { ZodValidationPipe } from 'nestjs-zod';
 import { AppController } from './app.controller';
 import { DrizzleExceptionFilter } from './common/filters/drizzle.exception.filter';
 import { HttpExceptionFilter } from './common/filters/http.exception.filter';
+import { ZodExceptionFilter } from './common/filters/zod.exception.filter';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { ZodSerializerInterceptorCustom } from './common/interceptors/zod.response-checker.interceptor';
 import { MetricsMiddleware } from './common/middlewares/metrics.middleware';
@@ -50,6 +51,7 @@ import { WebsocketModule } from './modules/websocket/websocket.module';
     { provide: APP_INTERCEPTOR, useClass: ZodSerializerInterceptorCustom },
     { provide: APP_FILTER, useClass: HttpExceptionFilter },
     { provide: APP_FILTER, useClass: DrizzleExceptionFilter },
+    { provide: APP_FILTER, useClass: ZodExceptionFilter },
   ],
 })
 export class AppModule implements NestModule {
