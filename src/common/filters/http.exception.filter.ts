@@ -56,7 +56,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       return { message: String(rawResponse ?? defaultMessage) };
     }
 
-    const typed:HttpErrorResponse = rawResponse ;
+    const typed: HttpErrorResponse = rawResponse;
 
     return {
       message: typed.message ?? defaultMessage,

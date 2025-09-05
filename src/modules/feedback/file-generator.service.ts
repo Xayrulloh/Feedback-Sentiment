@@ -34,8 +34,9 @@ export class FileGeneratorService {
     let csv: string;
 
     if (type === 'detailed') {
-      const detailedData = (data as FeedbackSchemaType[]).map((f) => ({  //The union type prevents TypeScript from knowing the actual type
-      //  at this point; we’ve checked type to determine the shape, so the assertion is safe.
+      const detailedData = (data as FeedbackSchemaType[]).map((f) => ({
+        //The union type prevents TypeScript from knowing the actual type
+        //  at this point; we’ve checked type to determine the shape, so the assertion is safe.
         Feedback: f.content,
         Sentiment: f.sentiment,
         Confidence: f.confidence,

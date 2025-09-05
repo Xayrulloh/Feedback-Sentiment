@@ -34,8 +34,8 @@ export class MonitoringService {
     labelNames: string[] = [],
   ): client.Counter<string> {
     let metric = this.registry.getSingleMetric(name) as client.Counter<string>; //// We use 'as client.Counter<string>' because getSingleMetric returns a generic Metric<any> | undefined.
-// We know that if it exists, it must be a Counter, and if it doesn't, we create a new Counter.
-// This assertion is safe and allows TypeScript to understand the type for later increment operations.
+    // We know that if it exists, it must be a Counter, and if it doesn't, we create a new Counter.
+    // This assertion is safe and allows TypeScript to understand the type for later increment operations.
 
     if (!metric) {
       metric = new client.Counter({ name, help, labelNames });
