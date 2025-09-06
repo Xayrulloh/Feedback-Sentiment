@@ -68,6 +68,19 @@ const FeedbackSchema = z
 
 type FeedbackSchemaType = z.infer<typeof FeedbackSchema>;
 
+// workspace
+
+const WorkspaceSchema = z
+  .object({
+    name: z.string().min(1).max(255).describe('Workspace name'),
+    description: z.string().nullable().describe('Workspace description'),
+    userId: z.string().uuid().describe('User who owns the workspace'),
+  })
+  .merge(BaseSchema)
+  .describe('Workspace schema');
+
+type WorkspaceSchemaType = z.infer<typeof WorkspaceSchema>;
+
 // file
 const FileSchema = z
   .object({
@@ -240,4 +253,6 @@ export {
   RateLimitEventSchema,
   RateLimitErrorEnum,
   type RateLimitEventSchemaType,
+  WorkspaceSchema,
+  type WorkspaceSchemaType,
 };

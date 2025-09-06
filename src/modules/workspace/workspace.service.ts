@@ -1,13 +1,13 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { and, desc, eq, sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { DrizzleAsyncProvider } from 'src/database/drizzle.provider';
 import * as schema from 'src/database/schema';
 import {
-  CreateWorkspaceDto,
-  UpdateWorkspaceDto,
   WorkspaceQueryDto,
+  WorkspaceRequestDto,
   WorkspaceResponseDto,
+  WorkspaceSingleResponseDto,
 } from './dto/workspace.dto';
 
 @Injectable()
@@ -17,10 +17,16 @@ export class WorkspaceService {
     private readonly db: NodePgDatabase<typeof schema>,
   ) {}
 
-  async create(createWorkspaceDto: CreateWorkspaceDto) {
+  async create(
+    workspaceRequestDto: WorkspaceRequestDto,
+    userId: string,
+  ): Promise<WorkspaceSingleResponseDto> {
     const [workspace] = await this.db
       .insert(schema.workspacesSchema)
-      .values(createWorkspaceDto)
+      .values({
+        ...workspaceRequestDto,
+        userId,
+      })
       .returning();
 
     return workspace;
@@ -58,23 +64,32 @@ export class WorkspaceService {
     };
   }
 
-  async findOne(id: string, userId: string) {
-    return this.db.query.workspacesSchema.findFirst({
+  async findOne(
+    id: string,
+    userId: string,
+  ): Promise<WorkspaceSingleResponseDto> {
+    const workspace = await this.db.query.workspacesSchema.findFirst({
       where: and(
         eq(schema.workspacesSchema.id, id),
         eq(schema.workspacesSchema.userId, userId),
       ),
     });
+
+    if (!workspace) {
+      throw new NotFoundException(`Workspace with id: ${id} not found`);
+    }
+
+    return workspace;
   }
 
   async update(
     id: string,
     userId: string,
-    updateWorkspaceDto: UpdateWorkspaceDto,
-  ) {
+    workspaceRequestDto: WorkspaceRequestDto,
+  ): Promise<WorkspaceSingleResponseDto> {
     const [workspace] = await this.db
       .update(schema.workspacesSchema)
-      .set(updateWorkspaceDto)
+      .set(workspaceRequestDto)
       .where(
         and(
           eq(schema.workspacesSchema.id, id),
@@ -87,16 +102,19 @@ export class WorkspaceService {
   }
 
   async remove(id: string, userId: string) {
-    const [workspace] = await this.db
-      .delete(schema.workspacesSchema)
-      .where(
-        and(
-          eq(schema.workspacesSchema.id, id),
-          eq(schema.workspacesSchema.userId, userId),
-        ),
-      )
-      .returning();
+    const workspace = await this.db.query.workspacesSchema.findFirst({
+      where: and(
+        eq(schema.workspacesSchema.id, id),
+        eq(schema.workspacesSchema.userId, userId),
+      ),
+    });
 
-    return workspace;
+    if (!workspace) {
+      throw new NotFoundException('Workspace not found');
+    }
+
+    await this.db
+      .delete(schema.workspacesSchema)
+      .where(eq(schema.workspacesSchema.id, id));
   }
 }

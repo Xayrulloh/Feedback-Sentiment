@@ -68,9 +68,11 @@ export const usersSchema = pgTable('users', {
 export const workspacesSchema = pgTable('workspaces', {
   name: varchar('name', { length: 255 }).notNull(),
   description: text('description'),
-  userId: uuid('user_id').references(() => usersSchema.id, {
-    onDelete: 'cascade',
-  }),
+  userId: uuid('user_id')
+    .notNull()
+    .references(() => usersSchema.id, {
+      onDelete: 'cascade',
+    }),
   ...baseSchema,
 });
 

@@ -1,18 +1,9 @@
 import { createZodDto } from 'nestjs-zod';
-import { PaginationResponseSchema } from 'src/utils/zod.schemas';
+import {
+  PaginationResponseSchema,
+  WorkspaceSchema,
+} from 'src/utils/zod.schemas';
 import z from 'zod';
-
-const WorkspaceSchema = z
-  .object({
-    id: z.string().uuid().optional(),
-    name: z.string().min(1).max(255),
-    description: z.string().nullable(),
-    userId: z.string().uuid().nullable().optional(),
-    createdAt: z.date().optional(),
-    updatedAt: z.date().optional(),
-    deletedAt: z.date().nullable().optional(),
-  })
-  .describe('Workspace schema');
 
 const WorkspaceQuerySchema = z
   .object({
@@ -32,6 +23,15 @@ const WorkspaceQuerySchema = z
   })
   .describe('Workspace Query schema');
 
+const WorkspaceRequestSchema = WorkspaceSchema.pick({
+  name: true,
+  description: true,
+});
+
+const WorkspaceSingleResponseSchema = WorkspaceSchema.describe(
+  'Single workspace response data',
+);
+
 const WorkspaceResponseSchema = z
   .object({
     workspaces: WorkspaceSchema.array().describe('List of users'),
@@ -41,17 +41,21 @@ const WorkspaceResponseSchema = z
   })
   .describe('Users response data with pagination');
 
-class CreateWorkspaceDto extends createZodDto(WorkspaceSchema) {}
-class UpdateWorkspaceDto extends createZodDto(WorkspaceSchema) {}
 class WorkspaceQueryDto extends createZodDto(WorkspaceQuerySchema) {}
+class WorkspaceRequestDto extends createZodDto(WorkspaceRequestSchema) {}
 class WorkspaceResponseDto extends createZodDto(WorkspaceResponseSchema) {}
+class WorkspaceSingleResponseDto extends createZodDto(
+  WorkspaceSingleResponseSchema,
+) {}
 
 export {
   WorkspaceSchema,
-  CreateWorkspaceDto,
-  UpdateWorkspaceDto,
+  WorkspaceRequestSchema,
+  WorkspaceRequestDto,
   WorkspaceQuerySchema,
   WorkspaceQueryDto,
   WorkspaceResponseSchema,
   WorkspaceResponseDto,
+  WorkspaceSingleResponseSchema,
+  WorkspaceSingleResponseDto,
 };
