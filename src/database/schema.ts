@@ -65,6 +65,15 @@ export const usersSchema = pgTable('users', {
   ...baseSchema,
 });
 
+export const workspacesSchema = pgTable('workspaces', {
+  name: varchar('name', { length: 255 }).notNull(),
+  description: text('description'),
+  userId: uuid('user_id').references(() => usersSchema.id, {
+    onDelete: 'cascade',
+  }),
+  ...baseSchema,
+});
+
 export const filesSchema = pgTable(
   'files',
   {
@@ -100,6 +109,10 @@ export const usersFeedbacksSchema = pgTable(
   {
     userId: uuid('user_id').notNull(),
     feedbackId: uuid('feedback_id').notNull(),
+    workspaceId: uuid('workspace_id').references(() => workspacesSchema.id, {
+      // make it not null in future
+      onDelete: 'cascade',
+    }),
     fileId: uuid('file_id').references(() => filesSchema.id, {
       onDelete: 'cascade',
     }),
@@ -109,6 +122,7 @@ export const usersFeedbacksSchema = pgTable(
     index('idx_users_feedbacks_user_id').on(table.userId),
     index('idx_users_feedbacks_feedback_id').on(table.feedbackId),
     index('idx_users_feedbacks_file_id').on(table.fileId),
+    index('idx_users_feedbacks_workspace_id').on(table.workspaceId),
   ],
 );
 
@@ -166,6 +180,25 @@ export const usersFeedbacksRelations = relations(
       fields: [usersFeedbacksSchema.fileId],
       references: [filesSchema.id],
       relationName: 'users_feedbacks_file_id_files_id_fk',
+    }),
+    workspace: one(workspacesSchema, {
+      fields: [usersFeedbacksSchema.workspaceId],
+      references: [workspacesSchema.id],
+      relationName: 'users_feedbacks_workspace_id_workspaces_id_fk',
+    }),
+  }),
+);
+
+export const workspacesRelations = relations(
+  workspacesSchema,
+  ({ many, one }) => ({
+    usersFeedbacks: many(usersFeedbacksSchema, {
+      relationName: 'users_feedbacks_workspace_id_workspaces_id_fk',
+    }),
+    user: one(usersSchema, {
+      fields: [workspacesSchema.userId],
+      references: [usersSchema.id],
+      relationName: 'workspaces_user_id_users_id_fk',
     }),
   }),
 );

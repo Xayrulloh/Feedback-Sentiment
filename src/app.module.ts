@@ -26,6 +26,7 @@ import { RedisModule } from './modules/redis/redis.module';
 import { SampleModule } from './modules/sample/sample.module';
 import { UserModule } from './modules/user/user.module';
 import { WebsocketModule } from './modules/websocket/websocket.module';
+import { WorkspaceModule } from './modules/workspace/workspace.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { WebsocketModule } from './modules/websocket/websocket.module';
     RedisModule,
     UserModule,
     SampleModule,
+    WorkspaceModule,
   ],
 
   controllers: [AppController],
