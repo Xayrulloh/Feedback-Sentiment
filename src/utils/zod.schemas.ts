@@ -224,7 +224,7 @@ const PaginationQuerySchema = z
     limit: z.coerce.number().int().min(1).max(100).default(20),
     page: z.coerce.number().int().min(1).default(1),
   })
-  .describe('pagination query schema');
+  .describe('Pagination query schema');
 
 export {
   PaginationQuerySchema,

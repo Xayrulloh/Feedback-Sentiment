@@ -1,27 +1,14 @@
 import { createZodDto } from 'nestjs-zod';
 import {
+  PaginationQuerySchema,
   PaginationResponseSchema,
   WorkspaceSchema,
 } from 'src/utils/zod.schemas';
 import z from 'zod';
 
-const WorkspaceQuerySchema = z
-  .object({
-    limit: z.coerce
-      .number()
-      .int()
-      .min(1)
-      .max(100)
-      .default(20)
-      .describe('Number of workspaces to fetch per page'),
-    page: z.coerce
-      .number()
-      .int()
-      .min(1)
-      .default(1)
-      .describe('Page number for pagination'),
-  })
-  .describe('Workspace Query schema');
+const WorkspaceQuerySchema = PaginationQuerySchema.describe(
+  'Workspace query schema',
+);
 
 const WorkspaceRequestSchema = WorkspaceSchema.pick({
   name: true,
