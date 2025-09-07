@@ -16,10 +16,14 @@ export class FileService {
   async getFile(
     query: FileQueryDto,
     user: UserSchemaType,
+    workspaceId?: string,
   ): Promise<FileResponseDto> {
     const { limit, page } = query;
 
-    const whereConditions = [eq(schema.filesSchema.userId, user.id)];
+    const whereConditions = [
+      eq(schema.filesSchema.userId, user.id),
+      workspaceId ? eq(schema.filesSchema.workspaceId, workspaceId) : undefined,
+    ].filter(Boolean);
 
     const totalResult = await this.db
       .select({

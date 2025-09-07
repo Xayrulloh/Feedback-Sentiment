@@ -63,6 +63,7 @@ const FeedbackSchema = z
     summary: z.string().describe('Summary of the feedback'),
     userId: z.string().uuid().describe('User ID'),
     fileId: z.string().uuid().nullable().describe('File ID'),
+    workspaceId: z.string().uuid().nullable().describe('Workspace Id'),
   })
   .merge(BaseSchema);
 
@@ -86,6 +87,10 @@ const FileSchema = z
   .object({
     id: z.string().uuid().describe('File ID'),
     userId: z.string().uuid().describe('User who owns the files'),
+    workspaceId: z
+      .string()
+      .uuid()
+      .describe('Workspace id in which file is stored'),
     name: z.string().min(1).describe('Original file name'),
     mimeType: z
       .string()

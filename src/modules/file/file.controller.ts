@@ -78,13 +78,20 @@ import { FileService } from './file.service';
     },
   },
 })
-@Controller('files')
+@Controller('workspaces/:workspaceId/file')
 export class FileController {
   constructor(private readonly fileService: FileService) {}
 
   @Get()
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiParam({
+    name: 'workspaceId',
+    type: 'string',
+    required: true,
+    description:
+      'Workspace ID (uuid) or "all". Option "all" is to get all the files regardless of workspaces',
+  })
   @ApiOkResponse({
     type: createBaseResponseDto(FileResponseSchema, 'FileResponseSchema'),
   })
@@ -93,11 +100,14 @@ export class FileController {
     summary: 'Get all user files',
   })
   async getFile(
+    @Param('workspaceId') workspaceId: string,
     @Query(new ZodValidationPipe(FileQueryDto))
     query: FileQueryDto,
     @Req() req: AuthenticatedRequest,
   ): Promise<FileResponseDto> {
-    return this.fileService.getFile(query, req.user);
+    const workspace = workspaceId === 'all' ? undefined : workspaceId;
+
+    return this.fileService.getFile(query, req.user, workspace);
   }
 
   @Delete(':fileId')

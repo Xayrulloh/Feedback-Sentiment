@@ -28,6 +28,7 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiParam,
   ApiQuery,
   ApiTags,
   ApiUnauthorizedResponse,
@@ -114,7 +115,7 @@ import { FeedbackService } from './feedback.service';
     },
   },
 })
-@Controller('feedback')
+@Controller('workspaces/:workspaceId/feedbacks')
 export class FeedbackController {
   constructor(private readonly feedbackService: FeedbackService) {}
 
@@ -155,10 +156,16 @@ export class FeedbackController {
   })
   @ZodSerializerDto(FeedbackResponseSchema)
   async feedbackManual(
+    @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
     @Body() body: FeedbackManualRequestDto,
     @Req() req: AuthenticatedRequest,
   ): Promise<FeedbackResponseDto> {
-    return this.feedbackService.feedbackManual(body, req.user);
+    return this.feedbackService.feedbackManual(
+      body,
+      req.user,
+      workspaceId,
+      null,
+    );
   }
 
   @Post('upload')
@@ -219,6 +226,7 @@ export class FeedbackController {
   })
   @ZodSerializerDto(FeedbackResponseSchema)
   async feedbackUpload(
+    @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
     @UploadedFile() file: Express.Multer.File,
     @Req() req: AuthenticatedRequest,
   ): Promise<FeedbackResponseDto> {
@@ -250,7 +258,7 @@ export class FeedbackController {
       throw new BadRequestException('File buffer is missing');
     }
 
-    return this.feedbackService.feedbackUpload(file, req.user);
+    return this.feedbackService.feedbackUpload(file, req.user, workspaceId);
   }
 
   @Get('sentiment-summary')
@@ -278,11 +286,21 @@ export class FeedbackController {
       'FeedbackGroupedArrayResponseSchema',
     ),
   })
+  @ApiParam({
+    name: 'workspaceId',
+    type: 'string',
+    required: true,
+    description:
+      'Workspace ID (uuid) or "all". Option "all" is to get the grouped feedback based on all feedbacks regardles of workspace.',
+  })
   @ZodSerializerDto(FeedbackGroupedArrayResponseSchema)
   async feedbackGrouped(
+    @Param('workspaceId') workspaceId: string,
     @Req() req: AuthenticatedRequest,
   ): Promise<FeedbackGroupedArrayResponseDto> {
-    return this.feedbackService.feedbackGrouped(req.user.id);
+    const workspace = workspaceId === 'all' ? undefined : workspaceId;
+
+    return this.feedbackService.feedbackGrouped(req.user.id, workspace);
   }
 
   @Get()
@@ -319,12 +337,27 @@ export class FeedbackController {
   })
   @ApiQuery({ name: 'format', enum: ['csv', 'pdf'], required: true })
   @ApiQuery({ name: 'type', enum: ['detailed', 'summary'], required: true })
+  @ApiParam({
+    name: 'workspaceId',
+    type: 'string',
+    required: true,
+    description:
+      'Workspace ID (uuid) or "all". Option "all" is to download all feedbacks regardles of workspace',
+  })
   async getFeedbackReport(
+    @Param('workspaceId') workspaceId: string,
     @Query() query: ReportDownloadQueryDto,
     @Req() req: AuthenticatedRequest,
     @Res() res: Response,
   ) {
-    return this.feedbackService.feedbackReportDownload(query, req.user, res);
+    const workspace = workspaceId === 'all' ? undefined : workspaceId;
+
+    return this.feedbackService.feedbackReportDownload(
+      query,
+      req.user,
+      res,
+      workspace,
+    );
   }
 
   @Get(':id')
