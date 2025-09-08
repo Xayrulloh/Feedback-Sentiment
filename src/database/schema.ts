@@ -80,9 +80,11 @@ export const filesSchema = pgTable(
   'files',
   {
     userId: uuid('user_id').notNull(),
-    workspaceId: uuid('workspace_id').notNull().references(() => workspacesSchema.id, {
-      onDelete: 'cascade',
-    }),
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspacesSchema.id, {
+        onDelete: 'cascade',
+      }),
     name: text('name').notNull(),
     mimeType: varchar('mime_type', { length: 255 }).notNull(),
     size: bigint('size', { mode: 'number' }).notNull(),
@@ -114,9 +116,11 @@ export const usersFeedbacksSchema = pgTable(
   {
     userId: uuid('user_id').notNull(),
     feedbackId: uuid('feedback_id').notNull(),
-    workspaceId: uuid('workspace_id').notNull().references(() => workspacesSchema.id, {
-      onDelete: 'cascade',
-    }),
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspacesSchema.id, {
+        onDelete: 'cascade',
+      }),
     fileId: uuid('file_id').references(() => filesSchema.id, {
       onDelete: 'cascade',
     }),

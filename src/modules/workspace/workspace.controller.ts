@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  ParseUUIDPipe,
   Post,
   Put,
   Query,
@@ -34,12 +35,12 @@ import { UserStatusGuard } from 'src/common/guards/user-status.guard';
 import { createBaseResponseDto } from 'src/helpers/create-base-response.helper';
 import type { AuthenticatedRequest } from 'src/shared/types/request-with-user';
 import {
+  WorkspacePaginatedResponseDto,
+  WorkspacePaginatedResponseSchema,
   WorkspaceQueryDto,
   WorkspaceRequestDto,
   WorkspaceResponseDto,
-  WorkspaceResponseSchema,
   WorkspaceSchema,
-  WorkspaceSingleResponseDto,
 } from './dto/workspace.dto';
 import { WorkspaceService } from './workspace.service';
 
@@ -128,11 +129,11 @@ export class WorkspaceController {
       },
     },
   })
-  create(
-    @Body() workspaceRequestDto: WorkspaceRequestDto,
+  async create(
+    @Body() body: WorkspaceRequestDto,
     @Req() req: AuthenticatedRequest,
-  ): Promise<WorkspaceSingleResponseDto> {
-    return this.workspaceService.create(workspaceRequestDto, req.user.id);
+  ): Promise<WorkspaceResponseDto> {
+    return this.workspaceService.create(body, req.user.id);
   }
 
   @Get()
@@ -141,16 +142,16 @@ export class WorkspaceController {
   @ApiOperation({ summary: 'Get all workspaces' })
   @ApiOkResponse({
     type: createBaseResponseDto(
-      WorkspaceResponseSchema,
-      'WorkspaceResponseSchema',
+      WorkspacePaginatedResponseSchema,
+      'WorkspacePaginatedResponseSchema',
     ),
   })
-  @ZodSerializerDto(WorkspaceResponseSchema)
-  findAll(
+  @ZodSerializerDto(WorkspacePaginatedResponseSchema)
+  async findAll(
     @Query(new ZodValidationPipe(WorkspaceQueryDto))
     query: WorkspaceQueryDto,
     @Req() req: AuthenticatedRequest,
-  ): Promise<WorkspaceResponseDto> {
+  ): Promise<WorkspacePaginatedResponseDto> {
     return this.workspaceService.findAll(query, req.user.id);
   }
 
@@ -191,10 +192,10 @@ export class WorkspaceController {
     },
   })
   @ZodSerializerDto(WorkspaceSchema)
-  findOne(
-    @Param('id') id: string,
+  async findOne(
+    @Param('id', ParseUUIDPipe) id: string,
     @Req() req: AuthenticatedRequest,
-  ): Promise<WorkspaceSingleResponseDto> {
+  ): Promise<WorkspaceResponseDto> {
     return this.workspaceService.findOne(id, req.user.id);
   }
 
@@ -235,12 +236,12 @@ export class WorkspaceController {
     },
   })
   @ZodSerializerDto(WorkspaceSchema)
-  update(
-    @Param('id') id: string,
-    @Body() workspaceRequestDto: WorkspaceRequestDto,
+  async update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: WorkspaceRequestDto,
     @Req() req: AuthenticatedRequest,
   ) {
-    return this.workspaceService.update(id, req.user.id, workspaceRequestDto);
+    return this.workspaceService.update(id, req.user.id, body);
   }
 
   @Delete(':id')
@@ -277,7 +278,10 @@ export class WorkspaceController {
       },
     },
   })
-  remove(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
+  async remove(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
     return this.workspaceService.remove(id, req.user.id);
   }
 }
