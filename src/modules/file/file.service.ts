@@ -15,27 +15,28 @@ export class FileService {
 
   async getFile(
     query: FileQueryDto,
-    user: UserSchemaType,
+    _user: UserSchemaType,
     workspaceId?: string,
   ): Promise<FileResponseDto> {
     const { limit, page } = query;
-
-    const whereConditions = [
-      eq(schema.filesSchema.userId, user.id),
-      workspaceId ? eq(schema.filesSchema.workspaceId, workspaceId) : undefined,
-    ].filter(Boolean);
 
     const totalResult = await this.db
       .select({
         count: sql<number>`count(*)`,
       })
       .from(schema.filesSchema)
-      .where(and(...whereConditions));
+      .where(
+        workspaceId
+          ? eq(schema.filesSchema.workspaceId, workspaceId)
+          : undefined,
+      );
 
     const total = totalResult[0]?.count ?? 0;
 
     const userFiles = await this.db.query.filesSchema.findMany({
-      where: and(...whereConditions),
+      where: workspaceId
+        ? eq(schema.filesSchema.workspaceId, workspaceId)
+        : undefined,
       limit,
       offset: (page - 1) * limit,
       orderBy: desc(schema.filesSchema.createdAt),

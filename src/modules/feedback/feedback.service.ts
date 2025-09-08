@@ -57,12 +57,14 @@ export class FeedbackService {
     workspaceId: string,
     fileId: string | null = null,
   ): Promise<FeedbackResponseDto> {
-    // 0. Check workspace exists and belongs to user
     const workspace = await this.db.query.workspacesSchema.findFirst({
-      where: eq(schema.workspacesSchema.id, workspaceId),
+      where: and(
+        eq(schema.workspacesSchema.id, workspaceId),
+        eq(schema.workspacesSchema.userId, user.id),
+      ),
     });
 
-    if (!workspace || workspace.userId !== user.id) {
+    if (!workspace) {
       throw new NotFoundException('Workspace not found');
     }
 
@@ -323,19 +325,12 @@ export class FeedbackService {
     userId: string,
     workspaceId?: string,
   ): Promise<FeedbackGroupedArrayResponseDto> {
-    const cacheKey = `feedback:grouped:${userId}:${workspaceId ?? 'all'}`;
+    const cacheKey = `feedback:grouped:${userId}:${workspaceId}`;
     const cached = await this.redisService.get(cacheKey);
 
     if (cached) {
       return JSON.parse(cached);
     }
-
-    const whereConditions = [
-      eq(schema.usersFeedbacksSchema.userId, userId),
-      workspaceId
-        ? eq(schema.usersFeedbacksSchema.workspaceId, workspaceId)
-        : undefined,
-    ].filter(Boolean);
 
     const grouped = await this.db
       .select({
@@ -360,7 +355,11 @@ export class FeedbackService {
         schema.feedbacksSchema,
         eq(schema.feedbacksSchema.id, schema.usersFeedbacksSchema.feedbackId),
       )
-      .where(and(...whereConditions))
+      .where(
+        workspaceId
+          ? eq(schema.usersFeedbacksSchema.workspaceId, workspaceId)
+          : undefined,
+      )
       .groupBy(schema.feedbacksSchema.summary)
       .orderBy(desc(count(schema.feedbacksSchema.id)))
       .limit(20);
@@ -385,13 +384,6 @@ export class FeedbackService {
       return JSON.parse(cached);
     }
 
-    const whereConditions = [
-      eq(schema.usersFeedbacksSchema.userId, userId),
-      workspaceId
-        ? eq(schema.usersFeedbacksSchema.workspaceId, workspaceId)
-        : undefined,
-    ].filter(Boolean);
-
     const summary = await this.db
       .select({
         sentiment: schema.feedbacksSchema.sentiment,
@@ -405,7 +397,11 @@ export class FeedbackService {
         schema.feedbacksSchema,
         eq(schema.feedbacksSchema.id, schema.usersFeedbacksSchema.feedbackId),
       )
-      .where(and(...whereConditions))
+      .where(
+        workspaceId
+          ? eq(schema.usersFeedbacksSchema.workspaceId, workspaceId)
+          : undefined,
+      )
       .groupBy(schema.feedbacksSchema.sentiment);
 
     await this.redisService.setWithExpiry(
@@ -418,16 +414,9 @@ export class FeedbackService {
   }
 
   async getAllFeedback(
-    user: UserSchemaType,
+    _user: UserSchemaType,
     workspaceId?: string,
   ): Promise<FeedbackSchemaType[]> {
-    const whereConditions = [
-      eq(schema.usersFeedbacksSchema.userId, user.id),
-      workspaceId
-        ? eq(schema.usersFeedbacksSchema.workspaceId, workspaceId)
-        : undefined,
-    ].filter(Boolean);
-
     return this.db
       .select({
         id: schema.usersFeedbacksSchema.id,
@@ -447,7 +436,11 @@ export class FeedbackService {
         schema.feedbacksSchema,
         eq(schema.feedbacksSchema.id, schema.usersFeedbacksSchema.feedbackId),
       )
-      .where(and(...whereConditions))
+      .where(
+        workspaceId
+          ? eq(schema.usersFeedbacksSchema.workspaceId, workspaceId)
+          : undefined,
+      )
       .orderBy(desc(schema.feedbacksSchema.createdAt));
   }
 
@@ -458,7 +451,7 @@ export class FeedbackService {
     workspaceId?: string,
   ) {
     const { format, type } = query;
-    const cacheKey = `feedback:report:${user.id}:${workspaceId ?? 'all'}:${type}:${format}`;
+    const cacheKey = `feedback:report:${user.id}:${workspaceId}:${type}:${format}`;
     const cached = await this.redisService.get(cacheKey);
 
     if (cached) {

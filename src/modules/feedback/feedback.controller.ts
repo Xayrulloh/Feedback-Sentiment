@@ -115,13 +115,19 @@ import { FeedbackService } from './feedback.service';
     },
   },
 })
-@Controller('workspaces/:workspaceId/feedbacks')
+@Controller('workspaces')
 export class FeedbackController {
   constructor(private readonly feedbackService: FeedbackService) {}
 
-  @Post('manual')
+  @Post(':workspaceId/feedbacks/manual')
   @HttpCode(HttpStatus.CREATED)
   @ApiBody({ type: FeedbackManualRequestDto })
+  @ApiParam({
+    name: 'workspaceId',
+    type: 'string',
+    required: true,
+    description: 'Workspace ID (uuid)',
+  })
   @ApiCreatedResponse({
     type: createBaseResponseDto(
       FeedbackResponseSchema,
@@ -168,9 +174,15 @@ export class FeedbackController {
     );
   }
 
-  @Post('upload')
+  @Post(':workspaceId/feedbacks/upload')
   @HttpCode(HttpStatus.CREATED)
   @ApiConsumes('multipart/form-data')
+  @ApiParam({
+    name: 'workspaceId',
+    type: 'string',
+    required: true,
+    description: 'Workspace ID (uuid)',
+  })
   @UseInterceptors(FileInterceptor('file'))
   @ApiOperation({ summary: 'Upload CSV feedback file' })
   @ApiBody({
@@ -276,7 +288,7 @@ export class FeedbackController {
     return this.feedbackService.feedbackSummary(req.user.id);
   }
 
-  @Get('grouped')
+  @Get(['feedbacks/grouped', ':workspaceId/feedbacks/grouped'])
   @ApiOperation({
     summary: 'Get feedbacks grouped by sentiment',
   })
@@ -289,18 +301,16 @@ export class FeedbackController {
   @ApiParam({
     name: 'workspaceId',
     type: 'string',
-    required: true,
+    required: false,
     description:
-      'Workspace ID (uuid) or "all". Option "all" is to get the grouped feedback based on all feedbacks regardles of workspace.',
+      'Workspace ID (uuid). If omitted, returns all grouped feedbacks from all workspaces.',
   })
   @ZodSerializerDto(FeedbackGroupedArrayResponseSchema)
   async feedbackGrouped(
-    @Param('workspaceId') workspaceId: string,
+    @Param('workspaceId') workspaceId: string | undefined,
     @Req() req: AuthenticatedRequest,
   ): Promise<FeedbackGroupedArrayResponseDto> {
-    const workspace = workspaceId === 'all' ? undefined : workspaceId;
-
-    return this.feedbackService.feedbackGrouped(req.user.id, workspace);
+    return this.feedbackService.feedbackGrouped(req.user.id, workspaceId);
   }
 
   @Get()
@@ -330,7 +340,7 @@ export class FeedbackController {
     return this.feedbackService.feedbackFiltered(query, req.user);
   }
 
-  @Get('report')
+  @Get(['feedbacks/report', ':workspaceId/feedbacks/report'])
   @ApiOperation({ summary: 'Download either pdf or csv report file' })
   @ApiOkResponse({
     description: 'Download report file',
@@ -340,23 +350,21 @@ export class FeedbackController {
   @ApiParam({
     name: 'workspaceId',
     type: 'string',
-    required: true,
+    required: false,
     description:
-      'Workspace ID (uuid) or "all". Option "all" is to download all feedbacks regardles of workspace',
+      'Workspace ID (uuid). If omitted, returns all feedbacks regardles of workspaces.',
   })
   async getFeedbackReport(
-    @Param('workspaceId') workspaceId: string,
+    @Param('workspaceId') workspaceId: string | undefined,
     @Query() query: ReportDownloadQueryDto,
     @Req() req: AuthenticatedRequest,
     @Res() res: Response,
   ) {
-    const workspace = workspaceId === 'all' ? undefined : workspaceId;
-
     return this.feedbackService.feedbackReportDownload(
       query,
       req.user,
       res,
-      workspace,
+      workspaceId,
     );
   }
 

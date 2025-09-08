@@ -78,36 +78,34 @@ import { FileService } from './file.service';
     },
   },
 })
-@Controller('workspaces/:workspaceId/file')
+@Controller('workspaces')
 export class FileController {
   constructor(private readonly fileService: FileService) {}
 
-  @Get()
+  @Get(['file/all', ':workspaceId/file'])
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiParam({
     name: 'workspaceId',
     type: 'string',
-    required: true,
+    required: false,
     description:
-      'Workspace ID (uuid) or "all". Option "all" is to get all the files regardless of workspaces',
+      'Workspace ID (uuid). If omitted, returns all grouped feedbacks from all workspaces.',
   })
   @ApiOkResponse({
     type: createBaseResponseDto(FileResponseSchema, 'FileResponseSchema'),
   })
   @ZodSerializerDto(FileResponseSchema)
   @ApiOperation({
-    summary: 'Get all user files',
+    summary: 'Get all user files based',
   })
   async getFile(
-    @Param('workspaceId') workspaceId: string,
+    @Param('workspaceId') workspaceId: string | undefined,
     @Query(new ZodValidationPipe(FileQueryDto))
     query: FileQueryDto,
     @Req() req: AuthenticatedRequest,
   ): Promise<FileResponseDto> {
-    const workspace = workspaceId === 'all' ? undefined : workspaceId;
-
-    return this.fileService.getFile(query, req.user, workspace);
+    return this.fileService.getFile(query, req.user, workspaceId);
   }
 
   @Delete(':fileId')
