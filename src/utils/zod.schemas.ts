@@ -68,6 +68,17 @@ const FeedbackSchema = z
 
 type FeedbackSchemaType = z.infer<typeof FeedbackSchema>;
 
+// workspace
+const WorkspaceSchema = z
+  .object({
+    name: z.string().min(1).max(255).describe('Workspace name'),
+    userId: z.string().uuid().describe('User who owns the workspace'),
+  })
+  .merge(BaseSchema)
+  .describe('Workspace schema');
+
+type WorkspaceSchemaType = z.infer<typeof WorkspaceSchema>;
+
 // file
 const FileSchema = z
   .object({
@@ -211,7 +222,7 @@ const PaginationQuerySchema = z
     limit: z.coerce.number().int().min(1).max(100).default(20),
     page: z.coerce.number().int().min(1).default(1),
   })
-  .describe('pagination query schema');
+  .describe('Pagination query schema');
 
 export {
   PaginationQuerySchema,
@@ -240,4 +251,6 @@ export {
   RateLimitEventSchema,
   RateLimitErrorEnum,
   type RateLimitEventSchemaType,
+  WorkspaceSchema,
+  type WorkspaceSchemaType,
 };
