@@ -69,7 +69,6 @@ const FeedbackSchema = z
 type FeedbackSchemaType = z.infer<typeof FeedbackSchema>;
 
 // workspace
-
 const WorkspaceSchema = z
   .object({
     name: z.string().min(1).max(255).describe('Workspace name'),

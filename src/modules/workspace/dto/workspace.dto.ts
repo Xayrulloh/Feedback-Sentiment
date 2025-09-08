@@ -7,13 +7,13 @@ import {
 import z from 'zod';
 
 const WorkspaceQuerySchema = PaginationQuerySchema.describe(
-  'Workspace query schema',
+  'Workspace pagination query schema',
 );
 
 const WorkspaceRequestSchema = WorkspaceSchema.pick({
   name: true,
   description: true,
-});
+}).describe('Create or update workspace request schema');
 
 const WorkspaceSingleResponseSchema = WorkspaceSchema.describe(
   'Single workspace response data',
