@@ -4,10 +4,10 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { DrizzleAsyncProvider } from 'src/database/drizzle.provider';
 import * as schema from 'src/database/schema';
 import {
+  WorkspacePaginatedResponseDto,
   WorkspaceQueryDto,
   WorkspaceRequestDto,
   WorkspaceResponseDto,
-  WorkspaceSingleResponseDto,
 } from './dto/workspace.dto';
 
 @Injectable()
@@ -18,13 +18,13 @@ export class WorkspaceService {
   ) {}
 
   async create(
-    workspaceRequestDto: WorkspaceRequestDto,
+    body: WorkspaceRequestDto,
     userId: string,
-  ): Promise<WorkspaceSingleResponseDto> {
+  ): Promise<WorkspaceResponseDto> {
     const [workspace] = await this.db
       .insert(schema.workspacesSchema)
       .values({
-        ...workspaceRequestDto,
+        ...body,
         userId,
       })
       .returning();
@@ -35,7 +35,7 @@ export class WorkspaceService {
   async findAll(
     query: WorkspaceQueryDto,
     userId: string,
-  ): Promise<WorkspaceResponseDto> {
+  ): Promise<WorkspacePaginatedResponseDto> {
     const { limit, page } = query;
 
     const totalResult = await this.db
@@ -64,10 +64,7 @@ export class WorkspaceService {
     };
   }
 
-  async findOne(
-    id: string,
-    userId: string,
-  ): Promise<WorkspaceSingleResponseDto> {
+  async findOne(id: string, userId: string): Promise<WorkspaceResponseDto> {
     const workspace = await this.db.query.workspacesSchema.findFirst({
       where: and(
         eq(schema.workspacesSchema.id, id),
@@ -85,11 +82,11 @@ export class WorkspaceService {
   async update(
     id: string,
     userId: string,
-    workspaceRequestDto: WorkspaceRequestDto,
-  ): Promise<WorkspaceSingleResponseDto> {
+    body: WorkspaceRequestDto,
+  ): Promise<WorkspaceResponseDto> {
     const [workspace] = await this.db
       .update(schema.workspacesSchema)
-      .set(workspaceRequestDto)
+      .set(body)
       .where(
         and(
           eq(schema.workspacesSchema.id, id),

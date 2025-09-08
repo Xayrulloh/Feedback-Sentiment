@@ -67,7 +67,6 @@ export const usersSchema = pgTable('users', {
 
 export const workspacesSchema = pgTable('workspaces', {
   name: varchar('name', { length: 255 }).notNull(),
-  description: text('description'),
   userId: uuid('user_id')
     .notNull()
     .references(() => usersSchema.id, {
@@ -80,7 +79,11 @@ export const filesSchema = pgTable(
   'files',
   {
     userId: uuid('user_id').notNull(),
-    workspaceId: uuid('workspace_id').notNull(),
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspacesSchema.id, {
+        onDelete: 'cascade',
+      }),
     name: text('name').notNull(),
     mimeType: varchar('mime_type', { length: 255 }).notNull(),
     size: bigint('size', { mode: 'number' }).notNull(),
@@ -199,13 +202,16 @@ export const usersFeedbacksRelations = relations(
 export const workspacesRelations = relations(
   workspacesSchema,
   ({ many, one }) => ({
-    usersFeedbacks: many(usersFeedbacksSchema, {
+    feedbacks: many(usersFeedbacksSchema, {
       relationName: 'users_feedbacks_workspace_id_workspaces_id_fk',
     }),
     user: one(usersSchema, {
       fields: [workspacesSchema.userId],
       references: [usersSchema.id],
       relationName: 'workspaces_user_id_users_id_fk',
+    }),
+    files: many(filesSchema, {
+      relationName: 'files_workspace_id_workspaces_id_fk',
     }),
   }),
 );

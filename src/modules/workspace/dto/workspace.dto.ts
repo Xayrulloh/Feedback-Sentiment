@@ -7,33 +7,32 @@ import {
 import z from 'zod';
 
 const WorkspaceQuerySchema = PaginationQuerySchema.describe(
-  'Workspace query schema',
+  'Workspace pagination query schema',
 );
 
 const WorkspaceRequestSchema = WorkspaceSchema.pick({
   name: true,
-  description: true,
-});
+}).describe('Create or update workspace request schema');
 
-const WorkspaceSingleResponseSchema = WorkspaceSchema.describe(
+const WorkspaceResponseSchema = WorkspaceSchema.describe(
   'Single workspace response data',
 );
 
-const WorkspaceResponseSchema = z
+const WorkspacePaginatedResponseSchema = z
   .object({
-    workspaces: WorkspaceSchema.array().describe('List of users'),
+    workspaces: WorkspaceSchema.array().describe('List of workspaces'),
     pagination: PaginationResponseSchema.optional().describe(
       'Pagination metadata',
     ),
   })
-  .describe('Users response data with pagination');
+  .describe('Paginated workspaces response schema');
 
 class WorkspaceQueryDto extends createZodDto(WorkspaceQuerySchema) {}
 class WorkspaceRequestDto extends createZodDto(WorkspaceRequestSchema) {}
-class WorkspaceResponseDto extends createZodDto(WorkspaceResponseSchema) {}
-class WorkspaceSingleResponseDto extends createZodDto(
-  WorkspaceSingleResponseSchema,
+class WorkspacePaginatedResponseDto extends createZodDto(
+  WorkspacePaginatedResponseSchema,
 ) {}
+class WorkspaceResponseDto extends createZodDto(WorkspaceResponseSchema) {}
 
 export {
   WorkspaceSchema,
@@ -41,8 +40,8 @@ export {
   WorkspaceRequestDto,
   WorkspaceQuerySchema,
   WorkspaceQueryDto,
+  WorkspacePaginatedResponseSchema,
+  WorkspacePaginatedResponseDto,
   WorkspaceResponseSchema,
   WorkspaceResponseDto,
-  WorkspaceSingleResponseSchema,
-  WorkspaceSingleResponseDto,
 };

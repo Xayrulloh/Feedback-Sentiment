@@ -143,6 +143,7 @@ export class FeedbackService {
             workspaceId,
             fileId,
             feedbackId: existingFeedback.id,
+            workspaceId: 'null', // FIXME: workspace while feedback manual
           })
           .returning()
           .onConflictDoNothing();
@@ -249,6 +250,7 @@ export class FeedbackService {
         size: file.size,
         rowCount: feedbacks.length,
         extension,
+        workspaceId: 'null', // FIXME: workspace while feedback upload
       })
       .returning({ id: schema.filesSchema.id });
 
