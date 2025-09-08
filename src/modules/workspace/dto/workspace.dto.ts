@@ -12,7 +12,6 @@ const WorkspaceQuerySchema = PaginationQuerySchema.describe(
 
 const WorkspaceRequestSchema = WorkspaceSchema.pick({
   name: true,
-  description: true,
 }).describe('Create or update workspace request schema');
 
 const WorkspaceResponseSchema = WorkspaceSchema.describe(
@@ -21,12 +20,12 @@ const WorkspaceResponseSchema = WorkspaceSchema.describe(
 
 const WorkspacePaginatedResponseSchema = z
   .object({
-    workspaces: WorkspaceSchema.array().describe('List of users'),
+    workspaces: WorkspaceSchema.array().describe('List of workspaces'),
     pagination: PaginationResponseSchema.optional().describe(
       'Pagination metadata',
     ),
   })
-  .describe('Users response data with pagination');
+  .describe('Paginated workspaces response schema');
 
 class WorkspaceQueryDto extends createZodDto(WorkspaceQuerySchema) {}
 class WorkspaceRequestDto extends createZodDto(WorkspaceRequestSchema) {}

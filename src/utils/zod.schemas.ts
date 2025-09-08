@@ -72,7 +72,6 @@ type FeedbackSchemaType = z.infer<typeof FeedbackSchema>;
 const WorkspaceSchema = z
   .object({
     name: z.string().min(1).max(255).describe('Workspace name'),
-    description: z.string().nullable().describe('Workspace description'),
     userId: z.string().uuid().describe('User who owns the workspace'),
   })
   .merge(BaseSchema)
