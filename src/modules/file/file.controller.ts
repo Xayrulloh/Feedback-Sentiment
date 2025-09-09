@@ -83,7 +83,7 @@ import { FileService } from './file.service';
 export class FileController {
   constructor(private readonly fileService: FileService) {}
 
-  @Get(['file/all', ':workspaceId/file'])
+  @Get(['file', ':workspaceId/file'])
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiParam({
