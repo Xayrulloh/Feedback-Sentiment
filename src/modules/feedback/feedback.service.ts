@@ -455,16 +455,14 @@ export class FeedbackService {
 
   async getFeedbackById(
     id: string,
-    workspaceId: string | undefined,
+    workspaceId: string,
     userId: string,
   ): Promise<FeedbackSingleResponseDto> {
     const userFeedback = await this.db.query.usersFeedbacksSchema.findFirst({
       where: and(
         eq(schema.usersFeedbacksSchema.id, id),
         eq(schema.usersFeedbacksSchema.userId, userId),
-        workspaceId
-          ? eq(schema.usersFeedbacksSchema.workspaceId, workspaceId)
-          : undefined,
+        eq(schema.usersFeedbacksSchema.workspaceId, workspaceId),
       ),
       with: {
         feedback: true,
