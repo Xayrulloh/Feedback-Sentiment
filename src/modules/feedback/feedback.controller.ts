@@ -40,6 +40,7 @@ import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RateLimitGuard } from 'src/common/guards/rate-limit.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { UserStatusGuard } from 'src/common/guards/user-status.guard';
+import { OptionalUUIDPipe } from 'src/common/pipes/optional.pipe';
 import { createBaseResponseDto } from 'src/helpers/create-base-response.helper';
 import type { AuthenticatedRequest } from 'src/shared/types/request-with-user';
 import { UserRoleEnum } from 'src/utils/zod.schemas';
