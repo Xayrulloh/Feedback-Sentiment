@@ -332,8 +332,8 @@ export class FeedbackController {
   async feedbackFiltered(
     @Query(new ZodValidationPipe(FeedbackQueryDto))
     query: FeedbackQueryDto,
-    @Param('workspaceId', OptionalUUIDPipe) workspaceId: string,
     @Req() req: AuthenticatedRequest,
+    @Param('workspaceId', OptionalUUIDPipe) workspaceId?: string,
   ) {
     return this.feedbackService.feedbackFiltered(
       query,

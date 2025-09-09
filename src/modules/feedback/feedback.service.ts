@@ -243,7 +243,7 @@ export class FeedbackService {
   async feedbackFiltered(
     query: FeedbackQueryDto,
     userId: string,
-    workspaceId: string | undefined,
+    workspaceId?: string,
   ): Promise<FeedbackFilteredResponseDto> {
     const { sentiment, limit, page } = query;
     const whereConditions = workspaceId
