@@ -15,7 +15,7 @@ export class OptionalUUIDPipe
     value: string | undefined,
     metadata: ArgumentMetadata,
   ): Promise<string | undefined> {
-    if (value === undefined || value === null || value === '') {
+    if (!value) {
       return undefined;
     }
 

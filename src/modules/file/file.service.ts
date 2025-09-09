@@ -53,9 +53,7 @@ export class FileService {
       where: and(
         eq(schema.filesSchema.id, fileId),
         eq(schema.filesSchema.userId, user.id),
-        workspaceId
-          ? eq(schema.filesSchema.workspaceId, workspaceId)
-          : undefined,
+        eq(schema.filesSchema.workspaceId, workspaceId),
       ),
     });
 
