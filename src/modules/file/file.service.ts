@@ -13,7 +13,7 @@ export class FileService {
     private readonly db: NodePgDatabase<typeof schema>,
   ) {}
 
-  async getFile(
+  async fileGet(
     query: FileQueryDto,
     user: UserSchemaType,
   ): Promise<FileResponseDto> {

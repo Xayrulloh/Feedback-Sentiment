@@ -92,12 +92,12 @@ export class FileController {
   @ApiOperation({
     summary: 'Get all user files',
   })
-  async getFile(
+  async fileGet(
     @Query(new ZodValidationPipe(FileQueryDto))
     query: FileQueryDto,
     @Req() req: AuthenticatedRequest,
   ): Promise<FileResponseDto> {
-    return this.fileService.getFile(query, req.user);
+    return this.fileService.fileGet(query, req.user);
   }
 
   @Delete(':workspaceId/files/:fileId')
