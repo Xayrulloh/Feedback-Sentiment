@@ -40,7 +40,6 @@ import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RateLimitGuard } from 'src/common/guards/rate-limit.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { UserStatusGuard } from 'src/common/guards/user-status.guard';
-import { OptionalUUIDPipe } from 'src/common/pipes/optional.pipe';
 import { createBaseResponseDto } from 'src/helpers/create-base-response.helper';
 import type { AuthenticatedRequest } from 'src/shared/types/request-with-user';
 import { UserRoleEnum } from 'src/utils/zod.schemas';
@@ -338,7 +337,7 @@ export class FeedbackController {
     return this.feedbackService.feedbackReportDownload(query, req.user, res);
   }
 
-  @Get(['feedback/:id', ':workspaceId/feedback/:id'])
+  @Get(':workspaceId/feedbacks/:id')
   @ApiBadRequestResponse({
     description: 'Validation failed (uuid is expected)',
     schema: {
@@ -372,7 +371,6 @@ export class FeedbackController {
   @ApiParam({
     name: 'workspaceId',
     type: 'string',
-    required: false,
     description: 'Workspace ID (uuid)',
   })
   @ApiParam({ name: 'id', type: 'string', description: 'Feedback ID (uuid)' })
@@ -387,7 +385,7 @@ export class FeedbackController {
   })
   @ZodSerializerDto(FeedbackSingleResponseSchema)
   async getFeedbackById(
-    @Param('id', OptionalUUIDPipe) workspaceId: string,
+    @Param('id', ParseUUIDPipe) workspaceId: string,
     @Param('id', ParseUUIDPipe) id: string,
     @Req() req: AuthenticatedRequest,
   ) {
