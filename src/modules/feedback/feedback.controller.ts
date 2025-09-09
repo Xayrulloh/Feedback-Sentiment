@@ -28,6 +28,7 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiParam,
   ApiQuery,
   ApiTags,
   ApiUnauthorizedResponse,
@@ -39,6 +40,7 @@ import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RateLimitGuard } from 'src/common/guards/rate-limit.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { UserStatusGuard } from 'src/common/guards/user-status.guard';
+import { OptionalUUIDPipe } from 'src/common/pipes/optional.pipe';
 import { createBaseResponseDto } from 'src/helpers/create-base-response.helper';
 import type { AuthenticatedRequest } from 'src/shared/types/request-with-user';
 import { UserRoleEnum } from 'src/utils/zod.schemas';
@@ -114,7 +116,7 @@ import { FeedbackService } from './feedback.service';
     },
   },
 })
-@Controller('feedback')
+@Controller('workspaces')
 export class FeedbackController {
   constructor(private readonly feedbackService: FeedbackService) {}
 
@@ -327,7 +329,7 @@ export class FeedbackController {
     return this.feedbackService.feedbackReportDownload(query, req.user, res);
   }
 
-  @Get(':id')
+  @Get(['feedback/:id', ':workspaceId/feedback/:id'])
   @ApiBadRequestResponse({
     description: 'Validation failed (uuid is expected)',
     schema: {
@@ -358,8 +360,16 @@ export class FeedbackController {
       },
     },
   })
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Fetch single feedback by its id' })
+  @ApiParam({
+    name: 'workspaceId',
+    type: 'string',
+    required: false,
+    description: 'Workspace ID (uuid)',
+  })
+  @ApiParam({ name: 'id', type: 'string', description: 'Feedback ID (uuid)' })
+  @ApiOperation({
+    summary: 'Fetch single feedback by its id from one workspace or all',
+  })
   @ApiOkResponse({
     type: createBaseResponseDto(
       FeedbackSingleResponseSchema,
@@ -368,9 +378,10 @@ export class FeedbackController {
   })
   @ZodSerializerDto(FeedbackSingleResponseSchema)
   async getFeedbackById(
+    @Param('id', OptionalUUIDPipe) workspaceId: string,
     @Param('id', ParseUUIDPipe) id: string,
     @Req() req: AuthenticatedRequest,
   ) {
-    return this.feedbackService.getFeedbackById(id, req.user.id);
+    return this.feedbackService.getFeedbackById(id, workspaceId, req.user.id);
   }
 }
