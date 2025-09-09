@@ -246,12 +246,12 @@ export class FeedbackService {
     workspaceId: string | undefined,
   ): Promise<FeedbackFilteredResponseDto> {
     const { sentiment, limit, page } = query;
-    const whereConditions = [
-      eq(schema.usersFeedbacksSchema.userId, userId),
-      workspaceId
-        ? eq(schema.usersFeedbacksSchema.workspaceId, workspaceId)
-        : undefined,
-    ];
+    const whereConditions = workspaceId
+      ? [
+          eq(schema.usersFeedbacksSchema.userId, userId),
+          eq(schema.usersFeedbacksSchema.workspaceId, workspaceId),
+        ]
+      : [eq(schema.usersFeedbacksSchema.userId, userId)];
 
     if (sentiment && sentiment.length > 0) {
       whereConditions.push(
