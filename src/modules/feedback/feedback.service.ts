@@ -357,7 +357,10 @@ export class FeedbackService {
       )
       .where(
         workspaceId
-          ? eq(schema.usersFeedbacksSchema.workspaceId, workspaceId)
+          ? and(
+              eq(schema.usersFeedbacksSchema.userId, userId),
+              eq(schema.usersFeedbacksSchema.workspaceId, workspaceId),
+            )
           : eq(schema.usersFeedbacksSchema.userId, userId),
       )
       .groupBy(schema.feedbacksSchema.summary)
@@ -399,7 +402,10 @@ export class FeedbackService {
       )
       .where(
         workspaceId
-          ? eq(schema.usersFeedbacksSchema.workspaceId, workspaceId)
+          ? and(
+              eq(schema.usersFeedbacksSchema.userId, userId),
+              eq(schema.usersFeedbacksSchema.workspaceId, workspaceId),
+            )
           : eq(schema.usersFeedbacksSchema.userId, userId),
       )
       .groupBy(schema.feedbacksSchema.sentiment);
@@ -438,7 +444,10 @@ export class FeedbackService {
       )
       .where(
         workspaceId
-          ? eq(schema.usersFeedbacksSchema.workspaceId, workspaceId)
+          ? and(
+              eq(schema.usersFeedbacksSchema.userId, user.id),
+              eq(schema.usersFeedbacksSchema.workspaceId, workspaceId),
+            )
           : eq(schema.usersFeedbacksSchema.userId, user.id),
       )
       .orderBy(desc(schema.feedbacksSchema.createdAt));

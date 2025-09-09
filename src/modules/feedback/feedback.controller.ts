@@ -40,6 +40,7 @@ import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RateLimitGuard } from 'src/common/guards/rate-limit.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { UserStatusGuard } from 'src/common/guards/user-status.guard';
+import { OptionalUUIDPipe } from 'src/common/pipes/optional.pipe';
 import { createBaseResponseDto } from 'src/helpers/create-base-response.helper';
 import type { AuthenticatedRequest } from 'src/shared/types/request-with-user';
 import { UserRoleEnum } from 'src/utils/zod.schemas';
@@ -166,12 +167,7 @@ export class FeedbackController {
     @Body() body: FeedbackManualRequestDto,
     @Req() req: AuthenticatedRequest,
   ): Promise<FeedbackResponseDto> {
-    return this.feedbackService.feedbackManual(
-      body,
-      req.user,
-      workspaceId,
-      null,
-    );
+    return this.feedbackService.feedbackManual(body, req.user, workspaceId);
   }
 
   @Post(':workspaceId/feedbacks/upload')
@@ -307,8 +303,8 @@ export class FeedbackController {
   })
   @ZodSerializerDto(FeedbackGroupedArrayResponseSchema)
   async feedbackGrouped(
-    @Param('workspaceId') workspaceId: string | undefined,
     @Req() req: AuthenticatedRequest,
+    @Param('workspaceId', OptionalUUIDPipe) workspaceId?: string,
   ): Promise<FeedbackGroupedArrayResponseDto> {
     return this.feedbackService.feedbackGrouped(req.user.id, workspaceId);
   }
@@ -355,10 +351,10 @@ export class FeedbackController {
       'Workspace ID (uuid). If omitted, returns all feedbacks regardles of workspaces.',
   })
   async getFeedbackReport(
-    @Param('workspaceId') workspaceId: string | undefined,
     @Query() query: ReportDownloadQueryDto,
     @Req() req: AuthenticatedRequest,
     @Res() res: Response,
+    @Param('workspaceId', OptionalUUIDPipe) workspaceId?: string,
   ) {
     return this.feedbackService.feedbackReportDownload(
       query,

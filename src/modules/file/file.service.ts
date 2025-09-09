@@ -27,7 +27,10 @@ export class FileService {
       .from(schema.filesSchema)
       .where(
         workspaceId
-          ? eq(schema.filesSchema.workspaceId, workspaceId)
+          ? and(
+              eq(schema.filesSchema.userId, user.id),
+              eq(schema.filesSchema.workspaceId, workspaceId),
+            )
           : eq(schema.filesSchema.userId, user.id),
       );
 
@@ -35,7 +38,10 @@ export class FileService {
 
     const userFiles = await this.db.query.filesSchema.findMany({
       where: workspaceId
-        ? eq(schema.filesSchema.workspaceId, workspaceId)
+        ? and(
+            eq(schema.filesSchema.workspaceId, workspaceId),
+            eq(schema.filesSchema.userId, user.id),
+          )
         : eq(schema.filesSchema.userId, user.id),
       limit,
       offset: (page - 1) * limit,
