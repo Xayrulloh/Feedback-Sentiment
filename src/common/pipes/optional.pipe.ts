@@ -1,7 +1,7 @@
 import {
   type ArgumentMetadata,
   Injectable,
-  ParseUUIDPipe,
+  type ParseUUIDPipe,
   type PipeTransform,
 } from '@nestjs/common';
 
@@ -9,7 +9,7 @@ import {
 export class OptionalUUIDPipe
   implements PipeTransform<string | undefined, Promise<string | undefined>>
 {
-  private uuidPipe = new ParseUUIDPipe({ version: '4' });
+  constructor(private readonly uuidPipe: ParseUUIDPipe) {}
 
   async transform(
     value: string | undefined,
@@ -18,6 +18,7 @@ export class OptionalUUIDPipe
     if (value === undefined || value === null || value === '') {
       return undefined;
     }
+
     return this.uuidPipe.transform(value, metadata);
   }
 }
