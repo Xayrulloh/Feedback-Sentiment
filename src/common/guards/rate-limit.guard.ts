@@ -68,7 +68,6 @@ export class RateLimitGuard implements CanActivate {
 
     const userCount = userCountRaw ? parseInt(userCountRaw, 10) : 0;
     const rateLimit = rateLimitRaw ? JSON.parse(rateLimitRaw) : null;
-    console.log('🚀 ~ canActivate ~ rateLimit:', rateLimit);
 
     if (!rateLimit) {
       return true;
@@ -97,8 +96,6 @@ export class RateLimitGuard implements CanActivate {
         event: 'suspiciousActivity',
         data: event,
       });
-
-      console.log(event, 'event');
 
       await this.db.insert(schema.suspiciousActivitySchema).values(event);
 
