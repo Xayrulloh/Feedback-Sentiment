@@ -15,7 +15,7 @@ export class FileService {
 
   async getFile(
     query: FileQueryDto,
-    _user: UserSchemaType,
+    user: UserSchemaType,
     workspaceId?: string,
   ): Promise<FileResponseDto> {
     const { limit, page } = query;
@@ -28,7 +28,7 @@ export class FileService {
       .where(
         workspaceId
           ? eq(schema.filesSchema.workspaceId, workspaceId)
-          : undefined,
+          : eq(schema.filesSchema.userId, user.id),
       );
 
     const total = totalResult[0]?.count ?? 0;
@@ -36,7 +36,7 @@ export class FileService {
     const userFiles = await this.db.query.filesSchema.findMany({
       where: workspaceId
         ? eq(schema.filesSchema.workspaceId, workspaceId)
-        : undefined,
+        : eq(schema.filesSchema.userId, user.id),
       limit,
       offset: (page - 1) * limit,
       orderBy: desc(schema.filesSchema.createdAt),

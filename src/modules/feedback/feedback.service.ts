@@ -358,7 +358,7 @@ export class FeedbackService {
       .where(
         workspaceId
           ? eq(schema.usersFeedbacksSchema.workspaceId, workspaceId)
-          : undefined,
+          : eq(schema.usersFeedbacksSchema.userId, userId),
       )
       .groupBy(schema.feedbacksSchema.summary)
       .orderBy(desc(count(schema.feedbacksSchema.id)))
@@ -400,7 +400,7 @@ export class FeedbackService {
       .where(
         workspaceId
           ? eq(schema.usersFeedbacksSchema.workspaceId, workspaceId)
-          : undefined,
+          : eq(schema.usersFeedbacksSchema.userId, userId),
       )
       .groupBy(schema.feedbacksSchema.sentiment);
 
@@ -414,7 +414,7 @@ export class FeedbackService {
   }
 
   async getAllFeedback(
-    _user: UserSchemaType,
+    user: UserSchemaType,
     workspaceId?: string,
   ): Promise<FeedbackSchemaType[]> {
     return this.db
@@ -439,7 +439,7 @@ export class FeedbackService {
       .where(
         workspaceId
           ? eq(schema.usersFeedbacksSchema.workspaceId, workspaceId)
-          : undefined,
+          : eq(schema.usersFeedbacksSchema.userId, user.id),
       )
       .orderBy(desc(schema.feedbacksSchema.createdAt));
   }
