@@ -1,5 +1,5 @@
 {
-  "id": "2735943b-9608-4fff-ae31-b6f7c2269340",
+  "id": "a4e009d6-7807-4dc7-b690-20e6eb855ade",
   "prevId": "70441185-17bf-45fc-80f5-36120ed333cc",
   "version": "7",
   "dialect": "postgresql",
@@ -105,9 +105,7 @@
         "feedbacks_content_hash_unique": {
           "name": "feedbacks_content_hash_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "content_hash"
-          ]
+          "columns": ["content_hash"]
         }
       },
       "policies": {},
@@ -203,6 +201,21 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "idx_files_workspace_id": {
+          "name": "idx_files_workspace_id",
+          "columns": [
+            {
+              "expression": "workspace_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -210,12 +223,8 @@
           "name": "files_workspace_id_workspaces_id_fk",
           "tableFrom": "files",
           "tableTo": "workspaces",
-          "columnsFrom": [
-            "workspace_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["workspace_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -278,9 +287,7 @@
         "rate_limits_target_unique": {
           "name": "rate_limits_target_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "target"
-          ]
+          "columns": ["target"]
         }
       },
       "policies": {},
@@ -363,12 +370,8 @@
           "name": "suspicious_activity_user_id_users_id_fk",
           "tableFrom": "suspicious_activity",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -502,12 +505,8 @@
           "name": "users_feedbacks_workspace_id_workspaces_id_fk",
           "tableFrom": "users_feedbacks",
           "tableTo": "workspaces",
-          "columnsFrom": [
-            "workspace_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["workspace_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -515,12 +514,8 @@
           "name": "users_feedbacks_file_id_files_id_fk",
           "tableFrom": "users_feedbacks",
           "tableTo": "files",
-          "columnsFrom": [
-            "file_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["file_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -596,9 +591,7 @@
         "users_email_unique": {
           "name": "users_email_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "email"
-          ]
+          "columns": ["email"]
         }
       },
       "policies": {},
@@ -614,6 +607,12 @@
           "type": "varchar(255)",
           "primaryKey": false,
           "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "user_id": {
           "name": "user_id",
@@ -655,12 +654,8 @@
           "name": "workspaces_user_id_users_id_fk",
           "tableFrom": "workspaces",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -676,12 +671,7 @@
     "public.sentiment": {
       "name": "sentiment",
       "schema": "public",
-      "values": [
-        "negative",
-        "neutral",
-        "positive",
-        "unknown"
-      ]
+      "values": ["negative", "neutral", "positive", "unknown"]
     },
     "public.rate_limit_error": {
       "name": "rate_limit_error",
@@ -696,20 +686,12 @@
     "public.rate_limit_target": {
       "name": "rate_limit_target",
       "schema": "public",
-      "values": [
-        "API",
-        "UPLOAD",
-        "DOWNLOAD",
-        "LOGIN"
-      ]
+      "values": ["API", "UPLOAD", "DOWNLOAD", "LOGIN"]
     },
     "public.user_role": {
       "name": "user_role",
       "schema": "public",
-      "values": [
-        "USER",
-        "ADMIN"
-      ]
+      "values": ["USER", "ADMIN"]
     }
   },
   "schemas": {},

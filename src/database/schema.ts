@@ -91,7 +91,10 @@ export const filesSchema = pgTable(
     extension: varchar('extension', { length: 50 }).notNull(),
     ...baseSchema,
   },
-  (table) => [index('idx_files_user_id').on(table.userId)],
+  (table) => [
+    index('idx_files_user_id').on(table.userId),
+    index('idx_files_workspace_id').on(table.workspaceId),
+  ],
 );
 
 export const feedbacksSchema = pgTable(
@@ -116,10 +119,10 @@ export const usersFeedbacksSchema = pgTable(
     userId: uuid('user_id').notNull(),
     feedbackId: uuid('feedback_id').notNull(),
     workspaceId: uuid('workspace_id')
-      .notNull()
       .references(() => workspacesSchema.id, {
         onDelete: 'cascade',
-      }),
+      })
+      .notNull(),
     fileId: uuid('file_id').references(() => filesSchema.id, {
       onDelete: 'cascade',
     }),

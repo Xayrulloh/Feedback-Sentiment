@@ -5,6 +5,7 @@ import {
   Inject,
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { and, count, desc, eq, inArray, sql } from 'drizzle-orm';
@@ -53,8 +54,20 @@ export class FeedbackService {
   async feedbackManual(
     input: FeedbackManualRequestDto,
     user: UserSchemaType,
+    workspaceId: string,
     fileId: string | null = null,
   ): Promise<FeedbackResponseDto> {
+    const workspace = await this.db.query.workspacesSchema.findFirst({
+      where: and(
+        eq(schema.workspacesSchema.id, workspaceId),
+        eq(schema.workspacesSchema.userId, user.id),
+      ),
+    });
+
+    if (!workspace) {
+      throw new NotFoundException('Workspace not found');
+    }
+
     // 1. Normalize + hash + deduplicate
     const normalizedSet = new Map<string, string>();
 
@@ -127,9 +140,9 @@ export class FeedbackService {
           .insert(schema.usersFeedbacksSchema)
           .values({
             userId: user.id,
+            workspaceId,
             fileId,
             feedbackId: existingFeedback.id,
-            workspaceId: 'null', // FIXME: workspace while feedback manual
           })
           .returning()
           .onConflictDoNothing();
@@ -137,6 +150,7 @@ export class FeedbackService {
         return {
           id: newUserFeedback.id,
           fileId: newUserFeedback.fileId,
+          workspaceId: newUserFeedback.workspaceId,
           userId: newUserFeedback.userId,
           createdAt: newUserFeedback.createdAt,
           updatedAt: newUserFeedback.updatedAt,
@@ -157,6 +171,7 @@ export class FeedbackService {
   async feedbackUpload(
     file: Express.Multer.File,
     user: UserSchemaType,
+    workspaceId: string,
   ): Promise<FeedbackResponseDto> {
     const csvContent = file.buffer.toString('utf8');
 
@@ -228,16 +243,21 @@ export class FeedbackService {
       .insert(schema.filesSchema)
       .values({
         userId: user.id,
+        workspaceId: workspaceId,
         name: file.originalname,
         mimeType: file.mimetype,
         size: file.size,
         rowCount: feedbacks.length,
         extension,
-        workspaceId: 'null', // FIXME: workspace while feedback upload
       })
       .returning({ id: schema.filesSchema.id });
 
-    return this.feedbackManual({ feedbacks: validFeedbacks }, user, newFile.id);
+    return this.feedbackManual(
+      { feedbacks: validFeedbacks },
+      user,
+      workspaceId,
+      newFile.id,
+    );
   }
 
   async feedbackFiltered(
@@ -270,6 +290,7 @@ export class FeedbackService {
       .select({
         id: schema.usersFeedbacksSchema.id,
         fileId: schema.usersFeedbacksSchema.fileId,
+        workspaceId: schema.usersFeedbacksSchema.workspaceId,
         userId: schema.usersFeedbacksSchema.userId,
         createdAt: schema.usersFeedbacksSchema.createdAt,
         updatedAt: schema.usersFeedbacksSchema.updatedAt,
@@ -302,8 +323,9 @@ export class FeedbackService {
 
   async feedbackGrouped(
     userId: string,
+    workspaceId?: string,
   ): Promise<FeedbackGroupedArrayResponseDto> {
-    const cacheKey = `feedback:grouped:${userId}`;
+    const cacheKey = `feedback:grouped:${userId}:${workspaceId}`;
     const cached = await this.redisService.get(cacheKey);
 
     if (cached) {
@@ -333,7 +355,14 @@ export class FeedbackService {
         schema.feedbacksSchema,
         eq(schema.feedbacksSchema.id, schema.usersFeedbacksSchema.feedbackId),
       )
-      .where(eq(schema.usersFeedbacksSchema.userId, userId))
+      .where(
+        workspaceId
+          ? and(
+              eq(schema.usersFeedbacksSchema.userId, userId),
+              eq(schema.usersFeedbacksSchema.workspaceId, workspaceId),
+            )
+          : eq(schema.usersFeedbacksSchema.userId, userId),
+      )
       .groupBy(schema.feedbacksSchema.summary)
       .orderBy(desc(count(schema.feedbacksSchema.id)))
       .limit(20);
@@ -347,7 +376,10 @@ export class FeedbackService {
     return grouped;
   }
 
-  async feedbackSummary(userId: string): Promise<FeedbackSummaryResponseDto> {
+  async feedbackSummary(
+    userId: string,
+    workspaceId?: string,
+  ): Promise<FeedbackSummaryResponseDto> {
     const cacheKey = `feedback:sentiment-summary:${userId}`;
     const cached = await this.redisService.get(cacheKey);
 
@@ -368,7 +400,14 @@ export class FeedbackService {
         schema.feedbacksSchema,
         eq(schema.feedbacksSchema.id, schema.usersFeedbacksSchema.feedbackId),
       )
-      .where(eq(schema.usersFeedbacksSchema.userId, userId))
+      .where(
+        workspaceId
+          ? and(
+              eq(schema.usersFeedbacksSchema.userId, userId),
+              eq(schema.usersFeedbacksSchema.workspaceId, workspaceId),
+            )
+          : eq(schema.usersFeedbacksSchema.userId, userId),
+      )
       .groupBy(schema.feedbacksSchema.sentiment);
 
     await this.redisService.setWithExpiry(
@@ -380,11 +419,15 @@ export class FeedbackService {
     return summary;
   }
 
-  async getAllFeedback(user: UserSchemaType): Promise<FeedbackSchemaType[]> {
+  async getAllFeedback(
+    user: UserSchemaType,
+    workspaceId?: string,
+  ): Promise<FeedbackSchemaType[]> {
     return this.db
       .select({
         id: schema.usersFeedbacksSchema.id,
         fileId: schema.usersFeedbacksSchema.fileId,
+        workspaceId: schema.usersFeedbacksSchema.workspaceId,
         userId: schema.usersFeedbacksSchema.userId,
         createdAt: schema.usersFeedbacksSchema.createdAt,
         updatedAt: schema.usersFeedbacksSchema.updatedAt,
@@ -399,7 +442,14 @@ export class FeedbackService {
         schema.feedbacksSchema,
         eq(schema.feedbacksSchema.id, schema.usersFeedbacksSchema.feedbackId),
       )
-      .where(eq(schema.usersFeedbacksSchema.userId, user.id))
+      .where(
+        workspaceId
+          ? and(
+              eq(schema.usersFeedbacksSchema.userId, user.id),
+              eq(schema.usersFeedbacksSchema.workspaceId, workspaceId),
+            )
+          : eq(schema.usersFeedbacksSchema.userId, user.id),
+      )
       .orderBy(desc(schema.feedbacksSchema.createdAt));
   }
 
@@ -407,9 +457,10 @@ export class FeedbackService {
     query: ReportDownloadQueryDto,
     user: UserSchemaType,
     res: Response,
+    workspaceId?: string,
   ) {
     const { format, type } = query;
-    const cacheKey = `feedback:report:${user.id}:${type}:${format}`;
+    const cacheKey = `feedback:report:${user.id}:${workspaceId}:${type}:${format}`;
     const cached = await this.redisService.get(cacheKey);
 
     if (cached) {
@@ -420,8 +471,8 @@ export class FeedbackService {
 
     const data =
       type === 'detailed'
-        ? await this.getAllFeedback(user)
-        : await this.feedbackSummary(user.id);
+        ? await this.getAllFeedback(user, workspaceId)
+        : await this.feedbackSummary(user.id, workspaceId);
 
     const fileBuffer = await this.fileGeneratorService.generate(
       format,
@@ -474,6 +525,7 @@ export class FeedbackService {
     return {
       id: userFeedback.id,
       fileId: userFeedback.fileId,
+      workspaceId: userFeedback.workspaceId,
       userId: userFeedback.userId,
       createdAt: userFeedback.createdAt,
       updatedAt: userFeedback.updatedAt,
