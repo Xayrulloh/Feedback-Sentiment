@@ -163,7 +163,7 @@ export class FeedbackService {
       }),
     );
 
-    await this.redisService.clearUserCache(user.id);
+    await this.redisService.clearUserCache(user.id, workspaceId);
 
     return userFeedbacks;
   }
