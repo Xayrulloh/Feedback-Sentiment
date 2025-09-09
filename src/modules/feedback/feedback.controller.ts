@@ -364,7 +364,7 @@ export class FeedbackController {
     );
   }
 
-  @Get(':id')
+  @Get(':workspaceId/feedbacks/:id')
   @ApiBadRequestResponse({
     description: 'Validation failed (uuid is expected)',
     schema: {
@@ -395,8 +395,15 @@ export class FeedbackController {
       },
     },
   })
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Fetch single feedback by its id' })
+  @ApiParam({
+    name: 'workspaceId',
+    type: 'string',
+    description: 'Workspace ID (uuid)',
+  })
+  @ApiParam({ name: 'id', type: 'string', description: 'Feedback ID (uuid)' })
+  @ApiOperation({
+    summary: 'Fetch single feedback by its id from one workspace or all',
+  })
   @ApiOkResponse({
     type: createBaseResponseDto(
       FeedbackSingleResponseSchema,
@@ -405,9 +412,10 @@ export class FeedbackController {
   })
   @ZodSerializerDto(FeedbackSingleResponseSchema)
   async getFeedbackById(
+    @Param('id', ParseUUIDPipe) workspaceId: string,
     @Param('id', ParseUUIDPipe) id: string,
     @Req() req: AuthenticatedRequest,
   ) {
-    return this.feedbackService.getFeedbackById(id, req.user.id);
+    return this.feedbackService.getFeedbackById(id, workspaceId, req.user.id);
   }
 }

@@ -13,7 +13,7 @@ export class FileService {
     private readonly db: NodePgDatabase<typeof schema>,
   ) {}
 
-  async getFile(
+  async fileGet(
     query: FileQueryDto,
     user: UserSchemaType,
     workspaceId?: string,
@@ -59,11 +59,12 @@ export class FileService {
     };
   }
 
-  async fileDelete(fileId: string, user: UserSchemaType) {
+  async fileDelete(fileId: string, workspaceId: string, user: UserSchemaType) {
     const file = await this.db.query.filesSchema.findFirst({
       where: and(
         eq(schema.filesSchema.id, fileId),
         eq(schema.filesSchema.userId, user.id),
+        eq(schema.filesSchema.workspaceId, workspaceId),
       ),
     });
 
