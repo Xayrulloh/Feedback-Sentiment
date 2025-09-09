@@ -256,8 +256,8 @@ export class FeedbackController {
   }
 
   @Get([
-    'feedback/sentiment-summary',
-    ':workspaceId/feedback/sentiment-summary',
+    'feedbacks/sentiment-summary',
+    ':workspaceId/feedbacks/sentiment-summary',
   ])
   @ApiOperation({ summary: 'Get sentiment summary for user' })
   @ApiOkResponse({

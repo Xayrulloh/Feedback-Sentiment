@@ -372,12 +372,12 @@ export class FeedbackService {
         eq(schema.feedbacksSchema.id, schema.usersFeedbacksSchema.feedbackId),
       )
       .where(
-        and(
-          eq(schema.usersFeedbacksSchema.userId, userId),
-          workspaceId
-            ? eq(schema.usersFeedbacksSchema.workspaceId, workspaceId)
-            : undefined,
-        ),
+        workspaceId
+          ? and(
+              eq(schema.usersFeedbacksSchema.userId, userId),
+              eq(schema.usersFeedbacksSchema.workspaceId, workspaceId),
+            )
+          : eq(schema.usersFeedbacksSchema.userId, userId),
       )
       .groupBy(schema.feedbacksSchema.sentiment);
 
