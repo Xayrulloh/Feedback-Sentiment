@@ -262,10 +262,16 @@ export class FeedbackService {
 
   async feedbackFiltered(
     query: FeedbackQueryDto,
-    user: UserSchemaType,
+    userId: string,
+    workspaceId?: string,
   ): Promise<FeedbackFilteredResponseDto> {
     const { sentiment, limit, page } = query;
-    const whereConditions = [eq(schema.usersFeedbacksSchema.userId, user.id)];
+    const whereConditions = workspaceId
+      ? [
+          eq(schema.usersFeedbacksSchema.userId, userId),
+          eq(schema.usersFeedbacksSchema.workspaceId, workspaceId),
+        ]
+      : [eq(schema.usersFeedbacksSchema.userId, userId)];
 
     if (sentiment && sentiment.length > 0) {
       whereConditions.push(
