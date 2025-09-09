@@ -287,7 +287,30 @@ export class FeedbackController {
     return this.feedbackService.feedbackGrouped(req.user.id);
   }
 
-  @Get()
+  @Get(['feedback', ':workspaceId/feedback'])
+  @ApiParam({
+    name: 'workspaceId',
+    type: 'string',
+    required: false,
+  })
+  @ApiBadRequestResponse({
+    description: 'Validation failed (uuid is expected)',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: false },
+        statusCode: { type: 'number', example: 400 },
+        message: {
+          type: 'string',
+          example: 'Validation failed (uuid is expected)',
+        },
+        timestamp: {
+          type: 'string',
+          example: new Date().toISOString(),
+        },
+      },
+    },
+  })
   @ApiQuery({
     name: 'sentiment',
     required: false,
@@ -309,9 +332,14 @@ export class FeedbackController {
   async feedbackFiltered(
     @Query(new ZodValidationPipe(FeedbackQueryDto))
     query: FeedbackQueryDto,
+    @Param('workspaceId', OptionalUUIDPipe) workspaceId: string,
     @Req() req: AuthenticatedRequest,
   ) {
-    return this.feedbackService.feedbackFiltered(query, req.user);
+    return this.feedbackService.feedbackFiltered(
+      query,
+      req.user.id,
+      workspaceId,
+    );
   }
 
   @Get('report')
