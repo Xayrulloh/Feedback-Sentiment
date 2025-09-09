@@ -347,12 +347,14 @@ export class FeedbackService {
             id: string;
             content: string;
             sentiment: FeedbackSentimentEnum;
+            workspaceId: string;
           }>
         >`JSON_AGG(
           JSON_BUILD_OBJECT(
             'id', ${schema.feedbacksSchema.id}::text,
             'content', ${schema.feedbacksSchema.content},
-            'sentiment', ${schema.feedbacksSchema.sentiment}
+            'sentiment', ${schema.feedbacksSchema.sentiment},
+            'workspaceId', ${schema.usersFeedbacksSchema.workspaceId}::text
           ) ORDER BY ${schema.feedbacksSchema.createdAt} DESC
         )`,
       })
