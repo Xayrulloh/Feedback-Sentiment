@@ -78,7 +78,7 @@ import { FileService } from './file.service';
     },
   },
 })
-@Controller('files')
+@Controller('workspaces')
 export class FileController {
   constructor(private readonly fileService: FileService) {}
 
@@ -92,15 +92,21 @@ export class FileController {
   @ApiOperation({
     summary: 'Get all user files',
   })
-  async getFile(
+  async fileGet(
     @Query(new ZodValidationPipe(FileQueryDto))
     query: FileQueryDto,
     @Req() req: AuthenticatedRequest,
   ): Promise<FileResponseDto> {
-    return this.fileService.getFile(query, req.user);
+    return this.fileService.fileGet(query, req.user);
   }
 
-  @Delete(':fileId')
+  @Delete(':workspaceId/files/:fileId')
+  @ApiParam({
+    name: 'workspaceId',
+    type: 'string',
+    required: false,
+    description: 'Workspace ID (uuid)',
+  })
   @ApiParam({ name: 'fileId', type: 'string', description: 'File ID (uuid)' })
   @ApiOkResponse({
     schema: {
@@ -108,7 +114,7 @@ export class FileController {
         success: true,
         statusCode: 200,
         message: 'OK',
-        path: '/api/files/{fileId}',
+        path: '/api/workspaces/{workspaceId}/files/{fileId}',
       },
     },
   })
@@ -118,7 +124,7 @@ export class FileController {
         success: false,
         statusCode: 404,
         message: 'File not found',
-        path: '/api/files/{fileId}',
+        path: '/api/workspaces/{workspaceId}/files/{fileId}',
       },
     },
   })
@@ -144,9 +150,10 @@ export class FileController {
     summary: 'Delete a file and all its feedbacks',
   })
   async fileDelete(
+    @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
     @Param('fileId', ParseUUIDPipe) fileId: string,
     @Req() req: AuthenticatedRequest,
   ) {
-    return this.fileService.fileDelete(fileId, req.user);
+    return this.fileService.fileDelete(fileId, workspaceId, req.user);
   }
 }
