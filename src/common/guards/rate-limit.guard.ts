@@ -40,20 +40,21 @@ export class RateLimitGuard implements CanActivate {
     const { user, ip } = request;
 
     if (
+      // if user is admin
       user?.role === UserRoleEnum.ADMIN ||
-      (request.method === 'GET' &&
-        !request.path.startsWith('/api/feedback/report'))
+      // if user is getting feedback report (doesn't work for others look for '!')
+      (request.method === 'GET' && !request.path.endsWith('/feedbacks/report'))
     ) {
       return true;
     }
 
     let action: RateLimitTargetEnum = RateLimitTargetEnum.API;
 
-    if (request.path.startsWith('/api/feedback/upload')) {
+    if (request.path.endsWith('/feedbacks/upload')) {
       action = RateLimitTargetEnum.UPLOAD;
-    } else if (request.path.startsWith('/api/feedback/report')) {
+    } else if (request.path.endsWith('/feedbacks/report')) {
       action = RateLimitTargetEnum.DOWNLOAD;
-    } else if (request.path.startsWith('/api/auth/login')) {
+    } else if (request.path.includes('/auth')) {
       action = RateLimitTargetEnum.LOGIN;
     }
 
@@ -67,6 +68,7 @@ export class RateLimitGuard implements CanActivate {
 
     const userCount = userCountRaw ? parseInt(userCountRaw, 10) : 0;
     const rateLimit = rateLimitRaw ? JSON.parse(rateLimitRaw) : null;
+    console.log('🚀 ~ canActivate ~ rateLimit:', rateLimit);
 
     if (!rateLimit) {
       return true;
@@ -87,8 +89,7 @@ export class RateLimitGuard implements CanActivate {
         email: user?.email,
         action: action,
         error: `TOO_MANY_${action}` as RateLimitErrorEnum,
-        details: `User ${user?.email ?? 'Unauthorized user'} (ID: ${user?.id ?? 'N/A'}, IP: ${ip}) exceeded rate limit for ${action}. 
-              Allowed: ${rateLimit.limit}, Reached: ${userCount}.`,
+        details: `Exceed rate limit for ${request.path}. Sender/User: ${user?.id || ip}`,
         timestamp: new Date(),
       };
 
@@ -96,6 +97,8 @@ export class RateLimitGuard implements CanActivate {
         event: 'suspiciousActivity',
         data: event,
       });
+
+      console.log(event, 'event');
 
       await this.db.insert(schema.suspiciousActivitySchema).values(event);
 
