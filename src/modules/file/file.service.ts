@@ -48,11 +48,14 @@ export class FileService {
     };
   }
 
-  async fileDelete(fileId: string, user: UserSchemaType) {
+  async fileDelete(fileId: string, workspaceId: string, user: UserSchemaType) {
     const file = await this.db.query.filesSchema.findFirst({
       where: and(
         eq(schema.filesSchema.id, fileId),
         eq(schema.filesSchema.userId, user.id),
+        workspaceId
+          ? eq(schema.filesSchema.workspaceId, workspaceId)
+          : undefined,
       ),
     });
 
