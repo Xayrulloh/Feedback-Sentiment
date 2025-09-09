@@ -26,7 +26,6 @@ import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RateLimitGuard } from 'src/common/guards/rate-limit.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { UserStatusGuard } from 'src/common/guards/user-status.guard';
-import { OptionalUUIDPipe } from 'src/common/pipes/optional.pipe';
 import { createBaseResponseDto } from 'src/helpers/create-base-response.helper';
 import type { AuthenticatedRequest } from 'src/shared/types/request-with-user';
 import { UserRoleEnum } from 'src/utils/zod.schemas';
@@ -101,7 +100,7 @@ export class FileController {
     return this.fileService.getFile(query, req.user);
   }
 
-  @Delete(['files/:fileId', ':workspaceId/files/:fileId'])
+  @Delete(':workspaceId/files/:fileId')
   @ApiParam({
     name: 'workspaceId',
     type: 'string',
@@ -151,7 +150,7 @@ export class FileController {
     summary: 'Delete a file and all its feedbacks',
   })
   async fileDelete(
-    @Param('workspaceId', OptionalUUIDPipe) workspaceId: string,
+    @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
     @Param('fileId', ParseUUIDPipe) fileId: string,
     @Req() req: AuthenticatedRequest,
   ) {
