@@ -1,5 +1,5 @@
 {
-  "id": "2735943b-9608-4fff-ae31-b6f7c2269340",
+  "id": "a4e009d6-7807-4dc7-b690-20e6eb855ade",
   "prevId": "70441185-17bf-45fc-80f5-36120ed333cc",
   "version": "7",
   "dialect": "postgresql",
@@ -192,6 +192,21 @@
           "columns": [
             {
               "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "idx_files_workspace_id": {
+          "name": "idx_files_workspace_id",
+          "columns": [
+            {
+              "expression": "workspace_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -592,6 +607,12 @@
           "type": "varchar(255)",
           "primaryKey": false,
           "notNull": true
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "user_id": {
           "name": "user_id",
