@@ -60,7 +60,7 @@ import {
 } from './dto/feedback.dto';
 import { FeedbackService } from './feedback.service';
 
-@ApiTags('Feedback')
+@ApiTags('Feedbacks')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard, UserStatusGuard, RateLimitGuard)
 @Roles(UserRoleEnum.ADMIN, UserRoleEnum.USER)
