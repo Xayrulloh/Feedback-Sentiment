@@ -386,7 +386,7 @@ export class FeedbackService {
     userId: string,
     workspaceId?: string,
   ): Promise<FeedbackSummaryResponseDto> {
-    const cacheKey = `feedback:sentiment-summary:${userId}`;
+    const cacheKey = `feedback:sentiment-summary:${userId}:${workspaceId}`;
     const cached = await this.redisService.get(cacheKey);
 
     if (cached) {

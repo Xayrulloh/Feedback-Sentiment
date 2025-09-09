@@ -269,7 +269,10 @@ export class FeedbackController {
     return this.feedbackService.feedbackUpload(file, req.user, workspaceId);
   }
 
-  @Get('sentiment-summary')
+  @Get([
+    'feedbacks/sentiment-summary',
+    ':workspaceId/feedbacks/sentiment-summary',
+  ])
   @ApiOperation({ summary: 'Get sentiment summary for user' })
   @ApiOkResponse({
     type: createBaseResponseDto(
@@ -277,11 +280,17 @@ export class FeedbackController {
       'FeedbackSummaryResponseSchema',
     ),
   })
+  @ApiParam({
+    name: 'workspaceId',
+    type: 'string',
+    required: false,
+  })
   @ZodSerializerDto(FeedbackSummaryResponseDto)
   async getSentimentSummary(
     @Req() req: AuthenticatedRequest,
+    @Param('workspaceId', OptionalUUIDPipe) workspaceId?: string,
   ): Promise<FeedbackSummaryResponseDto> {
-    return this.feedbackService.feedbackSummary(req.user.id);
+    return this.feedbackService.feedbackSummary(req.user.id, workspaceId);
   }
 
   @Get(['feedbacks/grouped', ':workspaceId/feedbacks/grouped'])
