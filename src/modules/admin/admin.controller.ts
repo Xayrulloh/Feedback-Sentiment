@@ -48,9 +48,9 @@ import {
   SuspiciousActivityResponseSchema,
 } from './dto/admin.dto';
 
-@ApiTags('Admin')
+@ApiTags('Admins')
 @ApiBearerAuth()
-@Controller('admin')
+@Controller('admins')
 @Roles(UserRoleEnum.ADMIN)
 @UseGuards(JwtAuthGuard, RolesGuard, RateLimitGuard)
 @ApiForbiddenResponse({

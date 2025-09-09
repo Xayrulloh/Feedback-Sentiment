@@ -87,7 +87,8 @@ export class RateLimitGuard implements CanActivate {
         email: user?.email,
         action: action,
         error: `TOO_MANY_${action}` as RateLimitErrorEnum,
-        details: `TOO_MANY_${action} requests for limit: ${rateLimit.limit}`,
+        details: `User ${user?.email ?? 'Unauthorized user'} (ID: ${user?.id ?? 'N/A'}, IP: ${ip}) exceeded rate limit for ${action}. 
+              Allowed: ${rateLimit.limit}, Reached: ${userCount}.`,
         timestamp: new Date(),
       };
 

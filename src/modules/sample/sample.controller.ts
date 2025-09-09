@@ -24,8 +24,8 @@ import {
 } from '../feedback/dto/feedback.dto';
 import { SampleService } from './sample.service';
 
-@Controller('sample')
-@ApiTags('Sample')
+@Controller('samples')
+@ApiTags('Samples')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 @ApiUnauthorizedResponse({
@@ -53,7 +53,7 @@ import { SampleService } from './sample.service';
 export class SampleController {
   constructor(private readonly sampleService: SampleService) {}
 
-  @Get('feedback/filtered')
+  @Get('feedbacks/filtered')
   @ApiQuery({
     name: 'sentiment',
     required: false,
@@ -79,7 +79,7 @@ export class SampleController {
     return this.sampleService.sampleFeedbackFiltered(query);
   }
 
-  @Get('feedback/grouped')
+  @Get('feedbacks/grouped')
   @ApiOperation({
     summary: 'Get feedbacks grouped by sentiment',
   })
@@ -94,7 +94,7 @@ export class SampleController {
     return this.sampleService.sampleFeedbackGrouped();
   }
 
-  @Get('feedback/sentiment-summary')
+  @Get('feedbacks/sentiment-summary')
   @ApiOperation({ summary: 'Get sentiment summary for user' })
   @ApiOkResponse({
     type: createBaseResponseDto(
