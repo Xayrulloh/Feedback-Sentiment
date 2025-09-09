@@ -120,9 +120,15 @@ import { FeedbackService } from './feedback.service';
 export class FeedbackController {
   constructor(private readonly feedbackService: FeedbackService) {}
 
-  @Post('manual')
+  @Post(':workspaceId/feedbacks/manual')
   @HttpCode(HttpStatus.CREATED)
   @ApiBody({ type: FeedbackManualRequestDto })
+  @ApiParam({
+    name: 'workspaceId',
+    type: 'string',
+    required: true,
+    description: 'Workspace ID (uuid)',
+  })
   @ApiCreatedResponse({
     type: createBaseResponseDto(
       FeedbackResponseSchema,
@@ -157,15 +163,22 @@ export class FeedbackController {
   })
   @ZodSerializerDto(FeedbackResponseSchema)
   async feedbackManual(
+    @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
     @Body() body: FeedbackManualRequestDto,
     @Req() req: AuthenticatedRequest,
   ): Promise<FeedbackResponseDto> {
-    return this.feedbackService.feedbackManual(body, req.user);
+    return this.feedbackService.feedbackManual(body, req.user, workspaceId);
   }
 
-  @Post('upload')
+  @Post(':workspaceId/feedbacks/upload')
   @HttpCode(HttpStatus.CREATED)
   @ApiConsumes('multipart/form-data')
+  @ApiParam({
+    name: 'workspaceId',
+    type: 'string',
+    required: true,
+    description: 'Workspace ID (uuid)',
+  })
   @UseInterceptors(FileInterceptor('file'))
   @ApiOperation({ summary: 'Upload CSV feedback file' })
   @ApiBody({
@@ -221,6 +234,7 @@ export class FeedbackController {
   })
   @ZodSerializerDto(FeedbackResponseSchema)
   async feedbackUpload(
+    @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
     @UploadedFile() file: Express.Multer.File,
     @Req() req: AuthenticatedRequest,
   ): Promise<FeedbackResponseDto> {
@@ -252,7 +266,7 @@ export class FeedbackController {
       throw new BadRequestException('File buffer is missing');
     }
 
-    return this.feedbackService.feedbackUpload(file, req.user);
+    return this.feedbackService.feedbackUpload(file, req.user, workspaceId);
   }
 
   @Get([
@@ -279,7 +293,7 @@ export class FeedbackController {
     return this.feedbackService.feedbackSummary(req.user.id, workspaceId);
   }
 
-  @Get('grouped')
+  @Get(['feedbacks/grouped', ':workspaceId/feedbacks/grouped'])
   @ApiOperation({
     summary: 'Get feedbacks grouped by sentiment',
   })
@@ -289,14 +303,45 @@ export class FeedbackController {
       'FeedbackGroupedArrayResponseSchema',
     ),
   })
+  @ApiParam({
+    name: 'workspaceId',
+    type: 'string',
+    required: false,
+    description:
+      'Workspace ID (uuid). If omitted, returns all grouped feedbacks from all workspaces.',
+  })
   @ZodSerializerDto(FeedbackGroupedArrayResponseSchema)
   async feedbackGrouped(
     @Req() req: AuthenticatedRequest,
+    @Param('workspaceId', OptionalUUIDPipe) workspaceId?: string,
   ): Promise<FeedbackGroupedArrayResponseDto> {
-    return this.feedbackService.feedbackGrouped(req.user.id);
+    return this.feedbackService.feedbackGrouped(req.user.id, workspaceId);
   }
 
-  @Get()
+  @Get(['feedbacks', ':workspaceId/feedbacks'])
+  @ApiParam({
+    name: 'workspaceId',
+    type: 'string',
+    required: false,
+  })
+  @ApiBadRequestResponse({
+    description: 'Validation failed (uuid is expected)',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: false },
+        statusCode: { type: 'number', example: 400 },
+        message: {
+          type: 'string',
+          example: 'Validation failed (uuid is expected)',
+        },
+        timestamp: {
+          type: 'string',
+          example: new Date().toISOString(),
+        },
+      },
+    },
+  })
   @ApiQuery({
     name: 'sentiment',
     required: false,
@@ -319,23 +364,41 @@ export class FeedbackController {
     @Query(new ZodValidationPipe(FeedbackQueryDto))
     query: FeedbackQueryDto,
     @Req() req: AuthenticatedRequest,
+    @Param('workspaceId', OptionalUUIDPipe) workspaceId?: string,
   ) {
-    return this.feedbackService.feedbackFiltered(query, req.user);
+    return this.feedbackService.feedbackFiltered(
+      query,
+      req.user.id,
+      workspaceId,
+    );
   }
 
-  @Get('report')
+  @Get(['feedbacks/report', ':workspaceId/feedbacks/report'])
   @ApiOperation({ summary: 'Download either pdf or csv report file' })
   @ApiOkResponse({
     description: 'Download report file',
   })
   @ApiQuery({ name: 'format', enum: ['csv', 'pdf'], required: true })
   @ApiQuery({ name: 'type', enum: ['detailed', 'summary'], required: true })
+  @ApiParam({
+    name: 'workspaceId',
+    type: 'string',
+    required: false,
+    description:
+      'Workspace ID (uuid). If omitted, returns all feedbacks regardles of workspaces.',
+  })
   async getFeedbackReport(
     @Query() query: ReportDownloadQueryDto,
     @Req() req: AuthenticatedRequest,
     @Res() res: Response,
+    @Param('workspaceId', OptionalUUIDPipe) workspaceId?: string,
   ) {
-    return this.feedbackService.feedbackReportDownload(query, req.user, res);
+    return this.feedbackService.feedbackReportDownload(
+      query,
+      req.user,
+      res,
+      workspaceId,
+    );
   }
 
   @Get(':workspaceId/feedbacks/:id')

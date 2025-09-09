@@ -26,6 +26,7 @@ import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RateLimitGuard } from 'src/common/guards/rate-limit.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { UserStatusGuard } from 'src/common/guards/user-status.guard';
+import { OptionalUUIDPipe } from 'src/common/pipes/optional.pipe';
 import { createBaseResponseDto } from 'src/helpers/create-base-response.helper';
 import type { AuthenticatedRequest } from 'src/shared/types/request-with-user';
 import { UserRoleEnum } from 'src/utils/zod.schemas';
@@ -82,22 +83,30 @@ import { FileService } from './file.service';
 export class FileController {
   constructor(private readonly fileService: FileService) {}
 
-  @Get()
+  @Get(['file', ':workspaceId/file'])
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiParam({
+    name: 'workspaceId',
+    type: 'string',
+    required: false,
+    description:
+      'Workspace ID (uuid). If omitted, returns all grouped feedbacks from all workspaces.',
+  })
   @ApiOkResponse({
     type: createBaseResponseDto(FileResponseSchema, 'FileResponseSchema'),
   })
   @ZodSerializerDto(FileResponseSchema)
   @ApiOperation({
-    summary: 'Get all user files',
+    summary: 'Get all user files based',
   })
-  async getFile(
+  async fileGet(
     @Query(new ZodValidationPipe(FileQueryDto))
     query: FileQueryDto,
     @Req() req: AuthenticatedRequest,
+    @Param('workspaceId', OptionalUUIDPipe) workspaceId?: string,
   ): Promise<FileResponseDto> {
-    return this.fileService.getFile(query, req.user);
+    return this.fileService.fileGet(query, req.user, workspaceId);
   }
 
   @Delete(':workspaceId/files/:fileId')

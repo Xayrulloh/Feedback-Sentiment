@@ -13,25 +13,36 @@ export class FileService {
     private readonly db: NodePgDatabase<typeof schema>,
   ) {}
 
-  async getFile(
+  async fileGet(
     query: FileQueryDto,
     user: UserSchemaType,
+    workspaceId?: string,
   ): Promise<FileResponseDto> {
     const { limit, page } = query;
-
-    const whereConditions = [eq(schema.filesSchema.userId, user.id)];
 
     const totalResult = await this.db
       .select({
         count: sql<number>`count(*)`,
       })
       .from(schema.filesSchema)
-      .where(and(...whereConditions));
+      .where(
+        workspaceId
+          ? and(
+              eq(schema.filesSchema.userId, user.id),
+              eq(schema.filesSchema.workspaceId, workspaceId),
+            )
+          : eq(schema.filesSchema.userId, user.id),
+      );
 
     const total = totalResult[0]?.count ?? 0;
 
     const userFiles = await this.db.query.filesSchema.findMany({
-      where: and(...whereConditions),
+      where: workspaceId
+        ? and(
+            eq(schema.filesSchema.workspaceId, workspaceId),
+            eq(schema.filesSchema.userId, user.id),
+          )
+        : eq(schema.filesSchema.userId, user.id),
       limit,
       offset: (page - 1) * limit,
       orderBy: desc(schema.filesSchema.createdAt),
