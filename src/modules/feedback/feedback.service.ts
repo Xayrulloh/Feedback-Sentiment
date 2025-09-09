@@ -347,8 +347,11 @@ export class FeedbackService {
     return grouped;
   }
 
-  async feedbackSummary(userId: string): Promise<FeedbackSummaryResponseDto> {
-    const cacheKey = `feedback:sentiment-summary:${userId}`;
+  async feedbackSummary(
+    userId: string,
+    workspaceId?: string,
+  ): Promise<FeedbackSummaryResponseDto> {
+    const cacheKey = `feedback:sentiment-summary:${userId}:${workspaceId}`;
     const cached = await this.redisService.get(cacheKey);
 
     if (cached) {
@@ -368,7 +371,14 @@ export class FeedbackService {
         schema.feedbacksSchema,
         eq(schema.feedbacksSchema.id, schema.usersFeedbacksSchema.feedbackId),
       )
-      .where(eq(schema.usersFeedbacksSchema.userId, userId))
+      .where(
+        and(
+          eq(schema.usersFeedbacksSchema.userId, userId),
+          workspaceId
+            ? eq(schema.usersFeedbacksSchema.workspaceId, workspaceId)
+            : undefined,
+        ),
+      )
       .groupBy(schema.feedbacksSchema.sentiment);
 
     await this.redisService.setWithExpiry(
