@@ -7,15 +7,11 @@ import {
   StreamableFile,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { validate, type ZodDto, ZodSerializationException } from 'nestjs-zod';
+import { validate, type ZodDto } from 'nestjs-zod';
 import { map, type Observable } from 'rxjs';
-import type { ZodError, ZodSchema } from 'zod';
+import { ZodError, ZodSchema } from 'zod';
 
 const ZodSerializerDtoOptions = 'ZOD_SERIALIZER_DTO_OPTIONS' as const;
-
-const createZodSerializationException = (error: ZodError) => {
-  return new ZodSerializationException(error);
-};
 
 @Injectable()
 export class ZodSerializerInterceptorCustom implements NestInterceptor {
@@ -30,11 +26,12 @@ export class ZodSerializerInterceptorCustom implements NestInterceptor {
           return res;
         }
 
-        if (typeof res !== 'object' || res instanceof StreamableFile) {
+        if (res instanceof StreamableFile) {
           return res;
         }
-
-        return validate(res, responseSchema, createZodSerializationException);
+        return validate(res, responseSchema, (error: ZodError) => {
+          throw error;
+        });
       }),
     );
   }

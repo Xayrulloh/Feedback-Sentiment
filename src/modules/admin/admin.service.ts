@@ -4,7 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { DrizzleAsyncProvider } from 'src/database/drizzle.provider';
 import * as schema from 'src/database/schema';
@@ -100,6 +100,8 @@ export class AdminService {
   }
 
   async adminGetSuspiciousActivities(): Promise<SuspiciousActivityResponseDto> {
-    return this.db.query.suspiciousActivitySchema.findMany();
+    return this.db.query.suspiciousActivitySchema.findMany({
+      orderBy: desc(schema.suspiciousActivitySchema.createdAt),
+    });
   }
 }

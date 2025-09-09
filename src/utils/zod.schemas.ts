@@ -63,16 +63,32 @@ const FeedbackSchema = z
     summary: z.string().describe('Summary of the feedback'),
     userId: z.string().uuid().describe('User ID'),
     fileId: z.string().uuid().nullable().describe('File ID'),
+    workspaceId: z.string().uuid().nullable().describe('Workspace Id'),
   })
   .merge(BaseSchema);
 
 type FeedbackSchemaType = z.infer<typeof FeedbackSchema>;
+
+// workspace
+const WorkspaceSchema = z
+  .object({
+    name: z.string().min(1).max(255).describe('Workspace name'),
+    userId: z.string().uuid().describe('User who owns the workspace'),
+  })
+  .merge(BaseSchema)
+  .describe('Workspace schema');
+
+type WorkspaceSchemaType = z.infer<typeof WorkspaceSchema>;
 
 // file
 const FileSchema = z
   .object({
     id: z.string().uuid().describe('File ID'),
     userId: z.string().uuid().describe('User who owns the files'),
+    workspaceId: z
+      .string()
+      .uuid()
+      .describe('Workspace id in which file is stored'),
     name: z.string().min(1).describe('Original file name'),
     mimeType: z
       .string()
@@ -211,7 +227,7 @@ const PaginationQuerySchema = z
     limit: z.coerce.number().int().min(1).max(100).default(20),
     page: z.coerce.number().int().min(1).default(1),
   })
-  .describe('pagination query schema');
+  .describe('Pagination query schema');
 
 export {
   PaginationQuerySchema,
@@ -240,4 +256,6 @@ export {
   RateLimitEventSchema,
   RateLimitErrorEnum,
   type RateLimitEventSchemaType,
+  WorkspaceSchema,
+  type WorkspaceSchemaType,
 };

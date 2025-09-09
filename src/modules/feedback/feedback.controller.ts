@@ -28,6 +28,7 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiParam,
   ApiQuery,
   ApiTags,
   ApiUnauthorizedResponse,
@@ -39,6 +40,7 @@ import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RateLimitGuard } from 'src/common/guards/rate-limit.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
 import { UserStatusGuard } from 'src/common/guards/user-status.guard';
+import { OptionalUUIDPipe } from 'src/common/pipes/optional.pipe';
 import { createBaseResponseDto } from 'src/helpers/create-base-response.helper';
 import type { AuthenticatedRequest } from 'src/shared/types/request-with-user';
 import { UserRoleEnum } from 'src/utils/zod.schemas';
@@ -58,7 +60,7 @@ import {
 } from './dto/feedback.dto';
 import { FeedbackService } from './feedback.service';
 
-@ApiTags('Feedback')
+@ApiTags('Feedbacks')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard, UserStatusGuard, RateLimitGuard)
 @Roles(UserRoleEnum.ADMIN, UserRoleEnum.USER)
@@ -114,13 +116,19 @@ import { FeedbackService } from './feedback.service';
     },
   },
 })
-@Controller('feedback')
+@Controller('workspaces')
 export class FeedbackController {
   constructor(private readonly feedbackService: FeedbackService) {}
 
-  @Post('manual')
+  @Post(':workspaceId/feedbacks/manual')
   @HttpCode(HttpStatus.CREATED)
   @ApiBody({ type: FeedbackManualRequestDto })
+  @ApiParam({
+    name: 'workspaceId',
+    type: 'string',
+    required: true,
+    description: 'Workspace ID (uuid)',
+  })
   @ApiCreatedResponse({
     type: createBaseResponseDto(
       FeedbackResponseSchema,
@@ -155,15 +163,22 @@ export class FeedbackController {
   })
   @ZodSerializerDto(FeedbackResponseSchema)
   async feedbackManual(
+    @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
     @Body() body: FeedbackManualRequestDto,
     @Req() req: AuthenticatedRequest,
   ): Promise<FeedbackResponseDto> {
-    return this.feedbackService.feedbackManual(body, req.user);
+    return this.feedbackService.feedbackManual(body, req.user, workspaceId);
   }
 
-  @Post('upload')
+  @Post(':workspaceId/feedbacks/upload')
   @HttpCode(HttpStatus.CREATED)
   @ApiConsumes('multipart/form-data')
+  @ApiParam({
+    name: 'workspaceId',
+    type: 'string',
+    required: true,
+    description: 'Workspace ID (uuid)',
+  })
   @UseInterceptors(FileInterceptor('file'))
   @ApiOperation({ summary: 'Upload CSV feedback file' })
   @ApiBody({
@@ -219,6 +234,7 @@ export class FeedbackController {
   })
   @ZodSerializerDto(FeedbackResponseSchema)
   async feedbackUpload(
+    @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
     @UploadedFile() file: Express.Multer.File,
     @Req() req: AuthenticatedRequest,
   ): Promise<FeedbackResponseDto> {
@@ -250,10 +266,13 @@ export class FeedbackController {
       throw new BadRequestException('File buffer is missing');
     }
 
-    return this.feedbackService.feedbackUpload(file, req.user);
+    return this.feedbackService.feedbackUpload(file, req.user, workspaceId);
   }
 
-  @Get('sentiment-summary')
+  @Get([
+    'feedbacks/sentiment-summary',
+    ':workspaceId/feedbacks/sentiment-summary',
+  ])
   @ApiOperation({ summary: 'Get sentiment summary for user' })
   @ApiOkResponse({
     type: createBaseResponseDto(
@@ -261,14 +280,20 @@ export class FeedbackController {
       'FeedbackSummaryResponseSchema',
     ),
   })
+  @ApiParam({
+    name: 'workspaceId',
+    type: 'string',
+    required: false,
+  })
   @ZodSerializerDto(FeedbackSummaryResponseDto)
   async getSentimentSummary(
     @Req() req: AuthenticatedRequest,
+    @Param('workspaceId', OptionalUUIDPipe) workspaceId?: string,
   ): Promise<FeedbackSummaryResponseDto> {
-    return this.feedbackService.feedbackSummary(req.user.id);
+    return this.feedbackService.feedbackSummary(req.user.id, workspaceId);
   }
 
-  @Get('grouped')
+  @Get(['feedbacks/grouped', ':workspaceId/feedbacks/grouped'])
   @ApiOperation({
     summary: 'Get feedbacks grouped by sentiment',
   })
@@ -278,14 +303,45 @@ export class FeedbackController {
       'FeedbackGroupedArrayResponseSchema',
     ),
   })
+  @ApiParam({
+    name: 'workspaceId',
+    type: 'string',
+    required: false,
+    description:
+      'Workspace ID (uuid). If omitted, returns all grouped feedbacks from all workspaces.',
+  })
   @ZodSerializerDto(FeedbackGroupedArrayResponseSchema)
   async feedbackGrouped(
     @Req() req: AuthenticatedRequest,
+    @Param('workspaceId', OptionalUUIDPipe) workspaceId?: string,
   ): Promise<FeedbackGroupedArrayResponseDto> {
-    return this.feedbackService.feedbackGrouped(req.user.id);
+    return this.feedbackService.feedbackGrouped(req.user.id, workspaceId);
   }
 
-  @Get()
+  @Get(['feedbacks', ':workspaceId/feedbacks'])
+  @ApiParam({
+    name: 'workspaceId',
+    type: 'string',
+    required: false,
+  })
+  @ApiBadRequestResponse({
+    description: 'Validation failed (uuid is expected)',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: false },
+        statusCode: { type: 'number', example: 400 },
+        message: {
+          type: 'string',
+          example: 'Validation failed (uuid is expected)',
+        },
+        timestamp: {
+          type: 'string',
+          example: new Date().toISOString(),
+        },
+      },
+    },
+  })
   @ApiQuery({
     name: 'sentiment',
     required: false,
@@ -308,26 +364,44 @@ export class FeedbackController {
     @Query(new ZodValidationPipe(FeedbackQueryDto))
     query: FeedbackQueryDto,
     @Req() req: AuthenticatedRequest,
+    @Param('workspaceId', OptionalUUIDPipe) workspaceId?: string,
   ) {
-    return this.feedbackService.feedbackFiltered(query, req.user);
+    return this.feedbackService.feedbackFiltered(
+      query,
+      req.user.id,
+      workspaceId,
+    );
   }
 
-  @Get('report')
+  @Get(['feedbacks/report', ':workspaceId/feedbacks/report'])
   @ApiOperation({ summary: 'Download either pdf or csv report file' })
   @ApiOkResponse({
     description: 'Download report file',
   })
   @ApiQuery({ name: 'format', enum: ['csv', 'pdf'], required: true })
   @ApiQuery({ name: 'type', enum: ['detailed', 'summary'], required: true })
+  @ApiParam({
+    name: 'workspaceId',
+    type: 'string',
+    required: false,
+    description:
+      'Workspace ID (uuid). If omitted, returns all feedbacks regardles of workspaces.',
+  })
   async getFeedbackReport(
     @Query() query: ReportDownloadQueryDto,
     @Req() req: AuthenticatedRequest,
     @Res() res: Response,
+    @Param('workspaceId', OptionalUUIDPipe) workspaceId?: string,
   ) {
-    return this.feedbackService.feedbackReportDownload(query, req.user, res);
+    return this.feedbackService.feedbackReportDownload(
+      query,
+      req.user,
+      res,
+      workspaceId,
+    );
   }
 
-  @Get(':id')
+  @Get(':workspaceId/feedbacks/:id')
   @ApiBadRequestResponse({
     description: 'Validation failed (uuid is expected)',
     schema: {
@@ -358,8 +432,15 @@ export class FeedbackController {
       },
     },
   })
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Fetch single feedback by its id' })
+  @ApiParam({
+    name: 'workspaceId',
+    type: 'string',
+    description: 'Workspace ID (uuid)',
+  })
+  @ApiParam({ name: 'id', type: 'string', description: 'Feedback ID (uuid)' })
+  @ApiOperation({
+    summary: 'Fetch single feedback by its id from one workspace or all',
+  })
   @ApiOkResponse({
     type: createBaseResponseDto(
       FeedbackSingleResponseSchema,
@@ -368,9 +449,10 @@ export class FeedbackController {
   })
   @ZodSerializerDto(FeedbackSingleResponseSchema)
   async getFeedbackById(
+    @Param('id', ParseUUIDPipe) workspaceId: string,
     @Param('id', ParseUUIDPipe) id: string,
     @Req() req: AuthenticatedRequest,
   ) {
-    return this.feedbackService.getFeedbackById(id, req.user.id);
+    return this.feedbackService.getFeedbackById(id, workspaceId, req.user.id);
   }
 }

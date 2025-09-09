@@ -65,35 +65,64 @@ export const usersSchema = pgTable('users', {
   ...baseSchema,
 });
 
-export const filesSchema = pgTable('files', {
-  userId: uuid('user_id').notNull(),
-  name: text('name').notNull(),
-  mimeType: varchar('mime_type', { length: 255 }).notNull(),
-  size: bigint('size', { mode: 'number' }).notNull(),
-  rowCount: integer('row_count'),
-  extension: varchar('extension', { length: 50 }).notNull(),
+export const workspacesSchema = pgTable('workspaces', {
+  name: varchar('name', { length: 255 }).notNull(),
+  userId: uuid('user_id')
+    .notNull()
+    .references(() => usersSchema.id, {
+      onDelete: 'cascade',
+    }),
   ...baseSchema,
-}, (table) => [
-  index('idx_files_user_id').on(table.userId),
-]);
+});
 
-export const feedbacksSchema = pgTable('feedbacks', {
-  contentHash: varchar('content_hash', { length: 64 }).notNull().unique(),
-  content: text('content').notNull(),
-  sentiment: DrizzleFeedbackSentimentEnum('sentiment').notNull(),
-  confidence: integer('confidence').notNull(),
-  summary: text('summary').notNull(),
-  ...baseSchema,
-},  (table) => [
+export const filesSchema = pgTable(
+  'files',
+  {
+    userId: uuid('user_id').notNull(),
+    workspaceId: uuid('workspace_id')
+      .notNull()
+      .references(() => workspacesSchema.id, {
+        onDelete: 'cascade',
+      }),
+    name: text('name').notNull(),
+    mimeType: varchar('mime_type', { length: 255 }).notNull(),
+    size: bigint('size', { mode: 'number' }).notNull(),
+    rowCount: integer('row_count'),
+    extension: varchar('extension', { length: 50 }).notNull(),
+    ...baseSchema,
+  },
+  (table) => [
+    index('idx_files_user_id').on(table.userId),
+    index('idx_files_workspace_id').on(table.workspaceId),
+  ],
+);
+
+export const feedbacksSchema = pgTable(
+  'feedbacks',
+  {
+    contentHash: varchar('content_hash', { length: 64 }).notNull().unique(),
+    content: text('content').notNull(),
+    sentiment: DrizzleFeedbackSentimentEnum('sentiment').notNull(),
+    confidence: integer('confidence').notNull(),
+    summary: text('summary').notNull(),
+    ...baseSchema,
+  },
+  (table) => [
     index('idx_feedbacks_sentiment').on(table.sentiment),
-    index('idx_feedbacks_summary').on(table.summary)
-  ],);
+    index('idx_feedbacks_summary').on(table.summary),
+  ],
+);
 
 export const usersFeedbacksSchema = pgTable(
   'users_feedbacks',
   {
     userId: uuid('user_id').notNull(),
     feedbackId: uuid('feedback_id').notNull(),
+    workspaceId: uuid('workspace_id')
+      .references(() => workspacesSchema.id, {
+        onDelete: 'cascade',
+      })
+      .notNull(),
     fileId: uuid('file_id').references(() => filesSchema.id, {
       onDelete: 'cascade',
     }),
@@ -103,6 +132,7 @@ export const usersFeedbacksSchema = pgTable(
     index('idx_users_feedbacks_user_id').on(table.userId),
     index('idx_users_feedbacks_feedback_id').on(table.feedbackId),
     index('idx_users_feedbacks_file_id').on(table.fileId),
+    index('idx_users_feedbacks_workspace_id').on(table.workspaceId),
   ],
 );
 
@@ -160,6 +190,28 @@ export const usersFeedbacksRelations = relations(
       fields: [usersFeedbacksSchema.fileId],
       references: [filesSchema.id],
       relationName: 'users_feedbacks_file_id_files_id_fk',
+    }),
+    workspace: one(workspacesSchema, {
+      fields: [usersFeedbacksSchema.workspaceId],
+      references: [workspacesSchema.id],
+      relationName: 'users_feedbacks_workspace_id_workspaces_id_fk',
+    }),
+  }),
+);
+
+export const workspacesRelations = relations(
+  workspacesSchema,
+  ({ many, one }) => ({
+    feedbacks: many(usersFeedbacksSchema, {
+      relationName: 'users_feedbacks_workspace_id_workspaces_id_fk',
+    }),
+    user: one(usersSchema, {
+      fields: [workspacesSchema.userId],
+      references: [usersSchema.id],
+      relationName: 'workspaces_user_id_users_id_fk',
+    }),
+    files: many(filesSchema, {
+      relationName: 'files_workspace_id_workspaces_id_fk',
     }),
   }),
 );

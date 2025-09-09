@@ -44,7 +44,7 @@ export class AuthService {
       })
       .returning();
 
-    return this.generateTokens(newUser);
+    return this.generateTokens<AuthUserResponseDto>(newUser);
   }
 
   async loginUser(input: AuthCredentialsDto): Promise<AuthUserResponseDto> {
@@ -59,7 +59,7 @@ export class AuthService {
     if (!isValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
-    return this.generateTokens(user);
+    return this.generateTokens<AuthUserResponseDto>(user);
   }
 
   async registerAdmin(
@@ -82,7 +82,7 @@ export class AuthService {
       })
       .returning();
 
-    return this.generateTokens(newAdmin);
+    return this.generateTokens<AuthAdminResponseDto>(newAdmin);
   }
 
   async loginAdmin(input: AuthCredentialsDto): Promise<AuthAdminResponseDto> {
@@ -98,7 +98,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid admin credentials');
     }
 
-    return this.generateTokens(user);
+    return this.generateTokens<AuthAdminResponseDto>(user);
   }
 
   private async generateTokens<
