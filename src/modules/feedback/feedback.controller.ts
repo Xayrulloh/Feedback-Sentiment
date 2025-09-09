@@ -274,7 +274,7 @@ export class FeedbackController {
   @ZodSerializerDto(FeedbackSummaryResponseDto)
   async getSentimentSummary(
     @Req() req: AuthenticatedRequest,
-    @Param('workspaceId', OptionalUUIDPipe) workspaceId: string,
+    @Param('workspaceId', OptionalUUIDPipe) workspaceId?: string,
   ): Promise<FeedbackSummaryResponseDto> {
     return this.feedbackService.feedbackSummary(req.user.id, workspaceId);
   }
