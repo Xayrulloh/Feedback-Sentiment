@@ -13,10 +13,10 @@ export class MetricsMiddleware implements NestMiddleware {
       return next();
     }
 
-    this.monitoringService.incrementApiUsage();
-
     if (path.includes('/upload')) {
       this.monitoringService.incrementUploads();
+    } else {
+      this.monitoringService.incrementApiUsage();
     }
 
     return next();
