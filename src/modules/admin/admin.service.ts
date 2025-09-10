@@ -4,7 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { desc, eq } from 'drizzle-orm';
+import { desc, eq, sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { DrizzleAsyncProvider } from 'src/database/drizzle.provider';
 import * as schema from 'src/database/schema';
@@ -16,6 +16,7 @@ import { RedisService } from '../redis/redis.service';
 import type {
   RateLimitGetDto,
   RateLimitUpsertDto,
+  SuspiciousActivityQueryDto,
   SuspiciousActivityResponseDto,
 } from './dto/admin.dto';
 
@@ -99,9 +100,31 @@ export class AdminService {
     return this.db.query.rateLimitsSchema.findMany();
   }
 
-  async adminGetSuspiciousActivities(): Promise<SuspiciousActivityResponseDto> {
-    return this.db.query.suspiciousActivitySchema.findMany({
+  async adminGetSuspiciousActivities(
+    query: SuspiciousActivityQueryDto,
+  ): Promise<SuspiciousActivityResponseDto> {
+    const { limit, page } = query;
+
+    const totalResult = await this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(schema.suspiciousActivitySchema);
+
+    const total = totalResult[0]?.count ?? 0;
+
+    const activities = await this.db.query.suspiciousActivitySchema.findMany({
+      limit,
+      offset: (page - 1) * limit,
       orderBy: desc(schema.suspiciousActivitySchema.createdAt),
     });
+
+    return {
+      activities,
+      pagination: {
+        limit,
+        page,
+        total: Number(total),
+        pages: Math.ceil(total / limit),
+      },
+    };
   }
 }
