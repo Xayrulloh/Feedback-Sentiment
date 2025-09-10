@@ -449,7 +449,7 @@ export class FeedbackController {
   })
   @ZodSerializerDto(FeedbackSingleResponseSchema)
   async getFeedbackById(
-    @Param('id', ParseUUIDPipe) workspaceId: string,
+    @Param('workspaceId', ParseUUIDPipe) workspaceId: string,
     @Param('id', ParseUUIDPipe) id: string,
     @Req() req: AuthenticatedRequest,
   ) {
