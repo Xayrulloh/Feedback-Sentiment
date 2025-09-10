@@ -42,7 +42,8 @@ export class WorkspaceService {
       .select({
         count: sql<number>`count(*)`,
       })
-      .from(schema.workspacesSchema);
+      .from(schema.workspacesSchema)
+      .where(eq(schema.workspacesSchema.userId, userId));
 
     const total = totalResult[0]?.count ?? 0;
 
