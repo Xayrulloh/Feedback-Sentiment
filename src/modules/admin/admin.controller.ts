@@ -8,6 +8,7 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -20,10 +21,11 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiParam,
+  ApiQuery,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { ZodSerializerDto } from 'nestjs-zod';
+import { ZodSerializerDto, ZodValidationPipe } from 'nestjs-zod';
 import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
 import { RateLimitGuard } from 'src/common/guards/rate-limit.guard';
 import { RolesGuard } from 'src/common/guards/roles.guard';
@@ -44,6 +46,7 @@ import {
   RateLimitGetDto,
   RateLimitGetSchema,
   RateLimitUpsertDto,
+  SuspiciousActivityQueryDto,
   SuspiciousActivityResponseDto,
   SuspiciousActivityResponseSchema,
 } from './dto/admin.dto';
@@ -260,9 +263,14 @@ export class AdminController {
       'SuspiciousActivityResponseSchema',
     ),
   })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiOperation({ summary: 'Get suspicious activities' })
   @ZodSerializerDto(SuspiciousActivityResponseSchema)
-  async adminGetSuspiciousActivities(): Promise<SuspiciousActivityResponseDto> {
-    return this.adminService.adminGetSuspiciousActivities();
+  async adminGetSuspiciousActivities(
+    @Query(new ZodValidationPipe(SuspiciousActivityQueryDto))
+    query: SuspiciousActivityQueryDto,
+  ): Promise<SuspiciousActivityResponseDto> {
+    return this.adminService.adminGetSuspiciousActivities(query);
   }
 }

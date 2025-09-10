@@ -91,13 +91,17 @@ const FeedbackGroupedResponseSchema = z
     summary: z.string().describe('Summary of grouped feedback items'),
     count: z.number().describe('Number of feedback items in this group'),
     items: z
-      .array(
+      .object({
+        workspaceId: z.string().uuid().describe('Workspace ID'),
+      })
+      .merge(
         FeedbackSchema.pick({
           id: true,
           content: true,
           sentiment: true,
         }),
       )
+      .array()
       .describe('Array of feedback items in this group'),
   })
   .describe('Grouped feedback response');

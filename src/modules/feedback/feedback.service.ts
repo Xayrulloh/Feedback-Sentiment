@@ -353,10 +353,10 @@ export class FeedbackService {
           }>
         >`JSON_AGG(
           JSON_BUILD_OBJECT(
-            'id', ${schema.usersFeedbacksSchema.id}::text,
+            'id', ${schema.usersFeedbacksSchema.id},
             'content', ${schema.feedbacksSchema.content},
             'sentiment', ${schema.feedbacksSchema.sentiment},
-            'workspaceId', ${schema.usersFeedbacksSchema.workspaceId}::text
+            'workspaceId', ${schema.usersFeedbacksSchema.workspaceId}
           ) ORDER BY ${schema.feedbacksSchema.createdAt} DESC
         )`,
       })
@@ -374,7 +374,7 @@ export class FeedbackService {
           : eq(schema.usersFeedbacksSchema.userId, userId),
       )
       .groupBy(schema.feedbacksSchema.summary)
-      .orderBy(desc(count(schema.feedbacksSchema.id)))
+      .orderBy(desc(count(schema.usersFeedbacksSchema.id)))
       .limit(20);
 
     await this.redisService.setWithExpiry(
