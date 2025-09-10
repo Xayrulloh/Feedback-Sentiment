@@ -341,7 +341,7 @@ export class FeedbackService {
     const grouped = await this.db
       .select({
         summary: schema.feedbacksSchema.summary,
-        count: count(schema.feedbacksSchema.id),
+        count: count(schema.usersFeedbacksSchema.id),
         items: sql<
           Array<{
             id: string;
@@ -351,7 +351,7 @@ export class FeedbackService {
           }>
         >`JSON_AGG(
           JSON_BUILD_OBJECT(
-            'id', ${schema.feedbacksSchema.id}::text,
+            'id', ${schema.usersFeedbacksSchema.id}::text,
             'content', ${schema.feedbacksSchema.content},
             'sentiment', ${schema.feedbacksSchema.sentiment},
             'workspaceId', ${schema.usersFeedbacksSchema.workspaceId}::text
