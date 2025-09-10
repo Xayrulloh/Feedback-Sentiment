@@ -9,12 +9,13 @@ export class MetricsMiddleware implements NestMiddleware {
   use(req: Request, _res: Response, next: () => void) {
     const path = req.url.split('?')[0];
 
-    if (!path.startsWith(GLOBAL_PREFIX)) {
+    if (!path.startsWith(`/${GLOBAL_PREFIX}`)) {
       return next();
     }
 
-    if (path.endsWith('/upload')) {
+    if (/\/feedbacks\/upload\/?$/.test(path)) {
       this.monitoringService.incrementUploads();
+      this.monitoringService.incrementApiUsage();
     } else {
       this.monitoringService.incrementApiUsage();
     }
