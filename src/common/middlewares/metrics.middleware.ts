@@ -1,5 +1,4 @@
 import { Injectable, type NestMiddleware } from '@nestjs/common';
-import { normalizeEndpoint } from 'src/helpers/normalize-endpoint.helper';
 import { MonitoringService } from 'src/modules/monitoring/monitoring.service';
 import { GLOBAL_PREFIX } from 'src/utils/constants';
 
@@ -14,14 +13,9 @@ export class MetricsMiddleware implements NestMiddleware {
       return next();
     }
 
-    const normalizedPath = normalizeEndpoint(path);
+    this.monitoringService.incrementApiUsage();
 
-    this.monitoringService.incrementApiUsage({
-      method: req.method,
-      endpoint: normalizedPath,
-    });
-
-    if (path.startsWith('/api/feedback/upload')) {
+    if (path.includes('/upload')) {
       this.monitoringService.incrementUploads();
     }
 
