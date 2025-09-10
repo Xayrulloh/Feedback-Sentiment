@@ -331,7 +331,9 @@ export class FeedbackService {
     userId: string,
     workspaceId?: string,
   ): Promise<FeedbackGroupedArrayResponseDto> {
-    const cacheKey = `feedback:grouped:${userId}:${workspaceId}`;
+    const cacheKey = workspaceId
+      ? `feedback:grouped:${userId}:${workspaceId}`
+      : `feedback:grouped:${userId}`;
     const cached = await this.redisService.get(cacheKey);
 
     if (cached) {
@@ -388,7 +390,9 @@ export class FeedbackService {
     userId: string,
     workspaceId?: string,
   ): Promise<FeedbackSummaryResponseDto> {
-    const cacheKey = `feedback:sentiment-summary:${userId}:${workspaceId}`;
+    const cacheKey = workspaceId
+      ? `feedback:sentiment-summary:${userId}:${workspaceId}`
+      : `feedback:sentiment-summary:${userId}`;
     const cached = await this.redisService.get(cacheKey);
 
     if (cached) {
@@ -468,7 +472,9 @@ export class FeedbackService {
     workspaceId?: string,
   ) {
     const { format, type } = query;
-    const cacheKey = `feedback:report:${user.id}:${workspaceId}:${type}:${format}`;
+    const identifier = workspaceId ? `${user.id}:${workspaceId}` : `${user.id}`;
+    const cacheKey = `feedback:report:${identifier}:${type}:${format}`;
+
     const cached = await this.redisService.get(cacheKey);
 
     if (cached) {
