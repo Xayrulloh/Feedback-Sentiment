@@ -30,25 +30,13 @@ const RateLimitGetSchema = RateLimitSchema.array().describe(
 
 const MetricsSchema = z
   .object({
-    uploads: z.number().int().nonnegative().describe('Total uploads count'),
-    apiUsage: z
-      .array(
-        z.object({
-          method: z.string(),
-          endpoint: z.string(),
-          count: z.number().int().nonnegative(),
-        }),
-      )
-      .describe('API usage per endpoint'),
+    uploads: z.number().int().nonnegative().describe('Daily uploads count'),
+    apiUsage: z.number().int().nonnegative().describe('Daily api usage count'),
     errorRates: z
-      .array(
-        z.object({
-          method: z.string(),
-          endpoint: z.string(),
-          count: z.number().int().nonnegative(),
-        }),
-      )
-      .describe('Error counts per endpoint'),
+      .number()
+      .int()
+      .nonnegative()
+      .describe('Daily error rate count'),
   })
   .describe('App metrics data');
 

@@ -31,27 +31,22 @@ export class PrometheusService {
   }
 
   async getApiUsage() {
-    const result = await this.query(
-      'sum(increase(api_requests_total[1d])) by (method, endpoint)',
-    );
+    const result = await this.query('sum(increase(api_requests_total[1d]))');
 
-    return result.map((r) => ({
-      method: r.metric.method,
-      endpoint: r.metric.endpoint,
-      count: Math.round(Number(r.value[1])) + 1,
-    }));
+    if (!result.length) {
+      return 0;
+    }
+
+    return Math.round(Number(result[0].value[1]));
   }
 
   async getErrorRates() {
-    const result = await this.query(
-      'sum(increase(api_errors_total[1d])) by (method, endpoint, error_message)',
-    );
+    const result = await this.query('sum(increase(api_errors_total[1d]))');
 
-    return result.map((r) => ({
-      method: r.metric.method,
-      endpoint: r.metric.endpoint,
-      errorMessage: r.metric.error_message,
-      count: Math.round(Number(r.value[1])) + 1,
-    }));
+    if (!result.length) {
+      return 0;
+    }
+
+    return Math.round(Number(result[0].value[1]));
   }
 }
