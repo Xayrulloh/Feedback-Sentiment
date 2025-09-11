@@ -1,6 +1,8 @@
 import { createZodDto } from 'nestjs-zod';
 import {
   BaseSchema,
+  PaginationQuerySchema,
+  PaginationResponseSchema,
   RateLimitErrorEnum,
   RateLimitSchema,
   RateLimitTargetEnum,
@@ -28,25 +30,13 @@ const RateLimitGetSchema = RateLimitSchema.array().describe(
 
 const MetricsSchema = z
   .object({
-    uploads: z.number().int().nonnegative().describe('Total uploads count'),
-    apiUsage: z
-      .array(
-        z.object({
-          method: z.string(),
-          endpoint: z.string(),
-          count: z.number().int().nonnegative(),
-        }),
-      )
-      .describe('API usage per endpoint'),
+    uploads: z.number().int().nonnegative().describe('Daily uploads count'),
+    apiUsage: z.number().int().nonnegative().describe('Daily api usage count'),
     errorRates: z
-      .array(
-        z.object({
-          method: z.string(),
-          endpoint: z.string(),
-          count: z.number().int().nonnegative(),
-        }),
-      )
-      .describe('Error counts per endpoint'),
+      .number()
+      .int()
+      .nonnegative()
+      .describe('Daily error rate count'),
   })
   .describe('App metrics data');
 
@@ -54,26 +44,33 @@ const MetricsSchema = z
 
 const SuspiciousActivityResponseSchema = z
   .object({
-    userId: z.string().uuid().nullable(),
-    email: z.string().email().nullable(),
-    ip: z.string().max(45).nullable(),
-    action: z.enum([
-      RateLimitTargetEnum.API,
-      RateLimitTargetEnum.DOWNLOAD,
-      RateLimitTargetEnum.LOGIN,
-      RateLimitTargetEnum.UPLOAD,
-    ]),
-    error: z.enum([
-      RateLimitErrorEnum.TOO_MANY_API,
-      RateLimitErrorEnum.TOO_MANY_DOWNLOAD,
-      RateLimitErrorEnum.TOO_MANY_LOGIN,
-      RateLimitErrorEnum.TOO_MANY_UPLOAD,
-    ]),
-    details: z.string().nullable(),
+    activities: z
+      .object({
+        userId: z.string().uuid().nullable(),
+        email: z.string().email().nullable(),
+        ip: z.string().max(45).nullable(),
+        action: z.enum([
+          RateLimitTargetEnum.API,
+          RateLimitTargetEnum.DOWNLOAD,
+          RateLimitTargetEnum.LOGIN,
+          RateLimitTargetEnum.UPLOAD,
+        ]),
+        error: z.enum([
+          RateLimitErrorEnum.TOO_MANY_API,
+          RateLimitErrorEnum.TOO_MANY_DOWNLOAD,
+          RateLimitErrorEnum.TOO_MANY_LOGIN,
+          RateLimitErrorEnum.TOO_MANY_UPLOAD,
+        ]),
+        details: z.string().nullable(),
+      })
+      .merge(BaseSchema)
+      .array()
+      .describe('List of suspicious activities'),
+    pagination: PaginationResponseSchema.describe('Pagination metadata'),
   })
-  .merge(BaseSchema)
-  .array()
-  .describe('List of suspicious activities');
+  .describe('Paginated suspicious activities response data');
+
+const SuspiciousActivityQuerySchema = PaginationQuerySchema;
 
 // DTOs
 class AdminDisableSuspendResponseDto extends createZodDto(
@@ -84,6 +81,9 @@ class RateLimitGetDto extends createZodDto(RateLimitGetSchema) {}
 class MetricsDto extends createZodDto(MetricsSchema) {}
 class SuspiciousActivityResponseDto extends createZodDto(
   SuspiciousActivityResponseSchema,
+) {}
+class SuspiciousActivityQueryDto extends createZodDto(
+  SuspiciousActivityQuerySchema,
 ) {}
 
 export {
@@ -97,4 +97,6 @@ export {
   MetricsDto,
   SuspiciousActivityResponseSchema,
   SuspiciousActivityResponseDto,
+  SuspiciousActivityQuerySchema,
+  SuspiciousActivityQueryDto,
 };

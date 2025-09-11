@@ -1,4 +1,9 @@
-import { Inject, Injectable, type OnModuleDestroy } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  Logger,
+  type OnModuleDestroy,
+} from '@nestjs/common';
 import type { Redis } from 'ioredis';
 
 @Injectable()
@@ -43,14 +48,20 @@ export class RedisService implements OnModuleDestroy {
     return ttl;
   }
 
-  async clearUserCache(userId: string, workspaceId?: string): Promise<void> {
-    await this.redisClient.del(
-      `feedback:sentiment-summary:${userId}:${workspaceId}`,
-      `feedback:grouped:${userId}:${workspaceId}`,
-      `feedback:report:${userId}:${workspaceId}:detailed:csv`,
-      `feedback:report:${userId}:${workspaceId}:detailed:pdf`,
-      `feedback:report:${userId}:${workspaceId}:summary:csv`,
-      `feedback:report:${userId}:${workspaceId}:summary:pdf`,
+  async clearUserCache(userId: string, workspaceId: string): Promise<void> {
+    const workspaceKeys = await this.redisClient.keys(
+      `*:${userId}:${workspaceId}*`,
     );
+    const globalKeys = await this.redisClient.keys(`*:${userId}*`);
+
+    const keysToDelete = [...workspaceKeys, ...globalKeys];
+
+    if (keysToDelete.length > 0) {
+      await this.redisClient.del(...keysToDelete);
+      Logger.log(
+        `Deleted ${keysToDelete.length} cache keys for user: ${userId}`,
+        'Redis',
+      );
+    }
   }
 }

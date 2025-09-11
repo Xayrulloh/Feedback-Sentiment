@@ -331,7 +331,9 @@ export class FeedbackService {
     userId: string,
     workspaceId?: string,
   ): Promise<FeedbackGroupedArrayResponseDto> {
-    const cacheKey = `feedback:grouped:${userId}:${workspaceId}`;
+    const cacheKey = workspaceId
+      ? `feedback:grouped:${userId}:${workspaceId}`
+      : `feedback:grouped:${userId}`;
     const cached = await this.redisService.get(cacheKey);
 
     if (cached) {
@@ -351,10 +353,10 @@ export class FeedbackService {
           }>
         >`JSON_AGG(
           JSON_BUILD_OBJECT(
-            'id', ${schema.usersFeedbacksSchema.id}::text,
+            'id', ${schema.usersFeedbacksSchema.id},
             'content', ${schema.feedbacksSchema.content},
             'sentiment', ${schema.feedbacksSchema.sentiment},
-            'workspaceId', ${schema.usersFeedbacksSchema.workspaceId}::text
+            'workspaceId', ${schema.usersFeedbacksSchema.workspaceId}
           ) ORDER BY ${schema.feedbacksSchema.createdAt} DESC
         )`,
       })
@@ -372,7 +374,7 @@ export class FeedbackService {
           : eq(schema.usersFeedbacksSchema.userId, userId),
       )
       .groupBy(schema.feedbacksSchema.summary)
-      .orderBy(desc(count(schema.feedbacksSchema.id)))
+      .orderBy(desc(count(schema.usersFeedbacksSchema.id)))
       .limit(20);
 
     await this.redisService.setWithExpiry(
@@ -388,7 +390,9 @@ export class FeedbackService {
     userId: string,
     workspaceId?: string,
   ): Promise<FeedbackSummaryResponseDto> {
-    const cacheKey = `feedback:sentiment-summary:${userId}:${workspaceId}`;
+    const cacheKey = workspaceId
+      ? `feedback:sentiment-summary:${userId}:${workspaceId}`
+      : `feedback:sentiment-summary:${userId}`;
     const cached = await this.redisService.get(cacheKey);
 
     if (cached) {
@@ -468,7 +472,9 @@ export class FeedbackService {
     workspaceId?: string,
   ) {
     const { format, type } = query;
-    const cacheKey = `feedback:report:${user.id}:${workspaceId}:${type}:${format}`;
+    const identifier = workspaceId ? `${user.id}:${workspaceId}` : `${user.id}`;
+    const cacheKey = `feedback:report:${identifier}:${type}:${format}`;
+
     const cached = await this.redisService.get(cacheKey);
 
     if (cached) {
