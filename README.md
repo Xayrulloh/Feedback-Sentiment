@@ -10,8 +10,9 @@ An AI-powered dashboard to analyze customer feedback sentiment, group themes, an
 
 - **Backend**: NestJS (TypeScript)
 - **Database**: PostgreSQL (Drizzle ORM)
-- **Auth**: JWT + Redis (sessions/rate-limiting)
+- **Auth**: JWT
 - **AI**: Mistral API (Sentiment Analysis + Topic Clustering)
+- **Caching**: Redis (Data is cached using Redis)
 
 ### **Tools**
 
@@ -60,20 +61,15 @@ REDIS_HOST
 REDIS_PORT
 ```
 
-### 3. Run Database
+### 3. Start App and Database
 
 ```bash
-docker compose up -d  # Starts PostgreSQL + Redis
-npx drizzle-kit push:pg  # Apply DB schema
+docker compose build # 1️⃣ Builds the app image
+docker compose up -d  # 2️⃣ Starts all services (DB, Redis, App, Prometheus, Grafana, Loki, Promtail) in the background
+pnpm drizzle:push # 3️⃣ Applies database migrations once the DB is healthy
 ```
 
-### 4. Start Server
-
-```bash
-pnpm run start:dev
-```
-
-### 5. Swagger Docs and server address
+### 4. Swagger Docs and server address
 
 - **http://localhost:${PORT}/${GLOBAL_PREFIX}** server address
 - **http://localhost:${PORT}/${GLOBAL_PREFIX}/docs** swagger docs
@@ -165,14 +161,14 @@ sequenceDiagram
     Backend->>+DB: Check whether feedback already exists in workspace
     alt Exist
         DB-->>-Backend: Return existing feedbacks
-        Backend-->>-Frontend: 201
     else Create
         Backend->>+AIService: Analyze (confidence/sentiment/group)
         AIService->>+DB: Save new feedback under workspaceId
         DB-->>-AIService: Success
         AIService-->>-Backend: Processed
-        Backend-->>-Frontend: 201
     end
+    Backend->>+Redis: Clear user cache (grouped + summary)
+    Backend-->>-Frontend: 201 Created
 ```
 
 #### **2. Upload Feedback via CSV**
@@ -182,13 +178,15 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-    Frontend->>+Backend: POST /workspaces/{workspaceId}/feedbacks/upload (file which has array of feedbacks)
-    Backend->>+UserStatusGuard: Check if user suspended/disabled
+    Frontend->>+Backend: POST /workspaces/{workspaceId}/feedbacks/upload (CSV file with array of feedbacks)
+    Backend->>+UserStatusGuard: Check suspended/disabled
     Backend->>+RateLimitGuard: Check user rate limits and increment (create activity in suspicious table)
-    RateLimitGuard->>+Websocket: Send admins if user hits limits
+    RateLimitGuard->>+Websocket: Notify admins if user hits limits
     Backend->>+MetricsMiddleware: (Api Usage, Error Rates, Uploads)
-    Backend->>Backend: Parsing and Zod Validation
-    Backend->>+FeedbackManual: Same happens with manual with the rest
+    Backend->>Backend: Parse CSV & Zod Validation
+    Backend->>+FeedbackManual: Reuse same flow as manual feedback creation
+    FeedbackManual-->>-Backend: Created / Existing feedbacks processed
+    Backend->>+Redis: Clear user cache (grouped + summary)
     Backend-->>-Frontend: 201 Created with results
 ```
 
@@ -211,14 +209,14 @@ sequenceDiagram
     Backend-->>-Frontend: 200
 ```
 
-#### **4. Filter Feedback by Sentiment**
+#### **4. Filter Feedback by Sentiment with/without workspaceId**
 
-**Path**: `GET /workspaces/feedbacks`  
+**Path**: `GET /workspaces/:workspaceId?/feedbacks`  
 **Flow**:
 
 ```mermaid
 sequenceDiagram
-    Frontend->>+Backend: GET /workspaces/feedbacks?sentiment=positive,negative
+    Frontend->>+Backend: GET /workspaces/:workspaceId?/feedbacks?sentiment=positive,negative
     Backend->>+UserStatusGuard: Check if user suspended/disabled
     Backend->>+RateLimitGuard: Check user rate limits and increment (create activity in suspicious table)
     RateLimitGuard->>+Websocket: Send admins if user hits limits
@@ -229,169 +227,93 @@ sequenceDiagram
     Backend-->>-Frontend: 200 (Paginated Data)
 ```
 
-#### **5. Filter Feedback by Sentiment based on workspace**
+#### **5. Get Feedback Summary with/without workspaceId**
 
-**Path**: `GET /workspaces/{workspaceId}/feedbacks`  
+**Path**: `GET /workspaces/:workspaceId?/feedbacks/sentiment-summary`  
 **Flow**:
 
 ```mermaid
 sequenceDiagram
-    Frontend->>+Backend: GET /workspaces/{workspaceId}/feedbacks?sentiment=positive,negative
+    Frontend->>+Backend: GET /workspaces/:workspaceId?/feedbacks/sentiment-summary
     Backend->>+UserStatusGuard: Check if user suspended/disabled
     Backend->>+RateLimitGuard: Check user rate limits and increment (create activity in suspicious table)
-    RateLimitGuard->>+Websocket: Send admins if user hits limits
+    RateLimitGuard->>+Websocket: Notify admins if user hits limits
     Backend->>+MetricsMiddleware: (Api Usage, Error Rates, Uploads)
     Backend->>Backend: Zod Validation
-    Backend->>+DB: Query with Sentiment Filters
-    DB-->>-Backend: Filtered Results
-    Backend-->>-Frontend: 200 (Paginated Data)
-```
-
-#### **6. Get Feedback Summary**
-
-**Path**: `GET /workspaces/feedbacks/sentiment-summary`  
-**Flow**:
-
-```mermaid
-sequenceDiagram
-    Frontend->>+Backend: GET /workspaces/feedbacks/sentiment-summary
-    Backend->>+UserStatusGuard: Check if user suspended/disabled
-    Backend->>+RateLimitGuard: Check user rate limits and increment (create activity in suspicious table)
-    RateLimitGuard->>+Websocket: Send admins if user hits limits
-    Backend->>+MetricsMiddleware: (Api Usage, Error Rates, Uploads)
-    Backend->>Backend: Zod Validation
-    Backend->>+DB: Query with userId
-    DB-->>-Backend: Grouped Results
-    Backend-->>-Frontend: 200
-```
-
-#### **7. Get Feedback Summary based on workspace**
-
-**Path**: `GET /workspaces/{workspaceId}/feedbacks/sentiment-summary`  
-**Flow**:
-
-```mermaid
-sequenceDiagram
-    Frontend->>+Backend: GET /workspaces/{workspaceId}/feedbacks/sentiment-summary
-    Backend->>+UserStatusGuard: Check if user suspended/disabled
-    Backend->>+RateLimitGuard: Check user rate limits and increment (create activity in suspicious table)
-    RateLimitGuard->>+Websocket: Send admins if user hits limits
-    Backend->>+MetricsMiddleware: (Api Usage, Error Rates, Uploads)
-    Backend->>Backend: Zod Validation
-    Backend->>+DB: Query with userId
-    DB-->>-Backend: Grouped Results
-    Backend-->>-Frontend: 200
-```
-
-#### **8. Get Feedback Grouped**
-
-**Path**: `GET /workspaces/feedbacks/grouped`
-**Flow**:
-
-```mermaid
-sequenceDiagram
-    Frontend->>+Backend: GET /workspaces/feedbacks/grouped
-    Backend->>+UserStatusGuard: Check if user suspended/disabled
-    Backend->>+RateLimitGuard: Check user rate limits and increment (create activity in suspicious table)
-    RateLimitGuard->>+Websocket: Send admins if user hits limits
-    Backend->>+MetricsMiddleware: (Api Usage, Error Rates, Uploads)
-    Backend->>Backend: Zod Validation
-    Backend->>+DB: Query with userId
-    DB-->>-Backend: Grouped by summary 
-    Backend-->>-Frontend: 200
-```
-
-#### **9. Get Feedback Grouped based on workspace**
-
-**Path**: `GET /workspaces/{workspaceId}/feedbacks/grouped`
-**Flow**:
-
-```mermaid
-sequenceDiagram
-    Frontend->>+Backend: GET /workspaces/{workspaceId}/feedbacks/grouped
-    Backend->>+UserStatusGuard: Check if user suspended/disabled
-    Backend->>+RateLimitGuard: Check user rate limits and increment (create activity in suspicious table)
-    RateLimitGuard->>+Websocket: Send admins if user hits limits
-    Backend->>+MetricsMiddleware: (Api Usage, Error Rates, Uploads)
-    Backend->>Backend: Zod Validation
-    Backend->>+DB: Query with userId
-    DB-->>-Backend: Grouped by summary 
-    Backend-->>-Frontend: 200
-```
-
-#### **10. Get Feedback Report file (CSV/PDF)**
-
-**Path**: `GET /workspaces/feedbacks/report`
-**Flow**:
-
-```mermaid
-sequenceDiagram
-    Frontend->>+Backend: GET /workspaces/feedbacks/report
-    Backend->>+UserStatusGuard: Check if user suspended/disabled
-    Backend->>+RateLimitGuard: Check user rate limits and increment (create activity in suspicious table)
-    RateLimitGuard->>+Websocket: Send admins if user hits limits
-    Backend->>+MetricsMiddleware: (Api Usage, Error Rates, Uploads)
-    Backend->>Backend: Zod Validation
-    Backend->>+DB: Fetch all feedback
-    DB-->>-Backend: Raw data
-    alt PDF Format
-        Backend->>+PDF-lib: Generate PDF
-        PDF-lib-->>-Backend: PDF buffer
-    else CSV Format
-        Backend->>+json2csv: Convert to CSV
-        json2csv-->>-Backend: CSV string
+    Backend->>+Redis: Check cache (feedback:sentiment-summary:{userId}:{workspaceId?})
+    alt Cache hit
+        Redis-->>-Backend: Return cached summary
+        Backend-->>-Frontend: 200
+    else Cache miss
+        Backend->>+DB: Aggregate sentiment counts + percentages
+        DB-->>-Backend: Grouped Results
+        Backend->>+Redis: Store summary with TTL
+        Backend-->>-Frontend: 200
     end
-    Backend-->>-Frontend: File download
 ```
 
-#### **11. Get Feedback Report file (CSV/PDF) based on workspace**
+#### **6. Get Feedback Grouped with/without workspaceId**
 
-**Path**: `GET /workspaces/{workspaceId}/feedbacks/report`
+**Path**: `GET /workspaces/:workspaceId?/feedbacks/grouped`
 **Flow**:
 
 ```mermaid
 sequenceDiagram
-    Frontend->>+Backend: GET /workspaces/{workspaceId}/feedbacks/report
+    Frontend->>+Backend: GET /workspaces/:workspaceId?/feedbacks/grouped
     Backend->>+UserStatusGuard: Check if user suspended/disabled
     Backend->>+RateLimitGuard: Check user rate limits and increment (create activity in suspicious table)
-    RateLimitGuard->>+Websocket: Send admins if user hits limits
+    RateLimitGuard->>+Websocket: Notify admins if user hits limits
     Backend->>+MetricsMiddleware: (Api Usage, Error Rates, Uploads)
     Backend->>Backend: Zod Validation
-    Backend->>+DB: Fetch all feedback
-    DB-->>-Backend: Raw data
-    alt PDF Format
-        Backend->>+PDF-lib: Generate PDF
-        PDF-lib-->>-Backend: PDF buffer
-    else CSV Format
-        Backend->>+json2csv: Convert to CSV
-        json2csv-->>-Backend: CSV string
+    Backend->>+Redis: Check cache (feedback:grouped:{userId}:{workspaceId?})
+    alt Cache hit
+        Redis-->>-Backend: Return cached groups
+        Backend-->>-Frontend: 200
+    else Cache miss
+        Backend->>+DB: Aggregate feedback grouped by summary
+        DB-->>-Backend: Grouped results with items
+        Backend->>+Redis: Store grouped results with TTL
+        Backend-->>-Frontend: 200
     end
-    Backend-->>-Frontend: File download
+```
+
+#### **7. Get Feedback Report file (CSV/PDF) with/without workspaceId**
+
+**Path**: `GET /workspaces/:workspaceId?/feedbacks/report`
+**Flow**:
+
+```mermaid
+sequenceDiagram
+    Frontend->>+Backend: GET /workspaces/:workspaceId?/feedbacks/report
+    Backend->>+UserStatusGuard: Check if user suspended/disabled
+    Backend->>+RateLimitGuard: Check user rate limits and increment (create activity in suspicious table)
+    RateLimitGuard->>+Websocket: Notify admins if user hits limits
+    Backend->>+MetricsMiddleware: (Api Usage, Error Rates, Uploads)
+    Backend->>Backend: Zod Validation
+    Backend->>+Redis: Check cache (feedback:report:{userId}:{workspaceId?}:{type}:{format})
+    alt Cache hit
+        Redis-->>-Backend: Return cached file (Base64 buffer)
+        Backend-->>-Frontend: File download
+    else Cache miss
+        alt Detailed report
+            Backend->>+DB: Fetch all feedback
+            DB-->>-Backend: Raw data
+        else Summary report
+            Backend->>+DB: Aggregate feedback summary
+            DB-->>-Backend: Summary data
+        end
+        Backend->>+FileGenerator: Generate file (CSV/PDF)
+        FileGenerator-->>-Backend: File buffer
+        Backend->>+Redis: Store file buffer (Base64) with TTL
+        Backend-->>-Frontend: File download
+    end
 ```
 
 ### 📁 File Endpoints
 
-#### **1. Get All Files regardles of a specific workspace**
+#### **1. Get All Files with/without workspaceId**
 
-**Path**: `GET /workspaces/files`  
-**Flow**:
-
-```mermaid
-sequenceDiagram
-    Frontend->>+Backend: GET /workspaces/files
-    Backend->>+UserStatusGuard: Check if user suspended/disabled
-    Backend->>+RateLimitGuard: Check user rate limits and increment (create activity in suspicious table)
-    RateLimitGuard->>+Websocket: Send admins if user hits limits
-    Backend->>+MetricsMiddleware: (Api Usage, Error Rates, Uploads)
-    Backend->>Backend: Zod Validation
-    Backend->>+DB: Fetch all user files (Paginated)
-    DB-->>-Backend: Files
-    Backend-->>-Frontend: 200
-```
-
-#### **2. Get All Files based on a workspace**
-
-**Path**: `GET /workspaces/{workspaceId}/files`  
+**Path**: `GET /workspaces/:workspaceId?/files`  
 **Flow**:
 
 ```mermaid
@@ -406,7 +328,6 @@ sequenceDiagram
     DB-->>-Backend: Files
     Backend-->>-Frontend: 200
 ```
-
 
 #### **3. Delete File**
 
@@ -689,71 +610,6 @@ sequenceDiagram
     Backend-->>-Frontend: 200 (Paginated Data)
 ```
 
-#### 📊 Prometheus
-
-Purpose: Metrics collection & scraping system.
-
-Usage in app:
-
-Scrapes /metrics endpoint of our NestJS backend (via MetricsMiddleware)
-
-Collects API usage, error rates, upload counts, rate-limit hits, memory usage, cpu usage etc.
-
-Endpoint:
-
-http://localhost:9090
- → Prometheus dashboard
-
-Integration:
-
-Backend → exposes /metrics
-
-Prometheus → pulls data and stores time-series
-
-#### 📈 Grafana
-Purpose: Visualization and dashboards.
-
-Usage in app:
-
-Connects to Prometheus as a data source
-Displays charts for API requests, latency, error rates, user activity
-Can also hook into Loki for logs
-
-Endpoint:
-http://localhost:3001
- → Grafana UI
-
-#### 📜 Loki
-Purpose: Centralized log storage (optimized for labels instead of full-text indexing).
-
-Usage in app:
-Stores logs from app container and others
-Works together with Promtail for ingestion
-
-Endpoint:
-
-http://localhost:3100
- → Loki API
-
-#### 🗄 Redis
-
-Purpose: High-performance in-memory data store for caching, rate-limiting, and pub/sub.
-Usage in app:
-Rate limiting → used by guards to track, create redis rules for a user and block excessive requests.
-Caching feedback queries →
-Store grouped feedback results per user/workspace
-Store sentiment summary results
-Cache generated reports (CSV/PDF) as Base64 for quick downloads
-Clear cache when new feedbacks are added (clearUserCache)
-
-Examples from FeedbackService:
-
-feedbackGrouped() → caches grouped feedback by feedback:grouped:{userId}:{workspaceId}.
-
-feedbackSummary() → caches sentiment stats by feedback:sentiment-summary:{userId}:{workspaceId}.
-
-feedbackReportDownload() → caches generated report files by feedback:report:{identifier}:{type}:{format}.
-
 ## 🗃️ Database Schema
 
 ```mermaid
@@ -846,4 +702,3 @@ erDiagram
         timestamp deleted_at "nullable"
     }
 ```
-
