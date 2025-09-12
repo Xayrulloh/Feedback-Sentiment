@@ -236,11 +236,11 @@ sequenceDiagram
 sequenceDiagram
     Frontend->>+Backend: GET /workspaces/:workspaceId?/feedbacks/sentiment-summary
     Backend->>+UserStatusGuard: Check if user suspended/disabled
-    Backend->>+RateLimitGuard: Check user rate limits and increment (create activity in suspicious table)
+    Backend->>+RateLimitGuard: Check user rate limits and increment, create activity in suspicious table
     RateLimitGuard->>+Websocket: Notify admins if user hits limits
-    Backend->>+MetricsMiddleware: (Api Usage, Error Rates, Uploads)
+    Backend->>+MetricsMiddleware: `Api Usage, Error Rates, Uploads`
     Backend->>Backend: Zod Validation
-    Backend->>+Redis: Check cache (feedback:sentiment-summary:{userId}:{workspaceId?})
+    Backend->>+Redis: `Check cache (feedback:sentiment-summary:{userId}:{workspaceId?})`
     alt Cache hit
         Redis-->>-Backend: Return cached summary
         Backend-->>-Frontend: 200
@@ -263,9 +263,9 @@ sequenceDiagram
     Backend->>+UserStatusGuard: Check if user suspended/disabled
     Backend->>+RateLimitGuard: Check user rate limits and increment (create activity in suspicious table)
     RateLimitGuard->>+Websocket: Notify admins if user hits limits
-    Backend->>+MetricsMiddleware: (Api Usage, Error Rates, Uploads)
+    Backend->>+MetricsMiddleware: `Api Usage, Error Rates, Uploads`
     Backend->>Backend: Zod Validation
-    Backend->>+Redis: Check cache (feedback:grouped:{userId}:{workspaceId?})
+    Backend->>+Redis: `Check cache (feedback:grouped:{userId}:{workspaceId?})`
     alt Cache hit
         Redis-->>-Backend: Return cached groups
         Backend-->>-Frontend: 200
@@ -288,20 +288,22 @@ sequenceDiagram
     Backend->>+UserStatusGuard: Check if user suspended/disabled
     Backend->>+RateLimitGuard: Check user rate limits and increment (create activity in suspicious table)
     RateLimitGuard->>+Websocket: Notify admins if user hits limits
-    Backend->>+MetricsMiddleware: (Api Usage, Error Rates, Uploads)
+    Backend->>+MetricsMiddleware: `Api Usage, Error Rates, Uploads`
     Backend->>Backend: Zod Validation
-    Backend->>+Redis: Check cache (feedback:report:{userId}:{workspaceId?}:{type}:{format})
+    Backend->>+Redis: `Check cache (feedback:report:{userId}:{workspaceId?}:{type}:{format})`
     alt Cache hit
         Redis-->>-Backend: Return cached file (Base64 buffer)
         Backend-->>-Frontend: File download
-    else Cache miss
-        alt Detailed report
-            Backend->>+DB: Fetch all feedback
-            DB-->>-Backend: Raw data
-        else Summary report
-            Backend->>+DB: Aggregate feedback summary
-            DB-->>-Backend: Summary data
-        end
+    else Cache miss - Detailed report
+        Backend->>+DB: Fetch all feedback
+        DB-->>-Backend: Raw data
+        Backend->>+FileGenerator: Generate file (CSV/PDF)
+        FileGenerator-->>-Backend: File buffer
+        Backend->>+Redis: Store file buffer (Base64) with TTL
+        Backend-->>-Frontend: File download
+    else Cache miss - Summary report
+        Backend->>+DB: Aggregate feedback summary
+        DB-->>-Backend: Summary data
         Backend->>+FileGenerator: Generate file (CSV/PDF)
         FileGenerator-->>-Backend: File buffer
         Backend->>+Redis: Store file buffer (Base64) with TTL
