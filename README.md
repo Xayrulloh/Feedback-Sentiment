@@ -10,8 +10,9 @@ An AI-powered dashboard to analyze customer feedback sentiment, group themes, an
 
 - **Backend**: NestJS (TypeScript)
 - **Database**: PostgreSQL (Drizzle ORM)
-- **Auth**: JWT + Redis (sessions/rate-limiting)
+- **Auth**: JWT
 - **AI**: Mistral API (Sentiment Analysis + Topic Clustering)
+- **Caching**: Redis (Data is cached using Redis)
 
 ### **Tools**
 
@@ -60,20 +61,15 @@ REDIS_HOST
 REDIS_PORT
 ```
 
-### 3. Run Database
+### 3. Start App and Database
 
 ```bash
-docker compose up -d  # Starts PostgreSQL + Redis
-npx drizzle-kit push:pg  # Apply DB schema
+docker compose build # 1️⃣ Builds the app image
+docker compose up -d  # 2️⃣ Starts all services (DB, Redis, App, Prometheus, Grafana, Loki, Promtail) in the background
+pnpm drizzle:push # 3️⃣ Applies database migrations once the DB is healthy
 ```
 
-### 4. Start Server
-
-```bash
-pnpm run start:dev
-```
-
-### 5. Swagger Docs and server address
+### 4. Swagger Docs and server address
 
 - **http://localhost:${PORT}/${GLOBAL_PREFIX}** server address
 - **http://localhost:${PORT}/${GLOBAL_PREFIX}/docs** swagger docs
@@ -151,55 +147,58 @@ sequenceDiagram
 
 #### **1. Feedback Manual**
 
-**Path**: `POST /feedback/manual`
+**Path**: `POST /workspaces/{workspaceId}/feedbacks/manual`
 **Flow**:
 
 ```mermaid
 sequenceDiagram
-    Frontend->>+Backend: POST /feedback/manual (array of feedbacks)
+    Frontend->>+Backend: POST /workspaces/{workspaceId}/feedbacks/manual (array of feedbacks)
     Backend->>+UserStatusGuard: Check suspended/disabled
     Backend->>+RateLimitGuard: Check user rate limits and increment (create activity in suspicious table)
-    RateLimitGuard->>+Websocket: Send admins if user hits limits
+    RateLimitGuard->>+Websocket: Notify admins if user hits limits
     Backend->>+MetricsMiddleware: (Api Usage, Error Rates, Uploads)
     Backend->>Backend: Zod Validation
-    Backend->>DB: Check whether it's already exist or not
+    Backend->>+DB: Check whether feedback already exists in workspace
     alt Exist
-        DB-->>-Backend: Get that feedbacks
-        Backend-->>-Frontend: 201
+        DB-->>-Backend: Return existing feedbacks
     else Create
         Backend->>+AIService: Analyze (confidence/sentiment/group)
-        AIService->>+DB: Create new one and return
+        AIService->>+DB: Save new feedback under workspaceId
         DB-->>-AIService: Success
         AIService-->>-Backend: Processed
-        Backend-->>-Frontend: 201
     end
+    Backend->>+Redis: Clear user cache (grouped + summary)
+    Backend-->>-Frontend: 201 Created
 ```
 
 #### **2. Upload Feedback via CSV**
 
-**Path**: `POST /feedback/upload`  
+**Path**: `POST /workspaces/{workspaceId}/feedbacks/upload`  
 **Flow**:
 
 ```mermaid
 sequenceDiagram
-    Frontend->>+Backend: POST /feedback/upload (file which has array of feedbacks)
-    Backend->>+UserStatusGuard: Check if user suspended/disabled
+    Frontend->>+Backend: POST /workspaces/{workspaceId}/feedbacks/upload (CSV file with array of feedbacks)
+    Backend->>+UserStatusGuard: Check suspended/disabled
     Backend->>+RateLimitGuard: Check user rate limits and increment (create activity in suspicious table)
-    RateLimitGuard->>+Websocket: Send admins if user hits limits
+    RateLimitGuard->>+Websocket: Notify admins if user hits limits
     Backend->>+MetricsMiddleware: (Api Usage, Error Rates, Uploads)
-    Backend->>Backend: Parsing and Zod Validation
-    Backend->>+FeedbackManual: Same happens with manual with the rest
+    Backend->>Backend: Parse CSV & Zod Validation
+    Backend->>+FeedbackManual: Reuse same flow as manual feedback creation
+    FeedbackManual-->>-Backend: Created / Existing feedbacks processed
+    Backend->>+Redis: Clear user cache (grouped + summary)
     Backend-->>-Frontend: 201 Created with results
 ```
 
 #### **3. Get Feedback by ID**
 
-**Path**: `GET /feedback/:id`  
+**Path**: `GET /workspaces/{workspaceId}/feedbacks/{id}
+`  
 **Flow**:
 
 ```mermaid
 sequenceDiagram
-    Frontend->>+Backend: GET /feedback/:id
+    Frontend->>+Backend: GET /workspaces/{workspaceId}/feedbacks/{id}
     Backend->>+UserStatusGuard: Check if user suspended/disabled
     Backend->>+RateLimitGuard: Check user rate limits and increment (create activity in suspicious table)
     RateLimitGuard->>+Websocket: Send admins if user hits limits
@@ -210,14 +209,14 @@ sequenceDiagram
     Backend-->>-Frontend: 200
 ```
 
-#### **4. Filter Feedback by Sentiment**
+#### **4. Filter Feedback by Sentiment with/without workspaceId**
 
-**Path**: `GET /feedback`  
+**Path**: `GET /workspaces/:workspaceId?/feedbacks`  
 **Flow**:
 
 ```mermaid
 sequenceDiagram
-    Frontend->>+Backend: GET /feedback?sentiment=positive,negative
+    Frontend->>+Backend: GET /workspaces/:workspaceId?/feedbacks?sentiment=positive,negative
     Backend->>+UserStatusGuard: Check if user suspended/disabled
     Backend->>+RateLimitGuard: Check user rate limits and increment (create activity in suspicious table)
     RateLimitGuard->>+Websocket: Send admins if user hits limits
@@ -228,77 +227,99 @@ sequenceDiagram
     Backend-->>-Frontend: 200 (Paginated Data)
 ```
 
-#### **5. Get Feedback Summary**
+#### **5. Get Feedback Summary with/without workspaceId**
 
-**Path**: `GET /feedback/sentiment-summary`  
+**Path**: `GET /workspaces/:workspaceId?/feedbacks/sentiment-summary`  
 **Flow**:
 
 ```mermaid
 sequenceDiagram
-    Frontend->>+Backend: GET /feedback/sentiment-summary
-    Backend->>+UserStatusGuard: Check if user suspended/disabled
-    Backend->>+RateLimitGuard: Check user rate limits and increment (create activity in suspicious table)
-    RateLimitGuard->>+Websocket: Send admins if user hits limits
-    Backend->>+MetricsMiddleware: (Api Usage, Error Rates, Uploads)
-    Backend->>Backend: Zod Validation
-    Backend->>+DB: Query with userId
-    DB-->>-Backend: Grouped Results
-    Backend-->>-Frontend: 200
-```
-
-#### **6. Get Feedback Grouped**
-
-**Path**: `GET /feedback/grouped`
-**Flow**:
-
-```mermaid
-sequenceDiagram
-    Frontend->>+Backend: GET /feedback/grouped
-    Backend->>+UserStatusGuard: Check if user suspended/disabled
-    Backend->>+RateLimitGuard: Check user rate limits and increment (create activity in suspicious table)
-    RateLimitGuard->>+Websocket: Send admins if user hits limits
-    Backend->>+MetricsMiddleware: (Api Usage, Error Rates, Uploads)
-    Backend->>Backend: Zod Validation
-    Backend->>+DB: Query with userId
-    DB-->>-Backend: Grouped by summary 
-    Backend-->>-Frontend: 200
-```
-
-#### **7. Get Feedback Report file (CSV/PDF)**
-
-**Path**: `GET /feedback/report`
-**Flow**:
-
-```mermaid
-sequenceDiagram
-    Frontend->>+Backend: GET /feedback/report
-    Backend->>+UserStatusGuard: Check if user suspended/disabled
-    Backend->>+RateLimitGuard: Check user rate limits and increment (create activity in suspicious table)
-    RateLimitGuard->>+Websocket: Send admins if user hits limits
-    Backend->>+MetricsMiddleware: (Api Usage, Error Rates, Uploads)
-    Backend->>Backend: Zod Validation
-    Backend->>+DB: Fetch all feedback
-    DB-->>-Backend: Raw data
-    alt PDF Format
-        Backend->>+PDF-lib: Generate PDF
-        PDF-lib-->>-Backend: PDF buffer
-    else CSV Format
-        Backend->>+json2csv: Convert to CSV
-        json2csv-->>-Backend: CSV string
+    Frontend->>Backend: GET /workspaces/feedbacks/sentiment-summary
+    Backend->>UserStatusGuard: Check user status
+    Backend->>RateLimitGuard: Check rate limits
+    RateLimitGuard->>Websocket: Notify admins
+    Backend->>Backend: Validation
+    Backend->>Redis: `Check cache feedback:sentiment-summary`
+    alt Cache hit
+        Redis-->>Backend: Return cached summary
+        Backend-->>Frontend: 200
+    else Cache miss
+        Backend->>DB: Aggregate sentiment
+        DB-->>Backend: Results
+        Backend->>Redis: Store summary
+        Backend-->>Frontend: 200
     end
-    Backend-->>-Frontend: File download
+```
+
+#### **6. Get Feedback Grouped with/without workspaceId**
+
+**Path**: `GET /workspaces/:workspaceId?/feedbacks/grouped`
+**Flow**:
+
+```mermaid
+sequenceDiagram
+    Frontend->>Backend: GET /workspaces/feedbacks/grouped
+    Backend->>UserStatusGuard: Check user status
+    Backend->>RateLimitGuard: Check rate limits
+    RateLimitGuard->>Websocket: Notify admins
+    Backend->>MetricsMiddleware: `Api Usage, Error Rates, Uploads`
+    Backend->>Backend: Zod Validation
+    Backend->>Redis: `Check cache feedback:grouped`
+    alt Cache hit
+        Redis-->>Backend: Return cached groups
+        Backend-->>Frontend: 200
+    else Cache miss
+        Backend->>DB: Aggregate feedback grouped
+        DB-->>Backend: Grouped results with items
+        Backend->>Redis: Store grouped results
+        Backend-->>Frontend: 200
+    end
+```
+
+#### **7. Get Feedback Report file (CSV/PDF) with/without workspaceId**
+
+**Path**: `GET /workspaces/:workspaceId?/feedbacks/report`
+**Flow**:
+
+```mermaid
+sequenceDiagram
+    Frontend->>Backend: GET /workspaces/feedbacks/report
+    Backend->>UserStatusGuard: Check user status
+    Backend->>RateLimitGuard: Check rate limits
+    RateLimitGuard->>Websocket: Notify admins
+    Backend->>MetricsMiddleware: `Api Usage, Error Rates, Uploads`
+    Backend->>Backend: Zod Validation
+    Backend->>Redis: `Check cache feedback:report`
+    alt Cache hit
+        Redis-->>Backend: Return cached file
+        Backend-->>Frontend: File download
+    else Cache miss - Detailed report
+        Backend->>DB: Fetch all feedback
+        DB-->>Backend: Raw data
+        Backend->>FileGenerator: Generate file CSV/PDF
+        FileGenerator-->>Backend: File buffer
+        Backend->>Redis: Store file buffer with TTL
+        Backend-->>Frontend: File download
+    else Cache miss - Summary report
+        Backend->>DB: Aggregate feedback summary
+        DB-->>Backend: Summary data
+        Backend->>FileGenerator: Generate file CSV/PDF
+        FileGenerator-->>Backend: File buffer
+        Backend->>Redis: Store file buffer with TTL
+        Backend-->>Frontend: File download
+    end
 ```
 
 ### 📁 File Endpoints
 
-#### **1. Get Files**
+#### **1. Get All Files with/without workspaceId**
 
-**Path**: `GET /files`  
+**Path**: `GET /workspaces/:workspaceId?/files`  
 **Flow**:
 
 ```mermaid
 sequenceDiagram
-    Frontend->>+Backend: GET /files
+    Frontend->>+Backend: GET /workspaces/{workspaceId}/files
     Backend->>+UserStatusGuard: Check if user suspended/disabled
     Backend->>+RateLimitGuard: Check user rate limits and increment (create activity in suspicious table)
     RateLimitGuard->>+Websocket: Send admins if user hits limits
@@ -309,15 +330,14 @@ sequenceDiagram
     Backend-->>-Frontend: 200
 ```
 
+#### **3. Delete File**
 
-#### **2. Delete File**
-
-**Path**: `DELETE /files/:id`  
+**Path**: `DELETE /workspaces/{workspaceId}/files/{fileId}`  
 **Flow**:
 
 ```mermaid
 sequenceDiagram
-    Frontend->>+Backend: DELETE /files/:id
+    Frontend->>+Backend: DELETE /workspaces/{workspaceId}/files/{fileId}
     Backend->>+UserStatusGuard: Check if user suspended/disabled
     Backend->>+RateLimitGuard: Check user rate limits and increment (create activity in suspicious table)
     RateLimitGuard->>+Websocket: Send admins if user hits limits
@@ -370,7 +390,7 @@ sequenceDiagram
 
 #### **1. Disable User**
 
-**Path**: `POST /admin/disable/:userId`
+**Path**: `POST /admins/disable/:userId`
 **Flow**:
 
 ```mermaid
@@ -384,7 +404,7 @@ sequenceDiagram
 
 #### **2. Suspend User**
 
-**Path**: `POST /admin/suspend/:userId`
+**Path**: `POST /admins/suspend/:userId`
 **Flow**:
 
 ```mermaid
@@ -398,7 +418,7 @@ sequenceDiagram
 
 #### **3. Metrics**
 
-**Path**: `GET /admin/metrics`
+**Path**: `GET /admins/metrics`
 **Flow**:
 
 ```mermaid
@@ -412,7 +432,7 @@ sequenceDiagram
 
 #### **4. Rate Limit**
 
-**Path**: `GET /admin/rate-limit`
+**Path**: `GET /admins/rate-limit`
 **Flow**:
 
 ```mermaid
@@ -426,7 +446,7 @@ sequenceDiagram
 
 #### **5. Rate Limit**
 
-**Path**: `PATCH /admin/rate-limit`
+**Path**: `PATCH /admins/rate-limit`
 **Flow**:
 
 ```mermaid
@@ -440,7 +460,7 @@ sequenceDiagram
 
 #### **6. Suspicious Activity**
 
-**Path**: `GET /admin/suspicious-activities`
+**Path**: `GET /admins/suspicious-activities`
 **Flow**:
 
 ```mermaid
@@ -454,48 +474,14 @@ sequenceDiagram
 
 ### 📜 Sample Feedback Endpoints
 
-#### **1 Sample. Feedback Manual**
+#### **1. Sample Filter Feedback by Sentiment**
 
-**Path**: `POST /sample/feedback/manual`
+**Path**: `GET /samples/feedbacks/filtered`  
 **Flow**:
 
 ```mermaid
 sequenceDiagram
-    Frontend->>+Backend: POST /sample/feedback-manual (array of feedbacks)
-    Backend->>+UserStatusGuard: Check suspended/disabled
-    Backend->>+RateLimitGuard: Check user rate limits and increment (create activity in suspicious table)
-    RateLimitGuard->>+Websocket: Send admins if user hits limits
-    Backend->>+MetricsMiddleware: (Api Usage, Error Rates, Uploads)
-    Backend->>Backend: Zod Validation
-    Backend->>MockData: Mock feedbacks
-    Backend-->>-Frontend: 201
-```
-
-#### **2. Sample Get Feedback by ID**
-
-**Path**: `GET /sample/feedback/:id`  
-**Flow**:
-
-```mermaid
-sequenceDiagram
-    Frontend->>+Backend: GET /sample/feedback-:id
-    Backend->>+UserStatusGuard: Check if user suspended/disabled
-    Backend->>+RateLimitGuard: Check user rate limits and increment (create activity in suspicious table)
-    RateLimitGuard->>+Websocket: Send admins if user hits limits
-    Backend->>+MetricsMiddleware: (Api Usage, Error Rates, Uploads)
-    Backend->>Backend: Zod Validation
-    Backend->>+MockData: Mock Feedback
-    Backend-->>-Frontend: 200
-```
-
-#### **4. Sample Filter Feedback by Sentiment**
-
-**Path**: `GET /feedback`  
-**Flow**:
-
-```mermaid
-sequenceDiagram
-    Frontend->>+Backend: GET /feedback?sentiment=positive,negative
+    Frontend->>+Backend: GET /samples/feedbacks/filtered?sentiment=positive,negative
     Backend->>+UserStatusGuard: Check if user suspended/disabled
     Backend->>+RateLimitGuard: Check user rate limits and increment (create activity in suspicious table)
     RateLimitGuard->>+Websocket: Send admins if user hits limits
@@ -505,9 +491,9 @@ sequenceDiagram
     Backend-->>-Frontend: 200 (Paginated Data)
 ```
 
-#### **5. Sample Get Feedback Summary**
+#### **2. Sample Get Feedback Summary**
 
-**Path**: `GET /sample/feedback-sentiment-summary`  
+**Path**: `GET /samples/feedbacks/sentiment-summary`  
 **Flow**:
 
 ```mermaid
@@ -522,14 +508,14 @@ sequenceDiagram
     Backend-->>-Frontend: 200
 ```
 
-#### **6. Sample Get Feedback Grouped**
+#### **3. Sample Get Feedback Grouped**
 
-**Path**: `GET /sample/feedback-grouped`
+**Path**: `GET /samples/feedbacks/grouped`
 **Flow**:
 
 ```mermaid
 sequenceDiagram
-    Frontend->>+Backend: GET /sample/feedback-grouped
+    Frontend->>+Backend: GET /samples/feedbacks/grouped
     Backend->>+UserStatusGuard: Check if user suspended/disabled
     Backend->>+RateLimitGuard: Check user rate limits and increment (create activity in suspicious table)
     RateLimitGuard->>+Websocket: Send admins if user hits limits
@@ -538,47 +524,142 @@ sequenceDiagram
     Backend->>+MockData: Mock Feedback
     Backend-->>-Frontend: 200
 ```
+### 📜 Workspaces Crud Endpoints
 
-#### **7. Sample Get Feedback Report file (CSV/PDF)**
+#### **1. Create a workspace**
 
-**Path**: `GET /sample/feedback-report`
+**Path**: `POST /api/workspaces`  
 **Flow**:
 
 ```mermaid
 sequenceDiagram
-    Frontend->>+Backend: GET /sample/feedback-report
+    Frontend->>+Backend: POST /api/workspaces
     Backend->>+UserStatusGuard: Check if user suspended/disabled
     Backend->>+RateLimitGuard: Check user rate limits and increment (create activity in suspicious table)
     RateLimitGuard->>+Websocket: Send admins if user hits limits
     Backend->>+MetricsMiddleware: (Api Usage, Error Rates, Uploads)
     Backend->>Backend: Zod Validation
-    Backend->>+MockData: Mock Feedback
-    Backend-->>-Frontend: File download
+    Backend->>+Workspace: Add workspace
+    Backend-->>-Frontend: 201 (Paginated Data)
+```
+
+#### **2. Get all workspaces**
+
+**Path**: `GET /api/workspaces`  
+**Flow**:
+
+```mermaid
+sequenceDiagram
+    Frontend->>+Backend: GET /api/workspaces
+    Backend->>+UserStatusGuard: Check if user suspended/disabled
+    Backend->>+RateLimitGuard: Check user rate limits and increment (create activity in suspicious table)
+    RateLimitGuard->>+Websocket: Send admins if user hits limits
+    Backend->>+MetricsMiddleware: (Api Usage, Error Rates, Uploads)
+    Backend->>Backend: Zod Validation
+    Backend->>Workspace: Get all workspace
+    Backend-->>-Frontend: 200 (Paginated Data)
+```
+
+#### **3. Get a workspace by Id**
+
+**Path**: `GET /api/workspaces/{id}`  
+**Flow**:
+
+```mermaid
+sequenceDiagram
+    Frontend->>+Backend: GET /api/workspaces/{id}
+    Backend->>+UserStatusGuard: Check if user suspended/disabled
+    Backend->>+RateLimitGuard: Check user rate limits and increment (create activity in suspicious table)
+    RateLimitGuard->>+Websocket: Send admins if user hits limits
+    Backend->>+MetricsMiddleware: (Api Usage, Error Rates, Uploads)
+    Backend->>Backend: Zod Validation
+    Backend->>Workspace: Get workspace by id
+    Backend-->>-Frontend: 200 (Paginated Data)
+```
+
+#### **4. Update a workspace by Id**
+
+**Path**: `PUT /api/workspaces/{id}`  
+**Flow**:
+
+```mermaid
+sequenceDiagram
+    Frontend->>+Backend: PUT /api/workspaces/{id}
+    Backend->>+UserStatusGuard: Check if user suspended/disabled
+    Backend->>+RateLimitGuard: Check user rate limits and increment (create activity in suspicious table)
+    RateLimitGuard->>+Websocket: Send admins if user hits limits
+    Backend->>+MetricsMiddleware: (Api Usage, Error Rates, Uploads)
+    Backend->>Backend: Zod Validation
+    Backend->>Workspace: Update workspace by id
+    Backend-->>-Frontend: 200 (Paginated Data)
+```
+
+#### **5. DELETE a workspace by Id**
+
+**Path**: `DELETE /api/workspaces/{id}`  
+**Flow**:
+
+```mermaid
+sequenceDiagram
+    Frontend->>+Backend: DELETE /api/workspaces/{id}
+    Backend->>+UserStatusGuard: Check if user suspended/disabled
+    Backend->>+RateLimitGuard: Check user rate limits and increment (create activity in suspicious table)
+    RateLimitGuard->>+Websocket: Send admins if user hits limits
+    Backend->>+MetricsMiddleware: (Api Usage, Error Rates, Uploads)
+    Backend->>Backend: Zod Validation
+    Backend->>Workspace: DELETE workspace by id
+    Backend-->>-Frontend: 200 (Paginated Data)
 ```
 
 ## 🗃️ Database Schema
 
 ```mermaid
 erDiagram
-    users ||--o{ users_feedbacks : "1:N"
+    users ||--o{ workspaces : "1:N"
     users ||--o{ files : "1:N"
+    users ||--o{ users_feedbacks : "1:N"
     users ||--o{ suspicious_activity : "1:N"
+    workspaces ||--o{ files : "1:N"
+    workspaces ||--o{ users_feedbacks : "1:N"
     feedbacks ||--o{ users_feedbacks : "1:N"
     files ||--o{ users_feedbacks : "1:N"
 
     users {
-        string id PK "uuid"
+        uuid id PK
         string email "unique"
         string password_hash
         enum role "user|admin"
-        boolean is_suspended
+        boolean is_suspended "default false"
+        timestamp created_at
+        timestamp updated_at
+        timestamp deleted_at "nullable"
+    }
+
+    workspaces {
+        uuid id PK
+        string name
+        uuid user_id FK
+        timestamp created_at
+        timestamp updated_at
+        timestamp deleted_at "nullable"
+    }
+
+    files {
+        uuid id PK
+        uuid user_id FK
+        uuid workspace_id FK
+        string name
+        string mime_type
+        bigint size "bytes"
+        integer row_count "nullable"
+        string extension
         timestamp created_at
         timestamp updated_at
         timestamp deleted_at "nullable"
     }
 
     feedbacks {
-        string id PK "uuid"
+        uuid id PK
         string content_hash "unique, sha256"
         text content
         enum sentiment "positive|neutral|negative|unknown"
@@ -590,27 +671,18 @@ erDiagram
     }
 
     users_feedbacks {
-        string user_id FK,PK
-        string feedback_id FK,PK
-        string file_id FK "nullable"
-        timestamp created_at
-    }
-
-    files {
-        string id PK "uuid"
-        string user_id FK
-        string name
-        string mime_type
-        bigint size "bytes"
-        integer row_count "nullable"
-        string extension
+        uuid id PK
+        uuid user_id FK
+        uuid feedback_id FK
+        uuid workspace_id FK
+        uuid file_id FK "nullable"
         timestamp created_at
         timestamp updated_at
         timestamp deleted_at "nullable"
     }
 
     rate_limits {
-        string id PK "uuid"
+        uuid id PK
         enum target "api|upload|download|login"
         integer limit
         timestamp created_at
@@ -619,8 +691,8 @@ erDiagram
     }
 
     suspicious_activity {
-        string id PK "uuid"
-        string user_id FK "nullable"
+        uuid id PK
+        uuid user_id FK "nullable"
         string email "nullable"
         string ip "nullable"
         enum action "api|upload|download|login"
@@ -631,4 +703,3 @@ erDiagram
         timestamp deleted_at "nullable"
     }
 ```
-
